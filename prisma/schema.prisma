@@ -1,0 +1,425 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum SkillAccessType {
+  FREE
+  PAID
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AIToolStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum RankingPeriodType {
+  WEEK
+  MONTH
+  QUARTER
+  ALL_TIME
+}
+
+enum RankingStatus {
+  DRAFT
+  PUBLISHED
+}
+
+// ---------------------------------------------------------------------------
+// Identity (Auth.js Prisma adapter compatible)
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String     @id @default(uuid())
+  name          String?    @db.VarChar(120)
+  email         String?    @unique @db.VarChar(320)
+  emailVerified DateTime?  @db.Timestamptz(3)
+  image         String?
+  role          UserRole   @default(USER)
+  status        UserStatus @default(ACTIVE)
+  createdAt     DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime   @updatedAt @db.Timestamptz(3)
+
+  accounts   Account[]
+  sessions   Session[]
+  favorites  SkillFavorite[]
+  skillViews SkillView[]
+  toolClicks ToolClick[]
+  skills     Skill[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime @db.Timestamptz(3)
+
+  @@unique([identifier, token])
+}
+
+// ---------------------------------------------------------------------------
+// Taxonomy
+// ---------------------------------------------------------------------------
+
+model Industry {
+  id          String   @id @default(uuid())
+  slug        String   @unique @db.VarChar(120)
+  name        String   @db.VarChar(160)
+  description String?
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  skills SkillIndustryLink[]
+  rankings Ranking[]
+
+  @@map("industries")
+}
+
+model SkillCategory {
+  id          String   @id @default(uuid())
+  slug        String   @unique @db.VarChar(120)
+  name        String   @db.VarChar(160)
+  description String?
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  skills SkillCategoryLink[]
+  rankings Ranking[]
+
+  @@map("skill_categories")
+}
+
+model UseCase {
+  id          String   @id @default(uuid())
+  slug        String   @unique @db.VarChar(160)
+  name        String   @db.VarChar(200)
+  description String?
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  skills SkillUseCaseLink[]
+}
+
+model AITool {
+  id          String      @id @default(uuid())
+  slug        String      @unique @db.VarChar(160)
+  name        String      @db.VarChar(200)
+  description String?
+  websiteUrl  String?
+  logoUrl     String?
+  status      AIToolStatus @default(ACTIVE)
+  createdAt   DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime    @updatedAt @db.Timestamptz(3)
+
+  skills    SkillToolLink[]
+  newsLinks NewsToolLink[]
+  rankingEntries RankingEntry[]
+  clicks    ToolClick[]
+
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Skill catalog
+// ---------------------------------------------------------------------------
+
+model Skill {
+  id              String          @id @default(uuid())
+  slug            String          @unique @db.VarChar(180)
+  title           String          @db.VarChar(200)
+  shortDescription String         @db.VarChar(500)
+  description     String          @db.Text
+  accessType      SkillAccessType @default(FREE)
+  status          ContentStatus   @default(DRAFT)
+  authorId        String?
+  coverImageUrl   String?
+  viewCount       BigInt          @default(0)
+  favoriteCount   BigInt          @default(0)
+  ratingAverage   Decimal?        @db.Decimal(3, 2)
+  ratingCount     Int             @default(0)
+  publishedAt     DateTime?       @db.Timestamptz(3)
+  createdAt       DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime        @updatedAt @db.Timestamptz(3)
+
+  versions   SkillVersion[]
+  prices     SkillPrice[]
+  categories SkillCategoryLink[]
+  industries SkillIndustryLink[]
+  useCases   SkillUseCaseLink[]
+  tools      SkillToolLink[]
+  favorites  SkillFavorite[]
+  views      SkillView[]
+  author     User?           @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([status, publishedAt])
+  @@index([accessType])
+  @@index([favoriteCount])
+  @@index([createdAt])
+}
+
+model SkillVersion {
+  id           String   @id @default(uuid())
+  skillId      String
+  version      Int
+  content      String   @db.Text
+  instructions String?  @db.Text
+  variables    Json?
+  changelog    String?  @db.Text
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([skillId, version])
+  @@index([skillId, version])
+}
+
+model SkillPrice {
+  id        String   @id @default(uuid())
+  skillId   String
+  currency  String   @db.Char(3)
+  amount    Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@index([skillId, isActive])
+}
+
+model SkillCategoryLink {
+  skillId    String
+  categoryId String
+
+  skill    Skill         @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  category SkillCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([skillId, categoryId])
+  @@index([categoryId, skillId])
+}
+
+model SkillIndustryLink {
+  skillId    String
+  industryId String
+
+  skill    Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  industry Industry  @relation(fields: [industryId], references: [id], onDelete: Cascade)
+
+  @@id([skillId, industryId])
+  @@index([industryId, skillId])
+}
+
+model SkillUseCaseLink {
+  skillId  String
+  useCaseId String
+
+  skill   Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  useCase UseCase @relation(fields: [useCaseId], references: [id], onDelete: Cascade)
+
+  @@id([skillId, useCaseId])
+  @@index([useCaseId, skillId])
+}
+
+model SkillToolLink {
+  skillId String
+  toolId  String
+
+  skill Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  tool  AITool  @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@id([skillId, toolId])
+  @@index([toolId, skillId])
+}
+
+// ---------------------------------------------------------------------------
+// News
+// ---------------------------------------------------------------------------
+
+model NewsArticle {
+  id            String        @id @default(uuid())
+  slug          String        @unique @db.VarChar(220)
+  title         String        @db.VarChar(260)
+  excerpt       String?       @db.VarChar(600)
+  content       String        @db.Text
+  coverImageUrl String?
+  sourceName    String        @db.VarChar(160)
+  sourceUrl     String?
+  status        ContentStatus @default(DRAFT)
+  publishedAt   DateTime?     @db.Timestamptz(3)
+  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime      @updatedAt @db.Timestamptz(3)
+
+  category NewsCategory? @relation("NewsArticleCategory", fields: [categoryId], references: [id])
+  categoryId String?
+
+  tools NewsToolLink[]
+
+  @@index([status, publishedAt])
+  @@index([sourceName])
+  @@index([categoryId, status])
+  @@map("news_articles")
+}
+
+model NewsCategory {
+  id        String   @id @default(uuid())
+  slug      String   @unique @db.VarChar(160)
+  name      String   @db.VarChar(200)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  articles NewsArticle[] @relation("NewsArticleCategory")
+
+  @@map("news_categories")
+}
+
+model NewsToolLink {
+  articleId String
+  toolId    String
+
+  article NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tool    AITool      @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, toolId])
+  @@index([toolId, articleId])
+}
+
+// ---------------------------------------------------------------------------
+// Rankings
+// ---------------------------------------------------------------------------
+
+model Ranking {
+  id          String             @id @default(uuid())
+  name        String             @db.VarChar(220)
+  slug        String             @unique @db.VarChar(220)
+  industryId  String?
+  categoryId  String?
+  periodType  RankingPeriodType  @default(MONTH)
+  periodStart DateTime?          @db.Timestamptz(3)
+  periodEnd   DateTime?          @db.Timestamptz(3)
+  status      RankingStatus      @default(DRAFT)
+  createdAt   DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime           @updatedAt @db.Timestamptz(3)
+
+  industry Industry?      @relation(fields: [industryId], references: [id])
+  category SkillCategory? @relation(fields: [categoryId], references: [id])
+  entries  RankingEntry[]
+
+  @@index([status])
+  @@index([industryId, status])
+  @@index([categoryId, status])
+}
+
+model RankingEntry {
+  id        String         @id @default(uuid())
+  rankingId String
+  toolId    String
+  score     Decimal        @db.Decimal(12, 4)
+  views     BigInt         @default(0)
+  favorites BigInt         @default(0)
+  clicks    BigInt         @default(0)
+  rank      Int
+
+  ranking Ranking @relation(fields: [rankingId], references: [id], onDelete: Cascade)
+  tool    AITool  @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@unique([rankingId, toolId])
+  @@index([rankingId, rank])
+  @@index([toolId])
+}
+
+// ---------------------------------------------------------------------------
+// Engagement
+// ---------------------------------------------------------------------------
+
+model SkillFavorite {
+  userId    String
+  skillId   String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([userId, skillId])
+  @@index([skillId, createdAt])
+}
+
+model SkillView {
+  id          String    @id @default(uuid())
+  skillId     String
+  userId      String?
+  sessionHash String?   @db.VarChar(64)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+
+  skill Skill  @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  user  User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([skillId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model ToolClick {
+  id        String   @id @default(uuid())
+  toolId    String
+  userId    String?
+  source    String   @db.VarChar(80)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  tool AITool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  user User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([toolId, createdAt])
+}
