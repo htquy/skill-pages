@@ -12,4 +12,5 @@ export interface TaxonomySnapshot {
 
 export interface TaxonomyRepository {
   getSnapshot(): Promise<TaxonomySnapshot>;
+  getAdminOptions(): Promise<TaxonomySnapshot>;
 }

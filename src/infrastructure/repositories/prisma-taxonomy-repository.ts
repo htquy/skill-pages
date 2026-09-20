@@ -34,4 +34,20 @@ export const prismaTaxonomyRepository: TaxonomyRepository = {
     };
     return snapshot;
   },
+
+  async getAdminOptions() {
+    const [industries, categories, useCases, tools] = await Promise.all([
+      prisma.industry.findMany({ orderBy: { name: "asc" } }),
+      prisma.skillCategory.findMany({ orderBy: { name: "asc" } }),
+      prisma.useCase.findMany({ orderBy: { name: "asc" } }),
+      prisma.aITool.findMany({ orderBy: { name: "asc" } }),
+    ]);
+
+    return {
+      industries: industries.map(toOption),
+      categories: categories.map(toOption),
+      useCases: useCases.map(toOption),
+      tools: tools.map(toOption),
+    };
+  },
 };

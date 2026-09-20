@@ -53,7 +53,7 @@ async function main() {
         id: demoId,
         name: "Demo Explorer",
         email: "explorer@promptworks.app",
-        role: "USER",
+        role: "CUSTOMER",
       },
     ],
   });
