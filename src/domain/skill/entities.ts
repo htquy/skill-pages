@@ -36,6 +36,25 @@ export interface SkillPriceInfo {
   amount: number;
 }
 
+export interface SkillPurchaseInfo {
+  id: string;
+  slug: string;
+  title: string;
+  accessType: SkillAccessType;
+  status: SkillStatus;
+  price: SkillPriceInfo | null;
+}
+
+export interface SkillContent {
+  id: string;
+  slug: string;
+  title: string;
+  content: string;
+  instructions: string | null;
+  changelog: string | null;
+  version: number;
+}
+
 export interface SkillDetail extends SkillSummary {
   description: string;
   content: string;
@@ -62,4 +81,6 @@ export interface SkillRepository {
   search(filters: SkillListFilters, pagination: Pagination): Promise<PaginatedResult<SkillSummary>>;
   findSummariesByIds(ids: string[]): Promise<SkillSummary[]>;
   findBySlug(slug: string): Promise<SkillDetail | null>;
+  findContentById(id: string): Promise<SkillContent | null>;
+  findPurchaseInfoById(id: string): Promise<SkillPurchaseInfo | null>;
 }

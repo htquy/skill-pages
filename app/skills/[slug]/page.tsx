@@ -10,7 +10,7 @@ import { SkillBadge } from "@/src/presentation/components/skill/skill-badge";
 import { StarRating } from "@/src/presentation/components/skill/star-rating";
 import { SaveButton } from "@/src/presentation/components/skill/save-button";
 import { CopyButton } from "@/src/presentation/components/shared/copy-button";
-import { skillQueries, engagementCommands } from "@/src/infrastructure/composition";
+import { skillQueries, engagementCommands, accessCommands } from "@/src/infrastructure/composition";
 import { getCurrentUser } from "@/src/infrastructure/authentication/authorization";
 import { formatDate, formatNumber, formatCurrencyAmount } from "@/src/lib/utils";
 
@@ -69,6 +69,8 @@ export default async function SkillDetailPage({ params }: Props) {
 
   const user = await getCurrentUser();
   const isFavorite = user ? await engagementCommands.isFavorite(user.id, slug) : false;
+  const hasAccess = skill.accessType === "FREE" || Boolean(user && await accessCommands.hasActiveAccess(user.id, skill.id));
+  const visibleContent = hasAccess ? skill.content : "Preview available after purchase.";
 
   if (user) {
     void engagementCommands
@@ -131,7 +133,7 @@ export default async function SkillDetailPage({ params }: Props) {
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <SaveButton skillSlug={skill.slug} isFavorite={isFavorite} />
-            <CopyButton text={skill.content} />
+            {hasAccess ? <CopyButton text={skill.content} /> : null}
           </div>
 
           <div className="mt-10 space-y-4">
@@ -162,7 +164,7 @@ export default async function SkillDetailPage({ params }: Props) {
             </div>
             <div className="px-5 py-6 sm:px-7">
               <pre className="whitespace-pre-wrap rounded-xl bg-zinc-50 p-5 font-mono text-sm leading-relaxed text-zinc-800 ring-1 ring-zinc-100">
-                {skill.content}
+                {visibleContent}
               </pre>
             </div>
           </section>

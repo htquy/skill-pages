@@ -167,4 +167,38 @@ export const prismaSkillRepository: SkillRepository = {
     });
     return skill ? toDetail(skill) : null;
   },
+
+  async findContentById(id) {
+    const skill = await prisma.skill.findUnique({
+      where: { id, status: "PUBLISHED" },
+      include: { versions: { orderBy: { version: "desc" as const }, take: 1 } },
+    });
+    if (!skill) return null;
+    const latest = skill.versions[0];
+    return {
+      id: skill.id,
+      slug: skill.slug,
+      title: skill.title,
+      content: latest?.content ?? "",
+      instructions: latest?.instructions ?? null,
+      changelog: latest?.changelog ?? null,
+      version: latest?.version ?? 1,
+    };
+  },
+
+  async findPurchaseInfoById(id) {
+    const skill = await prisma.skill.findUnique({
+      where: { id },
+      include: { prices: { where: { isActive: true }, orderBy: { createdAt: "desc" as const }, take: 1 } },
+    });
+    if (!skill) return null;
+    return {
+      id: skill.id,
+      slug: skill.slug,
+      title: skill.title,
+      accessType: toDomainAccess(skill.accessType),
+      status: skill.status,
+      price: skill.prices[0] ? { currency: skill.prices[0].currency, amount: skill.prices[0].amount } : null,
+    };
+  },
 };
