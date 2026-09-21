@@ -3,16 +3,19 @@
 import { useState, useTransition } from "react";
 import { Bookmark } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import type { Dict } from "@/src/lib/i18n/config";
 import { toggleFavoriteAction } from "@/src/presentation/actions/engagement-actions";
 
 export function SaveButton({
   skillSlug,
   isFavorite,
   compact,
+  dict,
 }: {
   skillSlug: string;
   isFavorite: boolean;
   compact?: boolean;
+  dict: Dict;
 }) {
   const [isSaved, setIsSaved] = useState(isFavorite);
   const [pending, startTransition] = useTransition();
@@ -44,7 +47,7 @@ export function SaveButton({
         className={cn("size-4", isSaved && "fill-current")}
         aria-hidden="true"
       />
-      {pending ? "Updating…" : isSaved ? "Saved" : "Save"}
+      {pending ? dict.saveButton.updating : isSaved ? dict.saveButton.saved : dict.saveButton.save}
     </button>
   );
 }

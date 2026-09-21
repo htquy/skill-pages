@@ -1,36 +1,144 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PromptWorks — Curated AI skills, news and rankings
 
-## Getting Started
+A marketing-and-commerce platform for curated AI **skills** (prompts, workflows and templates),
+**AI news**, and **tool rankings**, built with Next.js (App Router), Prisma + PostgreSQL and Auth.js.
 
-First, run the development server:
+- **Public site** — browse/search skills, read news, view rankings, purchase paid skills and unlock
+  prompt content.
+- **Admin console** — full content management (skills, articles, rankings), user management,
+  order monitoring, and a statistics dashboard.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Tech stack
+
+| Layer       | Technology                                            |
+| ----------- | ----------------------------------------------------- |
+| Framework   | Next.js 16 (App Router, Server Components, Turbopack) |
+| UI          | React 19 + Tailwind CSS v4 + lucide-react            |
+| ORM / DB    | Prisma 6 + PostgreSQL                                 |
+| Auth        | Auth.js (NextAuth v5) + Google OAuth                  |
+| Validation  | Zod                                                  |
+| Payments    | Pluggable gateway (mock provider for development)     |
+
+## Project structure
+
+```
+app/
+  admin/                  Admin console (protected)
+    page.tsx              Dashboard: KPI cards + revenue/order/top-skills charts
+    skills/ …             Skills: list, new, detail, edit, delete, publish
+    articles/ …           Articles: list, new, detail, edit, delete, publish
+    rankings/ …           Rankings: list, new, detail, edit, delete, publish, recalc
+    orders/ …             Orders: list + detail
+    users/ …              Users: list + detail, block/unblock, role change
+    statistics/           Charts for revenue, users, sales
+  api/                    API routes (auth, orders, payments, skill content)
+  …
+src/
+  application/            Application services / use cases (commands + queries)
+  domain/                 Domain types & repository interfaces
+  infrastructure/         Repositories, auth, payments, composition root (DI)
+  presentation/           React components, server actions, view models
+  lib/                    Utils, validation, site config
+prisma/
+  schema.prisma           Database schema
+  migrations/             Prisma migrations
+  seed.ts                 Seed/demo data
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Database overview (`prisma/schema.prisma`)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Identity** — `User` (role `CUSTOMER | ADMIN`, status `ACTIVE | BLOCKED`), Auth.js
+  `Account`, `Session`, `VerificationToken`.
+- **Taxonomy** — `Industry`, `SkillCategory`, `UseCase`, `AITool`.
+- **Skill catalog** — `Skill`, `SkillVersion` (versioned prompt content), `SkillPrice`
+  (per-currency pricing, stored in minor units), link tables for taxonomy/tools.
+- **News** — `NewsArticle`, `NewsCategory`, `NewsToolLink`.
+- **Rankings** — `Ranking` (period `WEEK | MONTH | QUARTER | ALL_TIME`), `RankingEntry`
+  (per-tool score/views/favorites/clicks).
+- **Engagement** — `SkillFavorite`, `SkillView`, `ToolClick`.
+- **Commerce** — `Order` (status `PENDING | PAID | EXPIRED | CANCELED | FAILED | REFUNDED`),
+  `PaymentTransaction`, `SkillAccess` (granted by `ORDER`, `ADMIN_GRANT` or `PROMOTION`).
+- **Audit** — `AuditLog` for admin actions.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Admin console
 
-## Learn More
+The console lives under `/admin` (requires the `ADMIN` role) and uses a persistent left-hand
+sidebar. Every module provides:
 
-To learn more about Next.js, take a look at the following resources:
+| Module      | List | Filters/search | Detail | Create | Edit | Delete | Extras               |
+| ----------- | ---- | -------------- | ------ | ------ | ---- | ------ | -------------------- |
+| Dashboard   | —    | —              | —      | —      | —    | —      | KPI cards, revenue-by-month bars, order-status donut, top skills, recent orders |
+| Statistics  | —    | —              | —      | —      | —    | —      | Revenue chart, user health, sales table |
+| Skills      | ✔    | q, status, access | ✔   | ✔      | ✔    | ✔      | Publish/unpublish, versioned content |
+| Articles    | ✔    | q, status      | ✔      | ✔      | ✔    | ✔      | Publish/unpublish, category/tools |
+| Rankings    | ✔    | —              | ✔      | ✔      | ✔    | ✔      | Publish/unpublish, recalculate scores |
+| Orders      | ✔    | q, status      | ✔      | —      | —    | —      | Read-only: orders are system-generated |
+| Users       | ✔    | q, role, status| ✔      | —      | —    | —      | Block/unblock, promote/demote role |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Admin mutations are performed through server actions (`src/presentation/actions/admin-actions.ts`)
+and recorded to `AuditLog`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Getting started
 
-## Deploy on Vercel
+### 1. Install dependencies
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm install
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 2. Configure environment
+
+Copy `.env.example` to `.env` and fill in:
+
+```bash
+# DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/ai_discovery_platform"
+DATABASE_URL=postgresql://postgres:Ra9WjSfeL0ihrJ7Z@db.fpqrrbdzeqmlnsjvgfeb.supabase.co:6543/postgres?sslmode=require
+AUTH_SECRET="$(openssl rand -base64 32)"
+AUTH_GOOGLE_ID="..."
+AUTH_GOOGLE_SECRET="..."
+```
+
+### 3. Create the database
+
+```bash
+npm run db:deploy        # apply migrations
+npm run db:seed          # load demo content + admin/customer users
+```
+
+Seed accounts: `admin@promptworks.app` (ADMIN) and `explorer@promptworks.app` (CUSTOMER).
+Sign-in uses Google OAuth — grant the admin role to a Google account, or use an existing admin
+session.
+
+### 4. Run the app
+
+```bash
+npm run dev              # http://localhost:3000
+```
+
+Visit `/admin` to open the dashboard.
+
+## Available scripts
+
+| Script             | Description                              |
+| ------------------ | ---------------------------------------- |
+| `npm run dev`      | Start the dev server (Turbopack)         |
+| `npm run build`    | Production build + type check            |
+| `npm run start`    | Start the production server              |
+| `npm run lint`     | Run ESLint                               |
+| `npm run db:generate` | Regenerate the Prisma client          |
+| `npm run db:migrate`  | Create & apply a new migration        |
+| `npm run db:deploy`   | Apply pending migrations              |
+| `npm run db:seed`     | Reset & seed demo data                |
+| `npm run db:studio`   | Open Prisma Studio                     |
+
+## Business rules
+
+- **Skill access** — free skills are readable by all visitors; paid skills require a purchase
+  (`SkillAccess` linked to a `PAID` order). `revokedAt` disables access.
+- **Prices** — `SkillPrice.amount` is stored in minor currency units (e.g. `900` = `$9.00`); the
+  admin form accepts major units and converts on save.
+- **Ranking score** — `score = views + favorites × 8 + clicks × 4`, recalculated from live
+  engagement within the ranking's period.
+- **Users** — accounts are created through authentication; admins block/unblock accounts and
+  change roles, but cannot delete them.
+- **Audit** — destructive and publish actions write an `AuditLog` entry with the acting admin.

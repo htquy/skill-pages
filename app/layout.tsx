@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import { SiteHeader } from "@/src/presentation/components/layout/site-header";
 import { SiteFooter } from "@/src/presentation/components/layout/site-footer";
 import { siteConfig } from "@/src/lib/site";
+import { getDictionary, getLocale, trans } from "@/src/lib/i18n";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -16,26 +17,31 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteConfig.url),
-  title: {
-    default: `${siteConfig.name} — Curated AI prompts, workflows and skills`,
-    template: `%s · ${siteConfig.name}`,
-  },
-  description: siteConfig.description,
-  openGraph: {
-    type: "website",
-    siteName: siteConfig.name,
-    title: `${siteConfig.name} — Discover better ways to work with AI`,
-    description: siteConfig.description,
-    url: siteConfig.url,
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const dict = await getDictionary();
+  return {
+    metadataBase: new URL(siteConfig.url),
+    title: {
+      default: `${siteConfig.name} — ${dict.meta.titleTemplate}`,
+      template: `%s · ${siteConfig.name}`,
+    },
+    description: dict.meta.description,
+    openGraph: {
+      type: "website",
+      siteName: siteConfig.name,
+      title: trans(dict.meta.ogTitle),
+      description: dict.meta.description,
+      url: siteConfig.url,
+    },
+  };
+}
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const [locale] = await Promise.all([getLocale()]);
+
   return (
     <html
-      lang="en"
+      lang={locale}
       suppressHydrationWarning
       className={`${geistSans.variable} h-full antialiased`}
     >

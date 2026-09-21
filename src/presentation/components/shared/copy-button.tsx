@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import type { Dict } from "@/src/lib/i18n/config";
 
-export function CopyButton({ text }: { text: string }) {
+export function CopyButton({ text, dict }: { text: string; dict: Dict }) {
   const [copied, setCopied] = useState(false);
 
   return (
@@ -25,10 +26,10 @@ export function CopyButton({ text }: { text: string }) {
           ? "border-emerald-200 bg-emerald-50 text-emerald-700"
           : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50",
       )}
-      aria-label={copied ? "Copied to clipboard" : "Copy prompt to clipboard"}
+      aria-label={copied ? dict.copyButton.copiedAria : dict.copyButton.copyAria}
     >
       {copied ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
-      {copied ? "Copied" : "Copy prompt"}
+      {copied ? dict.copyButton.copied : dict.copyButton.copyPrompt}
     </button>
   );
 }

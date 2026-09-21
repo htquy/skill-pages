@@ -1,11 +1,12 @@
 import { AuditAction } from "@/src/domain/audit";
 import type { AuditLogRepository } from "@/src/domain/audit";
 import type { CurrentUser } from "@/src/domain/identity/entities";
-import type { NewsAdminDetail, NewsAdminRepository, NewsAdminSummary, SaveArticleData } from "@/src/domain/news/admin";
+import type { NewsAdminDetail, NewsAdminRepository, NewsAdminSummary, NewsCategoryAdminRepository, SaveArticleData } from "@/src/domain/news/admin";
 import type { PaginatedResult, Pagination } from "@/src/domain/shared";
 
 export interface ArticleAdminDeps {
   articles: NewsAdminRepository;
+  categories: NewsCategoryAdminRepository;
   audit: AuditLogRepository;
 }
 
@@ -19,6 +20,10 @@ export function createArticleAdminCommands(deps: ArticleAdminDeps) {
         },
         pagination,
       );
+    },
+
+    listCategories(): Promise<{ id: string; slug: string; name: string }[]> {
+      return deps.categories.listAll();
     },
 
     getDetail(id: string): Promise<NewsAdminDetail | null> {

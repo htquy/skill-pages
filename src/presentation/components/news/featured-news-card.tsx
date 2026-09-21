@@ -2,8 +2,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Clock } from "lucide-react";
 import type { NewsCardViewModel } from "@/src/presentation/view-models/news";
+import { getDictionary, trans } from "@/src/lib/i18n";
 
-export function FeaturedNewsCard({ article }: { article: NewsCardViewModel }) {
+export async function FeaturedNewsCard({ article }: { article: NewsCardViewModel }) {
+  const dict = await getDictionary();
+  const featuredLabel = dict.news.featured;
+
   return (
     <Link
       href={`/news/${article.slug}`}
@@ -21,7 +25,7 @@ export function FeaturedNewsCard({ article }: { article: NewsCardViewModel }) {
         ) : (
           <div className="flex h-full items-center justify-center bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-500">
             <p className="text-sm font-semibold uppercase tracking-widest text-white/80">
-              Featured
+              {featuredLabel}
             </p>
           </div>
         )}
@@ -30,7 +34,7 @@ export function FeaturedNewsCard({ article }: { article: NewsCardViewModel }) {
       <div className="flex flex-1 flex-col justify-center p-6 md:p-10">
         <div className="flex items-center gap-2 text-xs">
           <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 font-semibold uppercase tracking-wide text-indigo-700">
-            Featured
+            {featuredLabel}
           </span>
           {article.categoryName ? (
             <span className="rounded-full bg-violet-50 px-2.5 py-0.5 font-medium text-violet-700">
@@ -53,12 +57,12 @@ export function FeaturedNewsCard({ article }: { article: NewsCardViewModel }) {
           <time dateTime={article.publishedLabel}>{article.publishedLabel}</time>
           <span className="flex items-center gap-1">
             <Clock className="size-4" aria-hidden="true" />
-            {article.readingMinutes} min read
+            {trans(dict.news.minRead, { count: article.readingMinutes })}
           </span>
         </div>
 
         <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 group-hover:gap-2.5 transition-all">
-          Read article
+          {dict.news.readArticle}
           <ArrowRight className="size-4" aria-hidden="true" />
         </span>
       </div>

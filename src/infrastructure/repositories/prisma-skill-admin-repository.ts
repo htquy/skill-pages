@@ -109,6 +109,10 @@ export const prismaSkillAdminRepository: SkillAdminRepository = {
       coverImageUrl: skill.coverImageUrl,
       authorId: skill.authorId,
       publishedAt: skill.publishedAt,
+      viewCount: Number(skill.viewCount),
+      favoriteCount: Number(skill.favoriteCount),
+      ratingAverage: skill.ratingAverage === null ? null : Number(skill.ratingAverage),
+      ratingCount: skill.ratingCount,
       price: skill.prices[0] ? { currency: skill.prices[0].currency, amount: skill.prices[0].amount } : null,
       content: latest?.content ?? "",
       instructions: latest?.instructions ?? null,
@@ -119,6 +123,8 @@ export const prismaSkillAdminRepository: SkillAdminRepository = {
       categorySlugs: skill.categories.map((l) => l.category.slug),
       useCaseSlugs: skill.useCases.map((l) => l.useCase.slug),
       toolSlugs: skill.tools.map((l) => l.tool.slug),
+      createdAt: skill.createdAt,
+      updatedAt: skill.updatedAt,
     };
   },
 

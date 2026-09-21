@@ -6,12 +6,14 @@ import { Bookmark } from "lucide-react";
 import { getCurrentUser } from "@/src/infrastructure/authentication/authorization";
 import { signInWithGoogle } from "@/src/presentation/actions/auth-actions";
 import { siteConfig } from "@/src/lib/site";
+import { getDictionary, trans } from "@/src/lib/i18n";
 
 export default async function LoginPage() {
   const user = await getCurrentUser();
   if (user) {
     redirect("/account");
   }
+  const dict = await getDictionary();
 
   return (
     <div className="flex flex-1 items-center justify-center bg-gradient-to-b from-indigo-50/60 via-white to-white px-6 py-16">
@@ -22,11 +24,10 @@ export default async function LoginPage() {
           </span>
         </div>
         <h1 className="mt-6 text-center text-2xl font-bold tracking-tight text-zinc-900">
-          Sign in to {siteConfig.name}
+          {trans(dict.login.title, { name: siteConfig.name })}
         </h1>
         <p className="mt-2 text-center text-sm text-zinc-500">
-          Save skills you love, track engagement and get a personalized
-          ranking view.
+          {dict.login.subtitle}
         </p>
 
         <form action={signInWithGoogle} className="mt-8">
@@ -41,17 +42,17 @@ export default async function LoginPage() {
               height={18}
               className="size-[18px]"
             />
-            Continue with Google
+            {dict.login.google}
           </button>
         </form>
 
         <p className="mt-6 text-center text-xs text-zinc-400">
-          By continuing you agree to our terms of service and privacy policy.
+          {dict.login.terms}
         </p>
 
         <div className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-indigo-50/70 px-4 py-3 text-xs text-indigo-700">
           <Bookmark className="size-4" aria-hidden="true" />
-          Your saved skills stay private to your account.
+          {dict.login.privacy}
         </div>
       </div>
     </div>

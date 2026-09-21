@@ -28,6 +28,10 @@ export interface SkillAdminDetail {
   coverImageUrl: string | null;
   authorId: string | null;
   publishedAt: Date | null;
+  viewCount: number;
+  favoriteCount: number;
+  ratingAverage: number | null;
+  ratingCount: number;
   price: { currency: string; amount: number } | null;
   content: string;
   instructions: string | null;
@@ -38,6 +42,8 @@ export interface SkillAdminDetail {
   categorySlugs: string[];
   useCaseSlugs: string[];
   toolSlugs: string[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface SaveSkillData {

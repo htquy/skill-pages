@@ -2,8 +2,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { Clock } from "lucide-react";
 import type { NewsCardViewModel } from "@/src/presentation/view-models/news";
+import { getDictionary, trans } from "@/src/lib/i18n";
 
-export function NewsCard({ article }: { article: NewsCardViewModel }) {
+export async function NewsCard({ article }: { article: NewsCardViewModel }) {
+  const dict = await getDictionary();
+
   return (
     <Link
       href={`/news/${article.slug}`}
@@ -22,7 +25,7 @@ export function NewsCard({ article }: { article: NewsCardViewModel }) {
       ) : (
         <div className="flex aspect-[16/9] w-full items-center justify-center bg-gradient-to-br from-indigo-50 to-violet-50">
           <p className="text-xs font-semibold uppercase tracking-wide text-indigo-400">
-            AI News
+            {dict.news.eyebrow}
           </p>
         </div>
       )}
@@ -59,7 +62,7 @@ export function NewsCard({ article }: { article: NewsCardViewModel }) {
           )}
           <span className="flex items-center gap-1 text-xs text-zinc-400">
             <Clock className="size-3.5" aria-hidden="true" />
-            {article.readingMinutes} min read
+            {trans(dict.news.minRead, { count: article.readingMinutes })}
           </span>
         </div>
       </div>

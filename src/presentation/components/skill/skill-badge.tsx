@@ -1,26 +1,24 @@
 import { cn } from "@/src/lib/utils";
+import { getDictionary } from "@/src/lib/i18n";
 import type { SkillAccessType } from "@/src/domain/skill";
 
-const LABELS: Record<SkillAccessType, { label: string; className: string }> = {
-  FREE: {
-    label: "FREE",
-    className: "bg-zinc-100 text-zinc-700 border border-zinc-200",
-  },
-  PAID: {
-    label: "PRO",
-    className: "bg-indigo-50 text-indigo-700 border border-indigo-200",
-  },
+const CLASSES: Record<SkillAccessType, string> = {
+  FREE: "bg-zinc-100 text-zinc-700 border border-zinc-200",
+  PAID: "bg-indigo-50 text-indigo-700 border border-indigo-200",
 };
 
-export function SkillBadge({ accessType }: { accessType: SkillAccessType }) {
+export async function SkillBadge({ accessType }: { accessType: SkillAccessType }) {
+  const dict = await getDictionary();
+  const label = accessType === "FREE" ? dict.filters.free : dict.filters.pro;
+
   return (
     <span
       className={cn(
         "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
-        LABELS[accessType].className,
+        CLASSES[accessType],
       )}
     >
-      {LABELS[accessType].label}
+      {label}
     </span>
   );
 }

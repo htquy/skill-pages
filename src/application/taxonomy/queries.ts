@@ -9,5 +9,9 @@ export function createTaxonomyQueries(deps: TaxonomyDeps) {
     getSnapshot(): Promise<TaxonomySnapshot> {
       return deps.taxonomy.getSnapshot();
     },
+
+    getAdminOptions(): Promise<TaxonomySnapshot> {
+      return deps.taxonomy.getAdminOptions();
+    },
   };
 }

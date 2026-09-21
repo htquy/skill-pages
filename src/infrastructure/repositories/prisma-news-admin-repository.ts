@@ -92,6 +92,8 @@ export const prismaNewsAdminRepository: NewsAdminRepository = {
       categorySlug: article.category?.slug ?? null,
       toolSlugs: article.tools.map((l) => l.tool.slug),
       publishedAt: article.publishedAt,
+      createdAt: article.createdAt,
+      updatedAt: article.updatedAt,
     };
   },
 

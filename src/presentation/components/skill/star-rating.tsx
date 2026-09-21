@@ -1,7 +1,8 @@
 import { Star } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import { getDictionary, trans } from "@/src/lib/i18n";
 
-export function StarRating({
+export async function StarRating({
   rating,
   count,
   className,
@@ -10,11 +11,16 @@ export function StarRating({
   count?: number;
   className?: string;
 }) {
+  const dict = await getDictionary();
   const rounded = Math.round(rating);
+  const ratingLabel = trans(dict.skillDetail.ratingAria, { rating: rating.toFixed(1) });
+  const countLabel = count != null ? trans(dict.skillDetail.ratingCountAria, { count }) : "";
+  const ariaLabel = `${ratingLabel}${countLabel}`;
+
   return (
     <span
       className={cn("inline-flex items-center gap-1 text-sm", className)}
-      aria-label={`Rated ${rating.toFixed(1)} out of 5${count != null ? ` (${count} ratings)` : ""}`}
+      aria-label={ariaLabel}
     >
       <span className="flex items-center gap-0.5" aria-hidden="true">
         {Array.from({ length: 5 }, (_, index) => (
