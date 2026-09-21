@@ -28,6 +28,8 @@ export interface NewsAdminDetail {
   categorySlug: string | null;
   toolSlugs: string[];
   publishedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface SaveArticleData {

@@ -13,6 +13,7 @@ import { CopyButton } from "@/src/presentation/components/shared/copy-button";
 import { skillQueries, engagementCommands, accessCommands } from "@/src/infrastructure/composition";
 import { getCurrentUser } from "@/src/infrastructure/authentication/authorization";
 import { formatDate, formatNumber, formatCurrencyAmount } from "@/src/lib/utils";
+import { getDictionary, trans } from "@/src/lib/i18n";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -35,10 +36,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 function Chips({
   label,
+  queryKey,
   icon,
   items,
 }: {
   label: string;
+  queryKey: string;
   icon: React.ReactNode;
   items: { slug: string; name: string }[];
 }) {
@@ -52,7 +55,7 @@ function Chips({
       {items.map((item) => (
         <Link
           key={item.slug}
-          href={`/search?${new URLSearchParams({ [label]: item.slug })}`}
+          href={`/search?${new URLSearchParams({ [queryKey]: item.slug })}`}
           className="rounded-full border border-zinc-200 bg-white px-2.5 py-0.5 text-xs font-medium text-zinc-700 transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
         >
           {item.name}
@@ -67,10 +70,10 @@ export default async function SkillDetailPage({ params }: Props) {
   const skill = await skillQueries.findBySlug(slug);
   if (!skill) notFound();
 
-  const user = await getCurrentUser();
+  const [dict, user] = await Promise.all([getDictionary(), getCurrentUser()]);
   const isFavorite = user ? await engagementCommands.isFavorite(user.id, slug) : false;
   const hasAccess = skill.accessType === "FREE" || Boolean(user && await accessCommands.hasActiveAccess(user.id, skill.id));
-  const visibleContent = hasAccess ? skill.content : "Preview available after purchase.";
+  const visibleContent = hasAccess ? skill.content : dict.skillDetail.previewLocked;
 
   if (user) {
     void engagementCommands
@@ -84,7 +87,7 @@ export default async function SkillDetailPage({ params }: Props) {
       : [
           {
             slug: "unknown",
-            name: "Any AI",
+            name: dict.skillDetail.anyAi,
             logoUrl: null,
           },
         ];
@@ -96,7 +99,7 @@ export default async function SkillDetailPage({ params }: Props) {
         className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900"
       >
         <ArrowLeft className="size-4" aria-hidden="true" />
-        Back to skills
+        {dict.skillDetail.back}
       </Link>
 
       <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-3">
@@ -120,35 +123,38 @@ export default async function SkillDetailPage({ params }: Props) {
             </span>
             <span className="flex items-center gap-1.5">
               <Eye className="size-4" aria-hidden="true" />
-              {formatNumber(skill.viewCount)} views
+              {trans(dict.skillDetail.viewsLabel, { count: formatNumber(skill.viewCount) })}
             </span>
             <span className="flex items-center gap-1.5">
               <Bookmark className="size-4" aria-hidden="true" />
-              {formatNumber(skill.favoriteCount)} saves
+              {trans(dict.skillDetail.savesLabel, { count: formatNumber(skill.favoriteCount) })}
             </span>
             {skill.authorName ? (
-              <span>By {skill.authorName}</span>
+              <span>{trans(dict.skillDetail.byAuthor, { name: skill.authorName })}</span>
             ) : null}
           </div>
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
-            <SaveButton skillSlug={skill.slug} isFavorite={isFavorite} />
-            {hasAccess ? <CopyButton text={skill.content} /> : null}
+            <SaveButton skillSlug={skill.slug} isFavorite={isFavorite} dict={dict} />
+            {hasAccess ? <CopyButton text={skill.content} dict={dict} /> : null}
           </div>
 
           <div className="mt-10 space-y-4">
             <Chips
-              label="industry"
+              label={dict.filters.industry}
+              queryKey="industry"
               icon={<FolderOpen className="size-3.5" aria-hidden="true" />}
               items={skill.industries}
             />
             <Chips
-              label="category"
+              label={dict.filters.category}
+              queryKey="category"
               icon={<FolderOpen className="size-3.5" aria-hidden="true" />}
               items={skill.categories}
             />
             <Chips
-              label="useCase"
+              label={dict.filters.useCase}
+              queryKey="useCase"
               icon={<Megaphone className="size-3.5" aria-hidden="true" />}
               items={skill.useCases}
             />
@@ -156,9 +162,9 @@ export default async function SkillDetailPage({ params }: Props) {
 
           <section className="mt-10 rounded-2xl border border-zinc-200 bg-white shadow-sm">
             <div className="border-b border-zinc-100 px-5 py-4 sm:px-7">
-              <h2 className="text-lg font-semibold text-zinc-900">The prompt</h2>
+              <h2 className="text-lg font-semibold text-zinc-900">{dict.skillDetail.thePrompt}</h2>
               <p className="mt-0.5 text-sm text-zinc-500">
-                v{skill.version}
+                {trans(dict.skillDetail.version, { version: skill.version })}
                 {skill.changelog ? ` · ${skill.changelog}` : ""}
               </p>
             </div>
@@ -171,7 +177,7 @@ export default async function SkillDetailPage({ params }: Props) {
 
           {skill.instructions ? (
             <section className="mt-10">
-              <h2 className="text-lg font-semibold text-zinc-900">How to use</h2>
+              <h2 className="text-lg font-semibold text-zinc-900">{dict.skillDetail.howToUse}</h2>
               <div className="mt-3 whitespace-pre-wrap rounded-2xl border border-violet-100 bg-violet-50/50 p-5 text-sm leading-relaxed text-zinc-700">
                 {skill.instructions}
               </div>
@@ -180,7 +186,7 @@ export default async function SkillDetailPage({ params }: Props) {
 
           {skill.description ? (
             <section className="mt-10">
-              <h2 className="text-lg font-semibold text-zinc-900">About this skill</h2>
+              <h2 className="text-lg font-semibold text-zinc-900">{dict.skillDetail.about}</h2>
               <div className="mt-3 whitespace-pre-wrap text-base leading-relaxed text-zinc-700">
                 {skill.description}
               </div>
@@ -189,7 +195,7 @@ export default async function SkillDetailPage({ params }: Props) {
 
           {skill.variables ? (
             <section className="mt-10">
-              <h2 className="text-lg font-semibold text-zinc-900">Input fields</h2>
+              <h2 className="text-lg font-semibold text-zinc-900">{dict.skillDetail.inputFields}</h2>
               <dl className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
                 {Object.entries(skill.variables).map(([key, value], index) => (
                   <div
@@ -214,7 +220,7 @@ export default async function SkillDetailPage({ params }: Props) {
         <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-              {skill.accessType === "PAID" ? "Pricing" : "Access"}
+              {skill.accessType === "PAID" ? dict.skillDetail.pricing : dict.skillDetail.access}
             </h3>
             {skill.accessType === "PAID" ? (
               <div className="mt-3 space-y-2">
@@ -232,14 +238,14 @@ export default async function SkillDetailPage({ params }: Props) {
               </div>
             ) : (
               <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-                Free to use
+                {dict.skillDetail.freeToUse}
               </div>
             )}
           </div>
 
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-              Works with
+              {dict.skillDetail.worksWith}
             </h3>
             <ul className="mt-3 space-y-2">
               {tools.map((tool) => (

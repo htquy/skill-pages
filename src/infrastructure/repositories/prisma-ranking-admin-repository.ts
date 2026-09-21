@@ -64,6 +64,8 @@ export const prismaRankingAdminRepository: RankingAdminRepository = {
       periodStart: ranking.periodStart,
       periodEnd: ranking.periodEnd,
       status: ranking.status as RankingStatus,
+      createdAt: ranking.createdAt,
+      updatedAt: ranking.updatedAt,
       entries: ranking.entries.map((e) => ({
         rank: e.rank,
         toolSlug: e.tool.slug,

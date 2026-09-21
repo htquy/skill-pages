@@ -3,13 +3,22 @@ import { Bookmark, Eye } from "lucide-react";
 import type { SkillCardViewModel } from "@/src/presentation/view-models/skill";
 import { SkillBadge } from "@/src/presentation/components/skill/skill-badge";
 import { StarRating } from "@/src/presentation/components/skill/star-rating";
+import { getDictionary, trans } from "@/src/lib/i18n";
 
-function ToolTags({ tools, limit = 3 }: { tools: SkillCardViewModel["tools"]; limit?: number }) {
+function ToolTags({
+  tools,
+  dict,
+  limit = 3,
+}: {
+  tools: SkillCardViewModel["tools"];
+  dict: Awaited<ReturnType<typeof getDictionary>>;
+  limit?: number;
+}) {
   if (tools.length === 0) return null;
   const visible = tools.slice(0, limit);
   return (
     <p className="text-sm text-zinc-600">
-      <span className="font-medium text-zinc-500">Tools:</span>{" "}
+      <span className="font-medium text-zinc-500">{dict.common.toolsLabel}</span>{" "}
       {visible.map((tool, index) => (
         <span key={tool.slug}>
           {index > 0 ? " / " : ""}
@@ -21,7 +30,9 @@ function ToolTags({ tools, limit = 3 }: { tools: SkillCardViewModel["tools"]; li
   );
 }
 
-export function SkillCard({ skill }: { skill: SkillCardViewModel }) {
+export async function SkillCard({ skill }: { skill: SkillCardViewModel }) {
+  const dict = await getDictionary();
+
   return (
     <Link
       href={`/skills/${skill.slug}`}
@@ -46,26 +57,29 @@ export function SkillCard({ skill }: { skill: SkillCardViewModel }) {
       <div className="mt-4 space-y-1.5">
         {skill.industries[0] ? (
           <p className="text-sm text-zinc-600">
-            <span className="font-medium text-zinc-500">Industry:</span>{" "}
+            <span className="font-medium text-zinc-500">{dict.skillCard.industryLabel}</span>{" "}
             {skill.industries.join(", ")}
           </p>
         ) : null}
         {skill.useCases[0] ? (
           <p className="text-sm text-zinc-600">
-            <span className="font-medium text-zinc-500">Use case:</span>{" "}
+            <span className="font-medium text-zinc-500">{dict.skillCard.useCaseLabel}</span>{" "}
             {skill.useCases.join(", ")}
           </p>
         ) : null}
-        <ToolTags tools={skill.tools} />
+        <ToolTags tools={skill.tools} dict={dict} />
       </div>
 
       <div className="mt-5 flex items-center justify-between border-t border-zinc-100 pt-4">
         {skill.ratingAverage != null ? (
           <StarRating rating={skill.ratingAverage} count={skill.ratingCount} />
         ) : (
-          <span className="text-sm text-zinc-400">No ratings yet</span>
+          <span className="text-sm text-zinc-400">{dict.skillCard.noRatings}</span>
         )}
-        <span className="flex items-center gap-2 text-sm text-zinc-500" aria-label={`${skill.favoriteCountLabel} saves`}>
+        <span
+          className="flex items-center gap-2 text-sm text-zinc-500"
+          aria-label={trans(dict.skillCard.savesAria, { count: skill.favoriteCountLabel })}
+        >
           <span className="flex items-center gap-1">
             <Bookmark className="size-4" aria-hidden="true" />
             {skill.favoriteCountLabel}

@@ -10,6 +10,7 @@ import { NewsGrid } from "@/src/presentation/components/news/news-grid";
 import { toNewsCardViewModel } from "@/src/presentation/view-models/news";
 import { newsQueries } from "@/src/infrastructure/composition";
 import { formatDate } from "@/src/lib/utils";
+import { getDictionary, trans } from "@/src/lib/i18n";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -36,6 +37,8 @@ export default async function NewsArticlePage({ params }: Props) {
   const article = await newsQueries.getArticle(slug);
   if (!article) notFound();
 
+  const dict = await getDictionary();
+
   const content = article.content
     .split(/\n{2,}/)
     .map((block) => block.trim())
@@ -48,7 +51,7 @@ export default async function NewsArticlePage({ params }: Props) {
         className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900"
       >
         <ArrowLeft className="size-4" aria-hidden="true" />
-        All articles
+        {dict.news.backAll}
       </Link>
 
       <article className="mt-8">
@@ -71,7 +74,7 @@ export default async function NewsArticlePage({ params }: Props) {
           <span aria-hidden="true">·</span>
           <span className="flex items-center gap-1">
             <Clock className="size-3.5" aria-hidden="true" />
-            {article.readingMinutes} min read
+            {trans(dict.news.minRead, { count: article.readingMinutes })}
           </span>
         </div>
 
@@ -109,7 +112,7 @@ export default async function NewsArticlePage({ params }: Props) {
             rel="noopener noreferrer"
             className="mt-8 inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 shadow-sm transition-colors hover:bg-zinc-50"
           >
-            Read the original story
+            {dict.news.readOriginal}
             <ExternalLink className="size-4" aria-hidden="true" />
           </a>
         ) : null}
@@ -117,7 +120,7 @@ export default async function NewsArticlePage({ params }: Props) {
         {article.tools.length > 0 ? (
           <div className="mt-10 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-              Tools mentioned
+              {dict.news.toolsMentioned}
             </h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {article.tools.map((tool) => (
@@ -146,7 +149,7 @@ export default async function NewsArticlePage({ params }: Props) {
       {article.related.length > 0 ? (
         <section className="mt-16">
           <h2 className="text-2xl font-bold tracking-tight text-zinc-900">
-            Related articles
+            {dict.news.related}
           </h2>
           <div className="mt-6">
             <NewsGrid articles={article.related.map(toNewsCardViewModel)} />

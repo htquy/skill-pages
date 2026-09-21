@@ -10,6 +10,7 @@ import { Pagination } from "@/src/presentation/components/shared/pagination";
 import { toSkillCardViewModel } from "@/src/presentation/view-models/skill";
 import { skillQueries, taxonomyQueries } from "@/src/infrastructure/composition";
 import { skillFiltersSchema, paginationSchema } from "@/src/lib/validation";
+import { getDictionary, trans } from "@/src/lib/i18n";
 
 function toUrlSearchParams(searchParams: Record<string, string | string[] | undefined>) {
   const params = new URLSearchParams();
@@ -49,6 +50,8 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
     filters.q || filters.industry || filters.category || filters.tool || filters.access,
   );
 
+  const dict = await getDictionary();
+
   return (
     <>
       <HeroSection />
@@ -56,14 +59,12 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-              Explore the skill library
+              {dict.results.libraryTitle}
             </h2>
-            <p className="mt-1 text-zinc-600">
-              Reusable prompts and workflows for every industry and tool.
-            </p>
+            <p className="mt-1 text-zinc-600">{dict.results.librarySubtitle}</p>
           </div>
           <p className="hidden text-sm text-zinc-500 sm:block">
-            {result.total} {result.total === 1 ? "result" : "results"}
+            {trans(dict.results.other, { count: result.total })}
           </p>
         </div>
 
@@ -92,14 +93,14 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
             </>
           ) : (
             <EmptyState
-              title="No skills found"
-              description="Try another keyword or remove a filter."
+              title={dict.search.emptyTitle}
+              description={dict.search.emptyDescription}
               action={
                 <Link
                   href={hasActiveFilters ? "/" : "/#catalog"}
                   className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
                 >
-                  Clear all filters
+                  {dict.common.clear}
                 </Link>
               }
             />

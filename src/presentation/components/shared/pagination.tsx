@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import { getDictionary, trans } from "@/src/lib/i18n";
 
 export interface PaginationInfo {
   page: number;
@@ -19,7 +20,7 @@ export function buildPaginationHref(
   return query ? `${path}?${query}` : path;
 }
 
-export function Pagination({
+export async function Pagination({
   info,
   path,
   params,
@@ -28,11 +29,12 @@ export function Pagination({
   path: string;
   params: URLSearchParams;
 }) {
+  const dict = await getDictionary();
   if (info.totalPages <= 1) return null;
 
   return (
     <nav
-      aria-label="Pagination"
+      aria-label={dict.pagination.status}
       className="mt-10 flex items-center justify-between gap-4"
     >
       {info.page > 1 ? (
@@ -43,14 +45,18 @@ export function Pagination({
           )}
         >
           <ChevronLeft className="size-4" aria-hidden="true" />
-          Previous
+          {dict.pagination.previous}
         </Link>
       ) : (
         <span aria-hidden="true" />
       )}
 
       <p className="text-sm text-zinc-500" aria-live="polite">
-        Page {info.page} of {info.totalPages} · {info.total} results
+        {trans(dict.pagination.status, {
+          page: info.page,
+          pages: info.totalPages,
+          total: info.total,
+        })}
       </p>
 
       {info.page < info.totalPages ? (
@@ -58,7 +64,7 @@ export function Pagination({
           href={buildPaginationHref(path, params, info.page + 1)}
           className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
         >
-          Next
+          {dict.pagination.next}
           <ChevronRight className="size-4" aria-hidden="true" />
         </Link>
       ) : (

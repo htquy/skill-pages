@@ -1,8 +1,8 @@
 import { prisma } from "@/src/infrastructure/database/prisma";
 import type { TaxonomyOption, TaxonomyRepository, TaxonomySnapshot } from "@/src/domain/taxonomy/entities";
 
-function toOption<T extends { slug: string; name: string }>(row: T): TaxonomyOption {
-  return { slug: row.slug, name: row.name };
+function toOption<T extends { id: string; slug: string; name: string }>(row: T): TaxonomyOption {
+  return { id: row.id, slug: row.slug, name: row.name };
 }
 
 export const prismaTaxonomyRepository: TaxonomyRepository = {

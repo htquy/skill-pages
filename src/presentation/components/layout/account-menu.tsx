@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ChevronDown, LogOut, Sparkles, User } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import type { Dict } from "@/src/lib/i18n/config";
 import { signOutAction } from "@/src/presentation/actions/auth-actions";
 
 export interface AccountMenuUser {
@@ -13,7 +14,7 @@ export interface AccountMenuUser {
   image: string | null;
 }
 
-export function AccountMenu({ user }: { user: AccountMenuUser | null }) {
+export function AccountMenu({ user, dict }: { user: AccountMenuUser | null; dict: Dict }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +42,7 @@ export function AccountMenu({ user }: { user: AccountMenuUser | null }) {
         href="/login"
         className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium text-zinc-900 shadow-sm transition-colors hover:bg-zinc-50"
       >
-        Sign in
+        {dict.account.signIn}
       </Link>
     );
   }
@@ -69,7 +70,7 @@ export function AccountMenu({ user }: { user: AccountMenuUser | null }) {
           </span>
         )}
         <span className="hidden max-w-36 truncate sm:block">
-          {user.name ?? "Account"}
+          {user.name ?? dict.account.signedIn}
         </span>
         <ChevronDown className="size-4 text-zinc-400" aria-hidden="true" />
       </button>
@@ -81,7 +82,7 @@ export function AccountMenu({ user }: { user: AccountMenuUser | null }) {
         >
           <div role="menuitem" className="px-3 py-2">
             <p className="truncate text-sm font-medium text-zinc-900">
-              {user.name ?? "Signed in"}
+              {user.name ?? dict.account.signedIn}
             </p>
             {user.email ? (
               <p className="truncate text-xs text-zinc-500">{user.email}</p>
@@ -95,7 +96,7 @@ export function AccountMenu({ user }: { user: AccountMenuUser | null }) {
             className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
           >
             <Sparkles className="size-4 text-zinc-400" aria-hidden="true" />
-            Saved skills
+            {dict.account.savedSkills}
           </Link>
           <Link
             href="/account"
@@ -104,7 +105,7 @@ export function AccountMenu({ user }: { user: AccountMenuUser | null }) {
             className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
           >
             <User className="size-4 text-zinc-400" aria-hidden="true" />
-            Account
+            {dict.account.account}
           </Link>
           <form action={signOutAction}>
             <button
@@ -116,7 +117,7 @@ export function AccountMenu({ user }: { user: AccountMenuUser | null }) {
               )}
             >
               <LogOut className="size-4 text-zinc-400" aria-hidden="true" />
-              Sign out
+              {dict.account.signOut}
             </button>
           </form>
         </div>

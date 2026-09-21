@@ -1,4 +1,5 @@
 export interface TaxonomyOption {
+  id: string;
   slug: string;
   name: string;
 }

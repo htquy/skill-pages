@@ -8,6 +8,7 @@ import { Pagination } from "@/src/presentation/components/shared/pagination";
 import { toSkillCardViewModel } from "@/src/presentation/view-models/skill";
 import { skillQueries, taxonomyQueries } from "@/src/infrastructure/composition";
 import { skillFiltersSchema, paginationSchema } from "@/src/lib/validation";
+import { getDictionary, trans } from "@/src/lib/i18n";
 
 function toUrlSearchParams(searchParams: Record<string, string | string[] | undefined>) {
   const params = new URLSearchParams();
@@ -44,15 +45,17 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
 
   const cards = result.items.map(toSkillCardViewModel);
 
+  const dict = await getDictionary();
+  const countText = trans(dict.search.resultsCount, { count: result.total });
+  const queryFragment = filters.q ? trans(dict.search.forQuery, { query: filters.q }) : "";
+
   return (
     <Container className="py-12 md:py-16">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-          Search skills
+          {dict.search.title}
         </h1>
-        <p className="mt-3 max-w-2xl text-lg text-zinc-600">
-          Find the right prompt, workflow or skill for your next project.
-        </p>
+        <p className="mt-3 max-w-2xl text-lg text-zinc-600">{dict.search.subtitle}</p>
       </div>
 
       <SkillFilters
@@ -70,8 +73,8 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
 
       <div className="mt-8">
         <p className="mb-4 text-sm text-zinc-500">
-          {result.total} {result.total === 1 ? "result" : "results"}
-          {filters.q ? <span> for “{filters.q}”</span> : null}
+          {countText}
+          {queryFragment}
         </p>
         {cards.length > 0 ? (
           <>
@@ -84,8 +87,8 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
           </>
         ) : (
           <EmptyState
-            title="No matching skills"
-            description="Double-check your spelling or try fewer filters."
+            title={dict.search.emptyTitle}
+            description={dict.search.emptyDescription}
           />
         )}
       </div>

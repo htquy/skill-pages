@@ -26,6 +26,8 @@ export interface RankingAdminDetail {
   periodStart: Date | null;
   periodEnd: Date | null;
   status: RankingStatus;
+  createdAt: Date;
+  updatedAt: Date;
   entries: { rank: number; toolSlug: string; toolName: string; score: number }[];
 }
 

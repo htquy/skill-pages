@@ -24,7 +24,7 @@ import { prismaSkillAccessRepository } from "@/src/infrastructure/repositories/p
 import { prismaAuditLogRepository } from "@/src/infrastructure/repositories/prisma-audit-log-repository";
 import { prismaUserRepository } from "@/src/infrastructure/repositories/prisma-user-repository";
 import { prismaSkillAdminRepository } from "@/src/infrastructure/repositories/prisma-skill-admin-repository";
-import { prismaNewsAdminRepository } from "@/src/infrastructure/repositories/prisma-news-admin-repository";
+import { prismaNewsAdminRepository, prismaNewsCategoryAdminRepository } from "@/src/infrastructure/repositories/prisma-news-admin-repository";
 import { prismaRankingAdminRepository } from "@/src/infrastructure/repositories/prisma-ranking-admin-repository";
 
 import { mockPaymentProvider } from "@/src/infrastructure/payment/mock-payment-provider";
@@ -83,6 +83,7 @@ export const skillAdminCommands = createSkillAdminCommands({
 
 export const articleAdminCommands = createArticleAdminCommands({
   articles: prismaNewsAdminRepository,
+  categories: prismaNewsCategoryAdminRepository,
   audit: prismaAuditLogRepository,
 });
 

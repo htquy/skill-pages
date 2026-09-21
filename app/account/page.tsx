@@ -5,9 +5,11 @@ import Image from "next/image";
 import { Bookmark, Shield, ArrowRight } from "lucide-react";
 import { Container } from "@/src/presentation/components/layout/container";
 import { requireUser } from "@/src/infrastructure/authentication/authorization";
+import { getDictionary } from "@/src/lib/i18n";
 
 export default async function AccountPage() {
   const user = await requireUser();
+  const dict = await getDictionary();
 
   return (
     <Container className="max-w-3xl py-12 md:py-16">
@@ -15,7 +17,7 @@ export default async function AccountPage() {
         {user.image ? (
           <Image
             src={user.image}
-            alt={user.name ?? "Your avatar"}
+            alt={user.name ?? dict.account.yourAvatar}
             width={80}
             height={80}
             className="size-20 rounded-full border-4 border-white shadow-md ring-1 ring-zinc-200"
@@ -26,13 +28,13 @@ export default async function AccountPage() {
           </span>
         )}
         <h1 className="mt-5 text-3xl font-bold tracking-tight text-zinc-900">
-          {user.name ?? "Your account"}
+          {user.name ?? dict.account.yourAccount}
         </h1>
         <p className="mt-1 text-zinc-500">{user.email}</p>
         {user.role === "ADMIN" ? (
           <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
             <Shield className="size-3.5" aria-hidden="true" />
-            Admin
+            {dict.account.admin}
           </span>
         ) : null}
       </div>
@@ -46,9 +48,9 @@ export default async function AccountPage() {
             <Bookmark className="size-5" aria-hidden="true" />
           </span>
           <span className="flex-1">
-            <span className="block font-medium text-zinc-900">Saved skills</span>
+            <span className="block font-medium text-zinc-900">{dict.account.savedSkills}</span>
             <span className="block text-sm text-zinc-500">
-              Everything you&apos;ve bookmarked for later.
+              {dict.account.saveSubtitle}
             </span>
           </span>
           <ArrowRight className="size-4 text-zinc-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
@@ -59,9 +61,9 @@ export default async function AccountPage() {
             <Shield className="size-5" aria-hidden="true" />
           </span>
           <span className="flex-1">
-            <span className="block font-medium text-zinc-900">Privacy</span>
+            <span className="block font-medium text-zinc-900">{dict.account.privacy}</span>
             <span className="block text-sm text-zinc-500">
-              Your saved skills and browsing are only visible to you.
+              {dict.account.privacySubtitle}
             </span>
           </span>
         </div>

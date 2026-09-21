@@ -3,6 +3,7 @@ import Image from "next/image";
 import type { RankingEntryView } from "@/src/domain/ranking/entities";
 import { formatNumber } from "@/src/lib/utils";
 import { cn } from "@/src/lib/utils";
+import { getDictionary, trans } from "@/src/lib/i18n";
 
 const RANK_BADGES: Record<number, string> = {
   1: "bg-amber-100 text-amber-700 border-amber-200",
@@ -10,7 +11,8 @@ const RANK_BADGES: Record<number, string> = {
   3: "bg-orange-100 text-orange-700 border-orange-200",
 };
 
-export function RankingRow({ entry }: { entry: RankingEntryView }) {
+export async function RankingRow({ entry }: { entry: RankingEntryView }) {
+  const dict = await getDictionary();
   const badgeClass = RANK_BADGES[entry.rank] ?? "bg-zinc-50 text-zinc-500 border-zinc-200";
 
   return (
@@ -20,7 +22,7 @@ export function RankingRow({ entry }: { entry: RankingEntryView }) {
           "flex size-9 shrink-0 items-center justify-center rounded-full border text-sm font-bold",
           badgeClass,
         )}
-        aria-label={`Rank ${entry.rank}`}
+        aria-label={trans(dict.rankings.rankingAria, { rank: entry.rank })}
       >
         {entry.rank}
       </span>
@@ -56,7 +58,7 @@ export function RankingRow({ entry }: { entry: RankingEntryView }) {
                 rel="noopener noreferrer"
                 className="text-xs text-indigo-600 hover:underline"
               >
-                Visit
+                {dict.rankings.visit}
               </a>
             </>
           ) : null}
@@ -70,15 +72,15 @@ export function RankingRow({ entry }: { entry: RankingEntryView }) {
 
       <div className="hidden items-center gap-6 text-right text-sm sm:flex">
         <div>
-          <p className="text-xs text-zinc-400">Views</p>
+          <p className="text-xs text-zinc-400">{dict.common.views}</p>
           <p className="font-medium text-zinc-700">{formatNumber(entry.views)}</p>
         </div>
         <div>
-          <p className="text-xs text-zinc-400">Saves</p>
+          <p className="text-xs text-zinc-400">{dict.common.saves}</p>
           <p className="font-medium text-zinc-700">{formatNumber(entry.favorites)}</p>
         </div>
         <div>
-          <p className="text-xs text-zinc-400">Score</p>
+          <p className="text-xs text-zinc-400">{dict.common.score}</p>
           <p className="font-semibold text-indigo-700">{entry.score.toFixed(2)}</p>
         </div>
       </div>
