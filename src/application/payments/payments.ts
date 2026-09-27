@@ -8,7 +8,6 @@ import type {
   PaymentProvider,
   PaymentQr,
   PaymentTransactionRepository,
-  VerifiedPayment,
 } from "@/src/domain/payments";
 import type { SkillAccessRepository } from "@/src/domain/access";
 
@@ -21,65 +20,22 @@ export interface PaymentsDeps {
   audit: AuditLogRepository;
 }
 
-export interface WebhookContext {
-  payload: unknown;
-  signature?: string;
-  ipAddress?: string | null;
-  userAgent?: string | null;
-}
-
-export interface WebhookResult {
-  reason: string;
-  handled: boolean;
-  orderId: string | null;
-  orderCode: string | null;
-}
-
 export function createPaymentCommands(deps: PaymentsDeps) {
   return {
+    /**
+     * Sinh QR cho một đơn PENDING còn hạn.
+     *
+     * Nội dung chuyển khoản chính là `order.orderCode` — đó là hợp đồng để webhook
+     * đối chiếu ngược lại, nên không được thay bằng chuỗi tuỳ ý.
+     */
     createPaymentRequest(order: Order): Promise<PaymentQr> {
       return deps.provider.createPayment({
         orderCode: order.orderCode,
         amount: order.amount,
         currency: order.currency,
-        description: `AIPLATFORM ${order.orderCode}`,
+        description: order.orderCode,
+        expiresAt: order.expiresAt,
       });
-    },
-
-    async handlePaymentWebhook(ctx: WebhookContext): Promise<WebhookResult> {
-      const verified: VerifiedPayment = await deps.provider.verifyWebhook(ctx.payload, ctx.signature);
-
-      const result = await deps.gateway.confirmPayment({
-        providerTransactionId: verified.providerTransactionId,
-        provider: verified.provider,
-        amount: verified.amount,
-        orderCode: verified.orderCode,
-        status: verified.status,
-        paidAt: verified.paidAt,
-        rawPayload: verified.rawPayload,
-      });
-
-      if (result.handled && result.reason === "ok" && result.orderId) {
-        const order = await deps.orders.findById(result.orderId);
-        if (order) {
-          await deps.audit.record({
-            actorUserId: order.userId,
-            action: AuditAction.ORDER_PAID,
-            entityType: "Order",
-            entityId: order.id,
-            metadata: { orderCode: order.orderCode, amount: order.amount },
-            ipAddress: ctx.ipAddress,
-            userAgent: ctx.userAgent,
-          });
-        }
-      }
-
-      return {
-        reason: result.reason,
-        handled: result.handled,
-        orderId: result.orderId,
-        orderCode: result.orderCode,
-      };
     },
 
     async refundPaidOrder(admin: CurrentUser, orderId: string): Promise<Order> {

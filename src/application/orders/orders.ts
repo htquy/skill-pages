@@ -1,6 +1,6 @@
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/src/domain/errors";
 import type { CurrentUser } from "@/src/domain/identity/entities";
-import type { Order, OrderRepository } from "@/src/domain/orders";
+import { ProductType, type Order, type OrderRepository } from "@/src/domain/orders";
 import type { SkillAccessRepository } from "@/src/domain/access";
 import type { SkillRepository } from "@/src/domain/skill";
 
@@ -12,6 +12,7 @@ export interface OrderDeps {
 
 export interface CreateOrderResult {
   order: Order;
+  /** true = đã có đơn PENDING còn hạn, tái sử dụng thay vì tạo đơn mới. */
   existing: boolean;
 }
 
@@ -25,6 +26,12 @@ const DEFAULT_ORDER_MINUTES = 15;
 
 export function createOrderCommands(deps: OrderDeps) {
   return {
+    /**
+     * Tạo đơn cho một skill trả phí.
+     *
+     * Server tự quyết định user, skill, giá và mã đơn — client không được gửi
+     * `userId`, `amount` hay `status` (xem README — Security invariants).
+     */
     async createOrder(user: CurrentUser, skillId: string): Promise<CreateOrderResult> {
       const skill = await deps.skills.findPurchaseInfoById(skillId);
       if (!skill) {
@@ -52,6 +59,8 @@ export function createOrderCommands(deps: OrderDeps) {
 
       const order = await deps.orders.create({
         userId: user.id,
+        email: user.email,
+        productType: ProductType.SKILL,
         skillId,
         amount: skill.price.amount,
         currency: skill.price.currency,

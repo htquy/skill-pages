@@ -1,6 +1,7 @@
 import { createSkillAction, updateSkillAction } from "@/src/presentation/actions/admin-actions";
 import type { SkillAdminDetail } from "@/src/domain/skill";
 import type { TaxonomySnapshot } from "@/src/domain/taxonomy/entities";
+import { toMajorUnits } from "@/src/domain/shared";
 import type { Dict } from "@/src/lib/i18n/config";
 import {
   CheckboxField,
@@ -77,7 +78,7 @@ export function SkillForm({
             step="0.01"
             min="0"
             defaultValue={
-              skill?.price ? String(skill.price.amount / 100) : ""
+              skill?.price ? String(toMajorUnits(skill.price.amount, skill.price.currency)) : ""
             }
             placeholder="0.00"
           />

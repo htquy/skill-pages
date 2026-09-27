@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Container } from "@/src/presentation/components/layout/container";
 import { orderRepository } from "@/src/infrastructure/composition";
-import { formatDate, formatDateTime, formatNumber } from "@/src/lib/utils";
+import { formatDate, formatDateTime } from "@/src/lib/utils";
+import { formatMoney } from "@/src/domain/shared";
 import { StatusBadge } from "@/src/presentation/components/admin/status-badge";
 import { getDictionary, trans } from "@/src/lib/i18n";
 
@@ -36,8 +37,10 @@ export default async function AdminOrderDetailPage({
       <dl className="mt-8 grid gap-3 rounded-2xl border border-zinc-200 bg-white p-6 text-sm shadow-sm sm:grid-cols-2">
         <Row label={dict.admin.orders.skill} value={order.skillTitle} />
         <Row label={dict.admin.orders.skillId} value={order.skillId} />
-        <Row label={dict.admin.orders.amount} value={`${formatNumber(order.amount)} ${order.currency}`} />
+        <Row label={dict.admin.orders.amount} value={formatMoney(order.amount, order.currency)} />
         <Row label={dict.common.status} value={order.status} />
+        <Row label={dict.admin.orders.customer} value={order.customerName ?? "—"} />
+        <Row label={dict.admin.orders.email} value={order.email ?? "—"} />
         <Row label={dict.admin.orders.expiresAt} value={formatDateTime(order.expiresAt)} />
         <Row label={dict.admin.orders.paidAt} value={order.paidAt ? formatDateTime(order.paidAt) : "—"} />
         <Row label={dict.admin.orders.canceledAt} value={order.canceledAt ? formatDateTime(order.canceledAt) : "—"} />

@@ -32,14 +32,6 @@ export function readingMinutes(body: string): number {
   return Math.max(1, Math.round(words / 200));
 }
 
-export function formatCurrencyAmount(amount: number, currency: string): string {
-  const value = amount / 100;
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-  }).format(value);
-}
-
 export function slugify(input: string): string {
   return input
     .toLowerCase()

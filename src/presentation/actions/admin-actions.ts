@@ -10,6 +10,7 @@ import {
   userCommands,
 } from "@/src/infrastructure/composition";
 import { ValidationError } from "@/src/domain/errors";
+import { toMinorUnits } from "@/src/domain/shared";
 import type { UserRole } from "@/src/domain/identity/entities";
 import type { SaveSkillData } from "@/src/domain/skill";
 import type { SaveArticleData } from "@/src/domain/news/admin";
@@ -81,7 +82,7 @@ function parseSkillForm(fd: FormData, dict: Dict): SaveSkillData {
       throw new ValidationError(dict.actions.skillPriceInvalid);
     }
     if (priceAmountMajor > 0) {
-      price = { currency, amount: Math.round(priceAmountMajor * 100) };
+      price = { currency, amount: toMinorUnits(priceAmountMajor, currency) };
     }
   }
 
