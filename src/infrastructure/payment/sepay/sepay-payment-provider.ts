@@ -10,8 +10,7 @@ import type {
 import { getSePayConfig } from "@/src/lib/env";
 import { isAuthorizedSePayRequest } from "./api-key";
 import { parseSePayTransactionDate } from "./transaction-date";
-import { renderQrDataUrl } from "@/src/infrastructure/payment/qr-image";
-import { buildVietQrUrl } from "@/src/infrastructure/payment/vietqr";
+import { buildVietQrImageUrl, fetchVietQrDataUrl } from "@/src/infrastructure/payment/vietqr";
 import {
   normalizeSePayWebhook,
   sePayWebhookSchema,
@@ -41,30 +40,30 @@ function parsePayload(payload: unknown): { body: SePayWebhookBody; raw: Record<s
 
 export const sePayPaymentProvider: PaymentProvider = {
   /**
-   * Dựng QR VietQR cho một đơn hàng.
-   *
-   * Ảnh do VietQR render (`qrImageUrl`) là ảnh đẹp, đúng template. Song nếu máy
-   * khách chặn api.vietqr.io thì QR vẫn phải dùng được, nên ta luôn dựng thêm một
-   * QR cục bộ chứa chính link đó (`qrDataUrl`).
+   * Dựng QR VietQR cho một đơn hàng bằng cách lấy thẳng dữ liệu ảnh (Base64 Data URL).
    */
   async createPayment(input: CreatePaymentRequest): Promise<PaymentQr> {
     const config = getSePayConfig();
+    const amountMajor = toMajorUnits(input.amount, input.currency);
 
-    const qrImageUrl = buildVietQrUrl(config.vietQrEndpoint, {
+    const vietQrParams = {
       bankCode: config.bankCode,
       accountNumber: config.accountNumber,
       accountName: config.accountName,
-      amountMajor: toMajorUnits(input.amount, input.currency),
+      amountMajor,
       addInfo: input.orderCode,
-    });
+      template: "compact2" as const,
+    };
 
-    const qrDataUrl = await renderQrDataUrl(qrImageUrl);
+    // Lấy thẳng dữ liệu hình ảnh (Base64 Data URL) từ VietQR
+    const qrDataUrl = await fetchVietQrDataUrl(vietQrParams);
+    const qrImageUrl = buildVietQrImageUrl(vietQrParams);
 
     return {
       provider: SEPAY_PROVIDER,
       qrImageUrl,
       qrDataUrl,
-      qrPayload: qrImageUrl,
+      qrPayload: qrDataUrl,
       bankName: config.bankCode,
       accountNumber: config.accountNumber,
       accountHolder: config.accountName,
