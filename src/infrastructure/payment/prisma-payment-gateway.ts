@@ -135,6 +135,11 @@ export const prismaPaymentGateway: PaymentGatewayService = {
       });
 
       return { handled: true, reason: "ok", orderId: order.id, orderCode: order.orderCode };
+    }, {
+      // Transaction ghi 3 bảng (paymentTransaction + order + skillAccess) nên
+      // cần đủ thời gian — mặc định Prisma chỉ 5 s timeout, 2 s maxWait.
+      timeout: 30_000,  // ms — thời gian tối đa thực thi transaction
+      maxWait: 10_000,  // ms — thời gian chờ acquire connection từ pool
     });
   },
 };
