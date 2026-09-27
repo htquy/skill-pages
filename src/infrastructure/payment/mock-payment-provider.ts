@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { ValidationError } from "@/src/domain/errors";
 import { toMajorUnits } from "@/src/domain/shared";
-import { renderQrDataUrl } from "@/src/infrastructure/payment/qr-image";
+import { buildVietQrImageUrl, fetchVietQrDataUrl } from "@/src/infrastructure/payment/vietqr";
 import type {
   CreatePaymentRequest,
   PaymentProvider,
@@ -41,21 +41,26 @@ function numberValue(value: unknown): number | null {
  */
 export const mockPaymentProvider: PaymentProvider = {
   async createPayment(input: CreatePaymentRequest): Promise<PaymentQr> {
-    const qrPayload = [
-      `bank=${MOCK_BANK.bankName}`,
-      `account=${MOCK_BANK.accountNumber}`,
-      `amount=${toMajorUnits(input.amount, input.currency)}`,
-      `ref=${input.orderCode}`,
-      `note=${input.description}`,
-    ].join("\n");
+    const amountMajor = toMajorUnits(input.amount, input.currency);
 
-    const qrDataUrl = await renderQrDataUrl(qrPayload);
+    const vietQrParams = {
+      bankCode: MOCK_BANK.bankName,
+      accountNumber: MOCK_BANK.accountNumber,
+      accountName: MOCK_BANK.accountHolder,
+      amountMajor,
+      addInfo: input.orderCode,
+      template: "compact2" as const,
+    };
+
+    // Lấy trực tiếp dữ liệu hình ảnh (Base64 Data URL) từ VietQR
+    const qrDataUrl = await fetchVietQrDataUrl(vietQrParams);
+    const qrImageUrl = buildVietQrImageUrl(vietQrParams);
 
     return {
       provider: "MOCK_QR",
-      qrImageUrl: null,
+      qrImageUrl,
       qrDataUrl,
-      qrPayload,
+      qrPayload: qrDataUrl,
       bankName: MOCK_BANK.bankName,
       accountNumber: MOCK_BANK.accountNumber,
       accountHolder: MOCK_BANK.accountHolder,
