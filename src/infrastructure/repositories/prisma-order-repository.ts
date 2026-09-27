@@ -74,7 +74,8 @@ export const prismaOrderRepository: OrderRepository = {
    * database là bảo đảm duy nhất, không dựa vào xác suất.
    */
   async create(data: CreateOrderCommand) {
-    const expiresAt = new Date(Date.now() + (data.expiresInMinutes ?? 15) * 60 * 1000);
+    // Không áp dụng thời gian hết hạn đơn: đặt mặc định 100 năm về sau
+    const expiresAt = new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000);
     let lastError: unknown;
 
     for (let attempt = 0; attempt < ORDER_CODE_MAX_ATTEMPTS; attempt += 1) {
@@ -123,7 +124,6 @@ export const prismaOrderRepository: OrderRepository = {
         userId,
         skillId,
         status: "PENDING",
-        expiresAt: { gt: new Date() },
       },
       include: selectInclude,
       orderBy: { createdAt: "desc" },

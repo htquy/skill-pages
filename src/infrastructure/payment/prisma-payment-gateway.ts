@@ -47,13 +47,19 @@ export const prismaPaymentGateway: PaymentGatewayService = {
       }
 
       // 3) Tiền phải vào đúng tài khoản nhận của shop.
+      // SePay gửi TK gốc ở `accountNumber` (ví dụ "8813991171") và virtual account
+      // ở `subAccount` (ví dụ "96247035021203"). `SEPAY_ACCOUNT_NUMBER` thường
+      // cấu hình là số virtual account, nên ưu tiên khớp subAccount trước.
       // Chỉ áp dụng khi đang chạy SePay thật: provider giả lập dùng tài khoản
-      // riêng nên so với tài khoản shop sẽ luôn lệch. Khi đã cấu hình SePay thì
-      // thiếu số tài khoản trong webhook cũng bị từ chối (fail closed).
+      // riêng nên so với tài khoản shop sẽ luôn lệch.
       const expectedAccount = isSePayConfigured()
         ? getSePayConfig().expectedAccountNumber
         : "";
-      const receivedAccount = input.accountNumber ?? "";
+      // Nhận tài khoản: dùng subAccount (TK ảo) nếu có, ngược lại fallback về accountNumber.
+      const receivedAccount =
+        (input.subAccount && input.subAccount.length > 0)
+          ? input.subAccount
+          : (input.accountNumber ?? "");
       if (expectedAccount && receivedAccount !== expectedAccount) {
         return {
           handled: false,
@@ -70,13 +76,7 @@ export const prismaPaymentGateway: PaymentGatewayService = {
         return { handled: false, reason, orderId: order.id, orderCode: order.orderCode };
       }
 
-      // 5) Đơn đã quá hạn thì KHÔNG tự mở khoá: chuyển sang đối soát thủ công để
-      // tránh trao quyền cho một đơn đã "chết" (xem README — Business rules).
-      if (order.expiresAt.getTime() < Date.now()) {
-        return { handled: false, reason: "expired", orderId: order.id, orderCode: order.orderCode };
-      }
-
-      // 6) Số tiền phải khớp tuyệt đối (VND: đơn 49000, chuyển 48000 => từ chối).
+      // 5) Số tiền phải khớp tuyệt đối (VND: đơn 49000, chuyển 48000 => từ chối).
       if (!matchesAmount(Number(order.amount), order.currency, input.amount)) {
         return { handled: false, reason: "amount_mismatch", orderId: order.id, orderCode: order.orderCode };
       }
