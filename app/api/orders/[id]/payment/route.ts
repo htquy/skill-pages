@@ -8,7 +8,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     const order = await orderRepository.findById((await params).id);
     if (!order) throw new NotFoundError("Order was not found");
     if (order.userId !== user.id) throw new ForbiddenError("You can only pay for your own order");
-    if (order.status !== "PENDING" || order.expiresAt <= new Date()) {
+    if (order.status !== "PENDING") {
       return Response.json({ error: "Order is no longer payable" }, { status: 409 });
     }
     return Response.json(await paymentCommands.createPaymentRequest(order));

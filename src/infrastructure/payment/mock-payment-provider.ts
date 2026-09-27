@@ -11,7 +11,7 @@ import type {
 
 const MOCK_BANK = {
   bankName: "BIDV",
-  accountNumber: "8813991171",
+  accountNumber: "96247035021203",
   accountHolder: "HOANG TRONG QUY",
 };
 

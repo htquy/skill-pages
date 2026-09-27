@@ -128,10 +128,17 @@ export interface ConfirmPaymentInput {
   /** Khoá liên kết với bản ghi webhook đã lưu, phục vụ đối soát. */
   webhookEventId?: string | null;
   /**
-   * Số tài khoản nhận tiền mà provider báo. Bắt buộc phải khớp tài khoản shop
-   * để không mở khoá khi tiền vào một tài khoản khác (ví dụ tài khoản ảo).
+   * Số tài khoản nhận tiền mà provider báo (TK ngân hàng gốc).
+   * Bắt buộc phải khớp tài khoản shop (hoặc subAccount) để không mở khoá
+   * khi tiền vào một tài khoản khác.
    */
   accountNumber?: string | null;
+  /**
+   * Sub-account / virtual account (tài khoản ảo SePay). SePay gửi TK gốc
+   * ở `accountNumber` và TK ảo ở `subAccount`. Ta ưu tiên khớp subAccount
+   * trước vì `SEPAY_ACCOUNT_NUMBER` thường cấu hình là số TK ảo.
+   */
+  subAccount?: string | null;
 }
 
 /**

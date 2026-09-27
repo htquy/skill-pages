@@ -90,7 +90,7 @@ export function PaymentModal({
 
   const status: OrderStatusSnapshot["status"] | null = snapshot?.status ?? null;
   const paid = status === "PAID";
-  const expired = status === "EXPIRED" || (pollingActive && remaining <= 0 && !paid);
+  const expired = status === "EXPIRED";
   const failed = status !== null && isTerminalStatus(status) && !paid && !expired;
 
   const hasNotifiedPaid = useRef(false);
@@ -277,16 +277,10 @@ export function PaymentModal({
 
           {showQr && details ? (
             <div className="flex flex-col gap-5">
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-amber-50 px-3.5 py-2.5 text-sm text-amber-900">
                 <span className="font-medium">
                   {checkout.amount}: {details.amountLabel}
                 </span>
-                {pollingActive ? (
-                  <span className="inline-flex items-center gap-1.5 font-mono tabular-nums">
-                    <Clock className="size-4" aria-hidden="true" />
-                    {trans(checkout.expiresIn, { time: formatCountdown(remaining) })}
-                  </span>
-                ) : null}
               </div>
 
               <div>

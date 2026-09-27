@@ -30,9 +30,10 @@ const ID_SEGMENT = "[0-9A-Z]{6}";
 const SUFFIX_SEGMENT = "[0-9A-Z]{4}";
 const PRODUCT_PATTERN = Object.values(PRODUCT_LABELS).join("|");
 const STRUCTURE = `${PRODUCT_PATTERN}-${ID_SEGMENT}-${ID_SEGMENT}-${SUFFIX_SEGMENT}`;
+const FLEXIBLE_STRUCTURE = `(${PRODUCT_PATTERN})-?(${ID_SEGMENT})-?(${ID_SEGMENT})-?(${SUFFIX_SEGMENT})`;
 
-/** Regex trích xuất mã đơn ra khỏi nội dung chuyển khoản tự do. */
-const EXTRACT_PATTERN = new RegExp(STRUCTURE, "i");
+/** Regex trích xuất mã đơn ra khỏi nội dung chuyển khoản tự do (chấp nhận cả khi bị mất dấu -). */
+const EXTRACT_PATTERN = new RegExp(FLEXIBLE_STRUCTURE, "i");
 
 /** Regex kiểm tra mã đơn đúng chuẩn (dùng khi validate nội dung webhook). */
 const VALIDATION_PATTERN = new RegExp(`^${STRUCTURE}$`, "i");
@@ -69,11 +70,14 @@ export function isOrderCode(value: string): boolean {
  * Trích mã đơn ra khỏi nội dung chuyển khoản.
  *
  * Nội dung do khách gõ rất linh hoạt: "SKILL-1A2B3C-4D5E6F-7H2K", "thanh toan
- * SKILL-1A2B3C-4D5E6F-7H2K don hang cua toi", hoặc bị app ngân hàng thêm/chữa
- * ký tự. Vì vậy ta dò chuỗi, không so khớp cả chuỗi.
+ * SKILLFBD3B46318E7XU2W don hang", hoặc bị app ngân hàng xóa bớt dấu gạch ngang.
+ * Vì vậy ta hỗ trợ trích xuất linh hoạt và chuẩn hóa về dạng `SKILL-XXXXXX-YYYYYY-ZZZZ`.
  */
 export function extractOrderCode(content: string | null | undefined): string | null {
   if (!content) return null;
   const match = EXTRACT_PATTERN.exec(content);
-  return match ? match[0].toUpperCase() : null;
+  if (!match) return null;
+
+  const [, prefix, part1, part2, part3] = match;
+  return `${prefix.toUpperCase()}-${part1.toUpperCase()}-${part2.toUpperCase()}-${part3.toUpperCase()}`;
 }

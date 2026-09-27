@@ -211,6 +211,7 @@ export function createSePayWebhookHandler(deps: SePayWebhookDeps) {
       rawPayload: verified.rawPayload,
       webhookEventId: eventId,
       accountNumber: verified.event?.accountNumber ?? null,
+      subAccount: verified.event?.subAccount ?? null,
     });
 
     const outcome = PAYMENT_REASON_TO_OUTCOME[result.reason];
