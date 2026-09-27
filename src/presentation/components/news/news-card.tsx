@@ -10,7 +10,7 @@ export async function NewsCard({ article }: { article: NewsCardViewModel }) {
   return (
     <Link
       href={`/news/${article.slug}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-md"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-zinc-300 hover:shadow-md"
     >
       {article.coverImageUrl ? (
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-zinc-100">

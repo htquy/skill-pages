@@ -1,4 +1,5 @@
 import type { PaginatedResult, Pagination } from "@/src/domain/shared";
+import type { ProductTypeValue } from "./order-code";
 
 export type OrderStatus = "PENDING" | "PAID" | "EXPIRED" | "CANCELED" | "FAILED" | "REFUNDED";
 
@@ -6,6 +7,18 @@ export interface Order {
   id: string;
   orderCode: string;
   userId: string;
+  /**
+   * Email nhận hàng được chụp lại tại thời điểm tạo đơn.
+   * Snapshot để giao hàng vẫn hoạt động nếu khách đổi email trong tài khoản.
+   */
+  email: string | null;
+  /** Tên khách tại thời điểm giao hàng, dùng để cá nhân hoá email bàn giao. */
+  customerName: string | null;
+  /**
+   * Loại sản phẩm được bán. Hiện chỉ có SKILL; giữ thành value object để mở rộng
+   * sang PACKAGE/BUNDLE mà không phải đổi lại luồng thanh toán.
+   */
+  productType: ProductTypeValue;
   skillId: string;
   skillTitle: string;
   skillSlug: string;
@@ -22,7 +35,11 @@ export interface Order {
 
 export interface CreateOrderCommand {
   userId: string;
+  /** Email nhận hàng, chụp lại tại thời điểm tạo đơn. */
+  email: string | null;
+  productType: ProductTypeValue;
   skillId: string;
+  /** Snapshot giá tại thời điểm tạo đơn, lưu theo đơn vị nhỏ nhất của currency. */
   amount: number;
   currency: string;
   expiresInMinutes?: number;

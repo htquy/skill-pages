@@ -9,6 +9,7 @@ import {
   BookOpen,
   Trophy,
   ShoppingCart,
+  Webhook,
   BarChart3,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
@@ -22,6 +23,7 @@ function adminNavItems(dict: Dict) {
     { href: "/admin/skills", label: dict.admin.nav.skills, icon: BookOpen },
     { href: "/admin/rankings", label: dict.admin.nav.rankings, icon: Trophy },
     { href: "/admin/orders", label: dict.admin.nav.orders, icon: ShoppingCart },
+    { href: "/admin/webhook-events", label: dict.admin.nav.webhookEvents, icon: Webhook },
     { href: "/admin/statistics", label: dict.admin.nav.statistics, icon: BarChart3 },
   ];
 }

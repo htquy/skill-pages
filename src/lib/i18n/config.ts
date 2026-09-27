@@ -2,6 +2,8 @@ import { en } from "./en";
 
 export type Dict = typeof en;
 
+export type CheckoutDict = Dict["checkout"];
+
 export const locales = ["en", "vi"] as const;
 
 export type Locale = (typeof locales)[number];

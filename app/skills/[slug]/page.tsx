@@ -10,9 +10,11 @@ import { SkillBadge } from "@/src/presentation/components/skill/skill-badge";
 import { StarRating } from "@/src/presentation/components/skill/star-rating";
 import { SaveButton } from "@/src/presentation/components/skill/save-button";
 import { CopyButton } from "@/src/presentation/components/shared/copy-button";
+import { BuyNowButton } from "@/src/presentation/components/checkout/buy-now-button";
 import { skillQueries, engagementCommands, accessCommands } from "@/src/infrastructure/composition";
 import { getCurrentUser } from "@/src/infrastructure/authentication/authorization";
-import { formatDate, formatNumber, formatCurrencyAmount } from "@/src/lib/utils";
+import { formatMoney } from "@/src/domain/shared";
+import { formatDate, formatNumber } from "@/src/lib/utils";
 import { getDictionary, trans } from "@/src/lib/i18n";
 
 type Props = {
@@ -231,7 +233,7 @@ export default async function SkillDetailPage({ params }: Props) {
                   >
                     <span className="text-sm text-zinc-500">{price.currency}</span>
                     <span className="text-lg font-bold text-zinc-900">
-                      {formatCurrencyAmount(price.amount, price.currency)}
+                      {formatMoney(price.amount, price.currency)}
                     </span>
                   </div>
                 ))}
@@ -241,6 +243,18 @@ export default async function SkillDetailPage({ params }: Props) {
                 {dict.skillDetail.freeToUse}
               </div>
             )}
+
+            {skill.accessType === "PAID" && !hasAccess ? (
+              <div className="mt-4">
+                <BuyNowButton
+                  skillId={skill.id}
+                  skillSlug={skill.slug}
+                  skillTitle={skill.title}
+                  dict={dict}
+                  variant="detail"
+                />
+              </div>
+            ) : null}
           </div>
 
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">

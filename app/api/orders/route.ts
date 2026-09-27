@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const user = await requireUser();
     const input = schema.parse(await request.json());
     const result = await orderCommands.createOrder(user, input.skillId);
-    return Response.json(result, { status: result.existing ? 200 : 201 });
+    return Response.json(result, { status: result.existing ? 200 : 201  });
   } catch (error) {
     if (isAppError(error)) return Response.json({ error: error.message }, { status: error.status });
     if (error instanceof z.ZodError) return Response.json({ error: "Invalid request" }, { status: 400 });

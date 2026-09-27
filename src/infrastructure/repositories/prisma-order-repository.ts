@@ -1,20 +1,30 @@
 import { Prisma, type OrderStatus as PrismaOrderStatus } from "@prisma/client";
 import { prisma } from "@/src/infrastructure/database/prisma";
+import { ProductType, createOrderCode, type ProductTypeValue } from "@/src/domain/orders";
 import type {
   CreateOrderCommand,
   Order,
-  OrderStatus,
   OrderRepository,
+  OrderStatus,
 } from "@/src/domain/orders";
 import type { PaginatedResult, Pagination } from "@/src/domain/shared";
 
-type OrderRow = Prisma.OrderGetPayload<{ include: { skill: { select: { title: true; slug: true } } } }>;
+
+type OrderRow = Prisma.OrderGetPayload<{
+  include: {
+    skill: { select: { title: true; slug: true } };
+    user: { select: { name: true } };
+  };
+}>;
 
 function toOrder(row: OrderRow): Order {
   return {
     id: row.id,
     orderCode: row.orderCode,
     userId: row.userId,
+    email: row.email,
+    customerName: row.user.name,
+    productType: toProductType(row.productType),
     skillId: row.skillId,
     skillTitle: row.skill.title,
     skillSlug: row.skill.slug,
@@ -32,15 +42,21 @@ function toOrder(row: OrderRow): Order {
 
 const selectInclude = {
   skill: { select: { title: true, slug: true } },
+  user: { select: { name: true } },
 } as const;
 
-function orderCode(): string {
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
-  const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `ORD-${yyyy}${mm}${dd}-${suffix}`;
+/** Số lần thử lại khi trùng mã đơn — hậu tố ngẫu nhiên 4 ký tự nên rất hiếm. */
+const ORDER_CODE_MAX_ATTEMPTS = 5;
+
+const PRODUCT_TYPES: readonly ProductTypeValue[] = Object.values(ProductType);
+
+/**
+ * Cột productType lưu chuỗi, còn domain dùng union. Giá trị lạ (dữ liệu nhập tay)
+ * được hạ về SKILL để không làm hỏng trang đơn hàng; thêm loại sản phẩm mới chỉ
+ * cần bổ sung vào `ProductType`.
+ */
+function toProductType(value: string): ProductTypeValue {
+  return PRODUCT_TYPES.find((type) => type === value) ?? ProductType.SKILL;
 }
 
 function toPaginated<T>(items: T[], total: number, pagination: Pagination): PaginatedResult<T> {
@@ -49,21 +65,46 @@ function toPaginated<T>(items: T[], total: number, pagination: Pagination): Pagi
 }
 
 export const prismaOrderRepository: OrderRepository = {
+  /**
+   * Tạo đơn.
+   *
+   * Mã đơn do domain `OrderCode` sinh (định dạng SKILL-<product>-<customer>-<random>)
+   * vì nó vừa là khoá duy nhất vừa là nội dung chuyển khoản ngân hàng. Nếu trùng
+   * (rất hiếm, hậu tố chỉ 4 ký tự) thì sinh mã mới và thử lại — unique index ở
+   * database là bảo đảm duy nhất, không dựa vào xác suất.
+   */
   async create(data: CreateOrderCommand) {
     const expiresAt = new Date(Date.now() + (data.expiresInMinutes ?? 15) * 60 * 1000);
-    const row = await prisma.order.create({
-      data: {
-        orderCode: orderCode(),
-        userId: data.userId,
-        skillId: data.skillId,
-        amount: data.amount,
-        currency: data.currency,
-        status: "PENDING",
-        expiresAt,
-      },
-      include: selectInclude,
-    });
-    return toOrder(row);
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt < ORDER_CODE_MAX_ATTEMPTS; attempt += 1) {
+      try {
+        const row = await prisma.order.create({
+          data: {
+            orderCode: createOrderCode(data.productType, data.skillId, data.userId),
+            userId: data.userId,
+            email: data.email,
+            productType: data.productType,
+            skillId: data.skillId,
+            amount: data.amount,
+            currency: data.currency,
+            status: "PENDING",
+            expiresAt,
+          },
+          include: selectInclude,
+        });
+        return toOrder(row);
+      } catch (error) {
+        const isUniqueViolation =
+          error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+        if (!isUniqueViolation) throw error;
+        lastError = error;
+      }
+    }
+
+    throw lastError instanceof Error
+      ? lastError
+      : new Error("Unable to generate a unique order code");
   },
 
   async findById(id) {

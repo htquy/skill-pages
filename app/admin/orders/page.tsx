@@ -3,7 +3,8 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { Container } from "@/src/presentation/components/layout/container";
 import { orderRepository } from "@/src/infrastructure/composition";
-import { formatDate, formatNumber } from "@/src/lib/utils";
+import { formatDate } from "@/src/lib/utils";
+import { formatMoney } from "@/src/domain/shared";
 import { StatusBadge } from "@/src/presentation/components/admin/status-badge";
 import { Pagination } from "@/src/presentation/components/shared/pagination";
 import type { OrderStatus } from "@/src/domain/orders";
@@ -98,16 +99,14 @@ export default async function AdminOrdersPage({
                     <Link href={`/admin/orders/${order.id}`} className="font-medium text-zinc-900 hover:text-indigo-700">
                       {order.orderCode}
                     </Link>
-                    <p className="text-xs text-zinc-400">{order.userId}</p>
+                    <p className="text-xs text-zinc-400">{order.email ?? order.userId}</p>
                   </td>
                   <td className="px-5 py-3">
                     <Link href={`/admin/skills/${order.skillId}`} className="text-zinc-700 hover:text-indigo-700">
                       {order.skillTitle}
                     </Link>
                   </td>
-                  <td className="px-5 py-3 text-zinc-600">
-                    {formatNumber(order.amount)} {order.currency}
-                  </td>
+                  <td className="px-5 py-3 text-zinc-600">{formatMoney(order.amount, order.currency)}</td>
                   <td className="px-5 py-3">
                     <StatusBadge status={order.status} />
                   </td>

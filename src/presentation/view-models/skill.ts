@@ -2,6 +2,7 @@ import type { SkillSummary } from "@/src/domain/skill";
 import { formatNumber } from "@/src/lib/utils";
 
 export interface SkillCardViewModel {
+  id: string;
   slug: string;
   title: string;
   description: string;
@@ -19,6 +20,7 @@ export interface SkillCardViewModel {
 
 export function toSkillCardViewModel(skill: SkillSummary): SkillCardViewModel {
   return {
+    id: skill.id,
     slug: skill.slug,
     title: skill.title,
     description: skill.shortDescription,

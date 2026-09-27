@@ -10,5 +10,11 @@ export type {
   PaymentTransaction,
   PaymentTransactionRepository,
   PaymentTransactionView,
+  PaymentWebhookContext,
+  RecordWebhookEventInput,
   VerifiedPayment,
+  VerifiedWebhookEvent,
+  WebhookEvent,
+  WebhookEventRepository,
+  WebhookEventStatus,
 } from "./entities";

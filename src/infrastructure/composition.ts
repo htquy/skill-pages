@@ -6,6 +6,7 @@ import { createAccountQueries } from "@/src/application/account/queries";
 import { createEngagementCommands } from "@/src/application/engagement/commands";
 import { createOrderCommands } from "@/src/application/orders/orders";
 import { createPaymentCommands } from "@/src/application/payments/payments";
+import { createSePayWebhookHandler } from "@/src/application/payments/sepay-webhook";
 import { createAccessCommands } from "@/src/application/access/access";
 import { createUserCommands } from "@/src/application/users/users";
 import { createStatistics } from "@/src/application/statistics/statistics";
@@ -26,9 +27,22 @@ import { prismaUserRepository } from "@/src/infrastructure/repositories/prisma-u
 import { prismaSkillAdminRepository } from "@/src/infrastructure/repositories/prisma-skill-admin-repository";
 import { prismaNewsAdminRepository, prismaNewsCategoryAdminRepository } from "@/src/infrastructure/repositories/prisma-news-admin-repository";
 import { prismaRankingAdminRepository } from "@/src/infrastructure/repositories/prisma-ranking-admin-repository";
+import { prismaWebhookEventRepository } from "@/src/infrastructure/repositories/prisma-webhook-event-repository";
 
 import { mockPaymentProvider } from "@/src/infrastructure/payment/mock-payment-provider";
+import { sePayPaymentProvider } from "@/src/infrastructure/payment/sepay/sepay-payment-provider";
 import { prismaPaymentGateway } from "@/src/infrastructure/payment/prisma-payment-gateway";
+import { consolePurchaseDeliveryNotifier } from "@/src/infrastructure/notifications/console-purchase-delivery-notifier";
+import { isSePayConfigured } from "@/src/lib/env";
+import { siteConfig } from "@/src/lib/site";
+
+/**
+ * Chọn payment provider theo cấu hình môi trường.
+ *
+ * - Có SEPAY_API_KEY + SEPAY_ACCOUNT_NUMBER => dùng SePay thật (QR VietQR + webhook).
+ * - Ngược lại                      => provider giả lập để demo luồng mua local.
+ */
+const paymentProvider = isSePayConfigured() ? sePayPaymentProvider : mockPaymentProvider;
 
 export const skillQueries = createSkillQueries({ skills: prismaSkillRepository });
 export const newsQueries = createNewsQueries({ news: prismaNewsRepository });
@@ -51,11 +65,21 @@ export const orderCommands = createOrderCommands({
 
 export const paymentCommands = createPaymentCommands({
   payments: prismaPaymentTransactionRepository,
-  provider: mockPaymentProvider,
+  provider: paymentProvider,
   gateway: prismaPaymentGateway,
   orders: prismaOrderRepository,
   access: prismaSkillAccessRepository,
   audit: prismaAuditLogRepository,
+});
+
+export const sePayWebhook = createSePayWebhookHandler({
+  provider: paymentProvider,
+  gateway: prismaPaymentGateway,
+  events: prismaWebhookEventRepository,
+  orders: prismaOrderRepository,
+  audit: prismaAuditLogRepository,
+  notifier: consolePurchaseDeliveryNotifier,
+  siteUrl: siteConfig.url,
 });
 
 export const accessCommands = createAccessCommands({
@@ -94,3 +118,4 @@ export const rankingAdminCommands = createRankingAdminCommands({
 
 export const skillAccessRepository = prismaSkillAccessRepository;
 export const orderRepository = prismaOrderRepository;
+export const webhookEventRepository = prismaWebhookEventRepository;
