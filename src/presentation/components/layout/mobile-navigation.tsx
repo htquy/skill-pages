@@ -11,6 +11,7 @@ const labels: Record<string, keyof Dict["nav"]> = {
   "/": "discover",
   "/news": "aiNews",
   "/rankings": "rankings",
+  "/tools": "tools",
 };
 
 export function MobileNavigation({ dict }: { dict: Dict }) {

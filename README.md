@@ -26,13 +26,15 @@ app/
   admin/                  Admin console (protected)
     page.tsx              Dashboard: KPI cards + revenue/order/top-skills charts
     skills/ …             Skills: list, new, detail, edit, delete, publish
+    tools/ …              Tools: list, new, detail, edit, delete, publish
     articles/ …           Articles: list, new, detail, edit, delete, publish
     rankings/ …           Rankings: list, new, detail, edit, delete, publish, recalc
     orders/ …             Orders: list + detail
     webhook-events/ …     Payment webhooks: reconciliation of unmatched transfers
     users/ …              Users: list + detail, block/unblock, role change
     statistics/           Charts for revenue, users, sales
-  api/                    API routes (auth, orders, SePay webhook, skill content)
+  tools/                  Public tool catalog: list + detail
+  api/                    API routes (auth, orders, SePay webhook, R2 uploads)
   …
 src/
   application/            Application services / use cases (commands + queries)
@@ -53,6 +55,10 @@ prisma/
 - **Taxonomy** — `Industry`, `SkillCategory`, `UseCase`, `AITool`.
 - **Skill catalog** — `Skill`, `SkillVersion` (versioned prompt content), `SkillPrice`
   (per-currency pricing, stored in minor units), link tables for taxonomy/tools.
+- **Tool catalog** — `Tool` (type `DOWNLOADABLE | EMBED_WIDGET | MCP_SERVER | WEB_APP`,
+  billing `FREE | ONE_TIME | SUBSCRIPTION`, `status` reuses `ContentStatus`),
+  `ToolVersion` (the latest release, package file or script URL) and `ToolPrice`
+  (per-currency, minor units, `durationDays` where `0` = lifetime).
 - **News** — `NewsArticle`, `NewsCategory`, `NewsToolLink`.
 - **Rankings** — `Ranking` (period `WEEK | MONTH | QUARTER | ALL_TIME`), `RankingEntry`
   (per-tool score/views/favorites/clicks).
@@ -71,6 +77,7 @@ sidebar. Every module provides:
 | Dashboard   | —    | —              | —      | —      | —    | —      | KPI cards, revenue-by-month bars, order-status donut, top skills, recent orders |
 | Statistics  | —    | —              | —      | —      | —    | —      | Revenue chart, user health, sales table |
 | Skills      | ✔    | q, status, access | ✔   | ✔      | ✔    | ✔      | Publish/unpublish, versioned content |
+| Tools       | ✔    | q, status, type, pricing | ✔ | ✔    | ✔    | ✔      | Publish/unpublish, latest version + package upload |
 | Articles    | ✔    | q, status      | ✔      | ✔      | ✔    | ✔      | Publish/unpublish, category/tools |
 | Rankings    | ✔    | —              | ✔      | ✔      | ✔    | ✔      | Publish/unpublish, recalculate scores |
 | Orders      | ✔    | q, status      | ✔      | —      | —    | —      | Read-only: orders are system-generated |
@@ -111,6 +118,16 @@ SEPAY_API_KEY="..."            # my.sepay.vn
 SEPAY_BANK_CODE="MB"
 SEPAY_ACCOUNT_NUMBER="..."
 SEPAY_ACCOUNT_NAME="..."
+```
+
+Video demo uploads (optional — see [Video uploads](#video-uploads-cloudflare-r2)):
+
+```bash
+R2_ACCOUNT_ID="..."            # Cloudflare dashboard
+R2_ACCESS_KEY_ID="..."         # R2 API token (Object Read & Write)
+R2_SECRET_ACCESS_KEY="..."
+R2_BUCKET_NAME="..."
+R2_PUBLIC_URL="https://pub-xxxx.r2.dev"
 ```
 
 `.env*` is git-ignored (only `.env.example` is committed). Never put a real
@@ -220,10 +237,72 @@ Reconcile transfers that matched no order at `/admin/webhook-events`
   port is in place (`PurchaseDeliveryNotifier`), so adding a provider is a matter of
   one adapter plus environment variables — no change to the payment flow.
 
+## File uploads (Cloudflare R2)
+
+`Skill.videoDemoUrl` accepts any public link (YouTube, Vimeo, direct MP4) and can
+also be filled by uploading a file straight to R2 from the admin skill form. The
+same flow uploads the downloadable package of a `Tool`. The browser never proxies
+the bytes through Next.js: the server only signs URLs, so a 2GB file costs a
+handful of small API calls instead of a request that lives for hours.
+
+Every request declares its `kind`:
+
+| `kind`      | Used by                    | Key prefix        | Accepted content                                                             |
+| ----------- | -------------------------- | ----------------- | ---------------------------------------------------------------------------- |
+| `media`     | `VideoDemoField` (skills)  | `skill-videos/`   | MP4, WebM, MOV, MKV, PDF, JPEG, PNG, WebP, GIF                                 |
+| `tool-file` | `ToolFileField` (tools)    | `tool-files/`     | ZIP/TAR/7z/RAR, EXE, MSI, DMG, PKG, DEB, RPM, AppImage, JS/PY/SH scripts, JSON, YAML, TXT |
+
+### Setup
+
+1. Cloudflare Dashboard → R2 → **Account API Tokens** → create a token with
+   *Object Read & Write*; note the Access Key ID and Secret Access Key.
+2. Create a bucket and put the five `R2_*` variables in `.env` (see
+   `.env.example`). `R2_PUBLIC_URL` is the bucket's `r2.dev` domain in dev or a
+   custom domain in production. Without those variables the upload UI is skipped
+   and the URL field still works.
+3. Apply the bucket CORS policy — the client reads each part's `ETag` header to
+   complete the upload, so it must be exposed:
+
+```bash
+r2 bucket cors set <bucket-name> --file docs/r2-cors.json
+```
+
+Edit the `AllowedOrigins` in `docs/r2-cors.json` before applying it, or the
+browser will block the upload.
+
+### Flow
+
+| Size                            | Path                                                                   |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| `< 50MB`                        | `POST /api/upload/r2/presign` → single presigned `PUT`                  |
+| `>= 50MB`                       | `POST /api/upload/r2/init-multipart` → one presigned `PUT` per 10MB part |
+| any                             | `POST /api/upload/r2/complete-multipart` (or `/abort-multipart` on cancel) |
+
+Presigned URLs live 15 minutes. Every endpoint calls `requireAdmin()`, and
+`buildObjectKey()` generates the key server-side (`skill-videos/YYYY-MM-DD/<uuid>-<name>.<ext>`)
+from an allowlist of content types, so admins cannot write outside the prefix or
+upload arbitrary types. Tool packages are checked on **both** MIME type and file
+extension, because browsers report binaries such as `.dmg` or `.AppImage` as
+`application/octet-stream` or an empty string.
+
 ## Business rules
 
 - **Skill access** — free skills are readable by all visitors; paid skills require a purchase
-  (`SkillAccess` linked to a `PAID` order). `revokedAt` disables access.
+  (`SkillAccess` linked to a `PAID` order). `revokedAt` disables access. List and
+  detail pages show an "Owned" badge and drop the buy button for skills the
+  visitor already owns; the lookup is one query per page, not one per card.
+- **Tool catalog** — `/tools` only lists `PUBLISHED` rows; the admin form manages a single
+  `isLatest` `ToolVersion` per tool, so editing a version updates the existing row instead of
+  appending history. `appUrl` for `WEB_APP` tools is stored inside `Tool.config` and edited
+  through its own field, so the JSON box and the form can never disagree. Checkout and
+  license keys are not implemented yet: the detail page shows pricing and a
+  "checkout coming soon" note.
+- **Rich text** — `NewsArticle.content`, `Skill.description`, `Tool.description` and
+  `SkillVersion.instructions` hold HTML from the admin Tiptap editor. Rendering
+  always goes through `sanitizeRichText()` (allowlist in `src/lib/rich-text.ts`)
+  and falls back to plain text for rows written before the editor existed.
+  `SkillVersion.content` stays a plain textarea: it is a prompt users copy, not
+  prose.
 - **Money** — all amounts are stored in **minor units**, and conversions go through the
   `Money` value object in `src/domain/shared/money.ts` because the exponent is
   currency-dependent: `USD` 2 decimals, `VND` 0 decimals. Never hard-code `* 100` or

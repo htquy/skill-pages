@@ -9,6 +9,7 @@ export async function SiteFooter() {
     { href: "/", label: dict.nav.discover },
     { href: "/news", label: dict.nav.aiNews },
     { href: "/rankings", label: dict.nav.rankings },
+    { href: "/tools", label: dict.nav.tools },
     { href: "/search", label: dict.nav.search },
   ] as const;
 

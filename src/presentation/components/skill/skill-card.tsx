@@ -3,7 +3,7 @@ import { Bookmark, Eye } from "lucide-react";
 import type { SkillCardViewModel } from "@/src/presentation/view-models/skill";
 import { SkillBadge } from "@/src/presentation/components/skill/skill-badge";
 import { StarRating } from "@/src/presentation/components/skill/star-rating";
-import { BuyNowButton } from "@/src/presentation/components/checkout/buy-now-button";
+import { PurchasePanel } from "@/src/presentation/components/checkout/purchase-panel";
 import { getDictionary, trans } from "@/src/lib/i18n";
 
 function ToolTags({
@@ -102,12 +102,7 @@ export async function SkillCard({ skill }: { skill: SkillCardViewModel }) {
 
       {skill.accessType === "PAID" ? (
         <div className="relative z-10 mt-4">
-          <BuyNowButton
-            skillId={skill.id}
-            skillSlug={skill.slug}
-            skillTitle={skill.title}
-            dict={dict}
-          />
+          <PurchasePanel skill={skill} />
         </div>
       ) : null}
     </article>

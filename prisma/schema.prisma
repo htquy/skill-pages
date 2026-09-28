@@ -79,6 +79,19 @@ enum RankingStatus {
   PUBLISHED
 }
 
+enum ToolType {
+  DOWNLOADABLE // App máy tính tải về (EXE, DMG, ZIP...)
+  EMBED_WIDGET // Widget nhúng Web doanh nghiệp (Chatbox, Popup...)
+  MCP_SERVER // MCP Server cho AI Agent
+  WEB_APP // Web App dùng trực tiếp
+}
+
+enum ToolBillingType {
+  FREE // Miễn phí
+  ONE_TIME // Mua đứt 1 lần
+  SUBSCRIPTION // Mua/gia hạn theo chu kỳ (tháng, năm)
+}
+
 // ---------------------------------------------------------------------------
 // Identity (Auth.js Prisma adapter compatible)
 // ---------------------------------------------------------------------------
@@ -222,6 +235,8 @@ model Skill {
   status           ContentStatus   @default(DRAFT)
   authorId         String?
   coverImageUrl    String?
+  /// Link video demo (YouTube/Vimeo/MP4 public hoặc file đã upload lên R2).
+  videoDemoUrl     String?
   viewCount        BigInt          @default(0)
   favoriteCount    BigInt          @default(0)
   ratingAverage    Decimal?        @db.Decimal(3, 2)
@@ -458,6 +473,83 @@ model ToolClick {
   user User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([toolId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Tool catalog & distribution
+//
+// `amount` của ToolPrice dùng đơn vị nhỏ (minor units) giống SkillPrice để
+// dùng chung `toMinorUnits`/`formatMoney`. Mỗi Tool chỉ có một phiên bản
+// "latest" tại thời điểm hiện tại; lịch sử phiên bản sẽ bổ sung ở phase sau.
+// ---------------------------------------------------------------------------
+
+model Tool {
+  id               String          @id @default(uuid())
+  slug             String          @unique @db.VarChar(180)
+  title            String          @db.VarChar(200)
+  shortDescription String          @db.VarChar(500)
+  description      String          @db.Text
+  type             ToolType        @default(DOWNLOADABLE)
+  billingType      ToolBillingType @default(SUBSCRIPTION)
+  status           ContentStatus   @default(DRAFT)
+  coverImageUrl    String?
+  /// Link video demo (YouTube/Vimeo/MP4 public hoặc file đã upload lên R2).
+  videoDemoUrl     String?
+  /// Cấu hình riêng theo loại tool, ví dụ:
+  /// - WEB_APP: { "appUrl": "https://app.example.com" }
+  /// - EMBED_WIDGET: { "defaultTheme": "dark", "allowedDomains": ["*"] }
+  /// - MCP_SERVER: { "command": "npx", "args": ["-y", "@modelcontextprotocol/..."] }
+  config           Json?
+  publishedAt      DateTime?       @db.Timestamptz(3)
+  createdAt        DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime        @updatedAt @db.Timestamptz(3)
+
+  prices   ToolPrice[]
+  versions ToolVersion[]
+
+  @@index([status, publishedAt])
+  @@index([type, status])
+  @@index([billingType])
+  @@map("tools")
+}
+
+model ToolPrice {
+  id           String   @id @default(uuid())
+  toolId       String
+  currency     String   @default("USD") @db.Char(3)
+  /// Số tiền ở đơn vị nhỏ, ví dụ 9 USD => 900.
+  amount       Int
+  /// Số ngày cấp quyền (30 = tháng, 365 = năm, 0 = vĩnh viễn).
+  durationDays Int      @default(30)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  tool Tool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@index([toolId, isActive])
+  @@map("tool_prices")
+}
+
+model ToolVersion {
+  id          String   @id @default(uuid())
+  toolId      String
+  /// Mã phiên bản hiển thị cho người dùng, ví dụ "1.0.0".
+  versionCode String   @db.VarChar(50)
+  changelog   String?  @db.Text
+  /// DOWNLOADABLE: tệp đã upload lên Cloudflare R2.
+  fileUrl     String?  @db.Text
+  fileName    String?  @db.VarChar(200)
+  fileSize    BigInt?
+  /// EMBED_WIDGET / MCP_SERVER: link script CDN hoặc file cấu hình.
+  scriptUrl   String?  @db.Text
+  isLatest    Boolean  @default(false)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  tool Tool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@unique([toolId, versionCode])
+  @@index([toolId, isLatest])
+  @@map("tool_versions")
 }
 
 // ---------------------------------------------------------------------------

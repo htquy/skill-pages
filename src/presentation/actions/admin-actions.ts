@@ -7,6 +7,7 @@ import {
   articleAdminCommands,
   rankingAdminCommands,
   skillAdminCommands,
+  toolAdminCommands,
   userCommands,
 } from "@/src/infrastructure/composition";
 import { ValidationError } from "@/src/domain/errors";
@@ -15,8 +16,10 @@ import type { UserRole } from "@/src/domain/identity/entities";
 import type { SaveSkillData } from "@/src/domain/skill";
 import type { SaveArticleData } from "@/src/domain/news/admin";
 import type { SaveRankingData } from "@/src/domain/ranking/admin";
+import type { SaveToolData, SaveToolPriceData, ToolBillingType, ToolType } from "@/src/domain/tool";
 import { getDictionary } from "@/src/lib/i18n";
 import type { Dict } from "@/src/lib/i18n/config";
+import { isEmptyRichText, sanitizeRichText } from "@/src/lib/rich-text";
 
 function str(fd: FormData, key: string): string {
   return String(fd.get(key) ?? "");
@@ -38,6 +41,7 @@ function revalidateAdmin() {
   revalidatePath("/admin");
   revalidatePath("/admin/skills");
   revalidatePath("/admin/articles");
+  revalidatePath("/admin/tools");
   revalidatePath("/admin/rankings");
   revalidatePath("/admin/users");
   revalidatePath("/admin/orders");
@@ -67,11 +71,13 @@ function parseSkillForm(fd: FormData, dict: Dict): SaveSkillData {
 
   const title = str(fd, "title").trim();
   const shortDescription = str(fd, "shortDescription").trim();
-  const description = str(fd, "description").trim();
+  const description = sanitizeRichText(str(fd, "description"));
   const content = str(fd, "content").trim();
   if (!title) throw new ValidationError(dict.actions.skillTitleRequired);
   if (!shortDescription) throw new ValidationError(dict.actions.skillShortDescriptionRequired);
-  if (!description) throw new ValidationError(dict.actions.skillDescriptionRequired);
+  if (!description || isEmptyRichText(description)) {
+    throw new ValidationError(dict.actions.skillDescriptionRequired);
+  }
   if (!content) throw new ValidationError(dict.actions.skillContentRequired);
 
   let price: { currency: string; amount: number } | null = null;
@@ -93,9 +99,12 @@ function parseSkillForm(fd: FormData, dict: Dict): SaveSkillData {
     description,
     accessType,
     coverImageUrl: optionalString(fd, "coverImageUrl") ?? null,
+    videoDemoUrl: optionalString(fd, "videoDemoUrl") ?? null,
     price,
     content,
-    instructions: optionalString(fd, "instructions") ?? null,
+    instructions: optionalString(fd, "instructions")
+      ? sanitizeRichText(str(fd, "instructions"))
+      : null,
     variables,
     changelog: optionalString(fd, "changelog") ?? null,
     industrySlugs: fd.getAll("industrySlug").map(String),
@@ -141,15 +150,159 @@ export async function unpublishSkillAction(id: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Tools
+// ---------------------------------------------------------------------------
+
+const TOOL_TYPES: ToolType[] = ["DOWNLOADABLE", "EMBED_WIDGET", "MCP_SERVER", "WEB_APP"];
+const TOOL_BILLING_TYPES: ToolBillingType[] = ["FREE", "ONE_TIME", "SUBSCRIPTION"];
+
+/** `appUrl` của WEB_APP cùng nằm trong `config`; đọc/ghi ở đây để không lệch nguồn dữ liệu. */
+function mergeAppUrl(
+  config: Record<string, unknown>,
+  appUrl: string | null,
+): Record<string, unknown> | null {
+  if (appUrl) return { ...config, appUrl };
+  if (!("appUrl" in config)) return Object.keys(config).length > 0 ? config : null;
+  const { appUrl: _removed, ...rest } = config;
+  return Object.keys(rest).length > 0 ? rest : null;
+}
+
+/** Mỗi gói giá là một dòng form; bỏ qua dòng trống ở cuối danh sách. */
+function parsePricePlans(fd: FormData, dict: Dict): SaveToolPriceData[] {
+  const amounts = fd.getAll("priceAmount").map(String);
+  const currencies = fd.getAll("priceCurrency").map(String);
+  const durations = fd.getAll("priceDuration").map(String);
+
+  return amounts.flatMap((raw, index) => {
+    if (!raw.trim()) return [];
+    const amountMajor = Number(raw);
+    if (!Number.isFinite(amountMajor) || amountMajor < 0) {
+      throw new ValidationError(dict.actions.toolPriceInvalid);
+    }
+    // Ô trống = vĩnh viễn, đồng bộ với gợi ý "0 là vĩnh viễn".
+    const durationRaw = (durations[index] ?? "").trim();
+    const duration = durationRaw === "" ? 0 : Number(durationRaw);
+    const currency = (currencies[index] ?? "").trim().toUpperCase() || "USD";
+    if (!Number.isInteger(duration) || duration < 0) {
+      throw new ValidationError(dict.actions.toolPriceDurationInvalid);
+    }
+    return [{ currency, amount: toMinorUnits(amountMajor, currency), durationDays: duration }];
+  });
+}
+
+function parseToolForm(fd: FormData, dict: Dict): SaveToolData {
+  const type = str(fd, "type") as ToolType;
+  if (!TOOL_TYPES.includes(type)) throw new ValidationError(dict.actions.toolTypeInvalid);
+  const billingType = str(fd, "billingType") as ToolBillingType;
+  if (!TOOL_BILLING_TYPES.includes(billingType)) {
+    throw new ValidationError(dict.actions.toolBillingInvalid);
+  }
+
+  const title = str(fd, "title").trim();
+  const shortDescription = str(fd, "shortDescription").trim();
+  const description = sanitizeRichText(str(fd, "description"));
+  if (!title) throw new ValidationError(dict.actions.toolTitleRequired);
+  if (!shortDescription) throw new ValidationError(dict.actions.toolShortDescriptionRequired);
+  if (!description || isEmptyRichText(description)) {
+    throw new ValidationError(dict.actions.toolDescriptionRequired);
+  }
+
+  const versionCode = str(fd, "versionCode").trim();
+  if (!versionCode) throw new ValidationError(dict.actions.toolVersionRequired);
+
+  let config: Record<string, unknown> = {};
+  const configRaw = optionalString(fd, "configJson");
+  if (configRaw) {
+    try {
+      const parsed = JSON.parse(configRaw) as unknown;
+      if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("not an object");
+      }
+      config = parsed as Record<string, unknown>;
+    } catch {
+      throw new ValidationError(dict.actions.toolConfigInvalid);
+    }
+  }
+
+  const appUrl = optionalString(fd, "appUrl") ?? null;
+  const fileUrl = optionalString(fd, "fileUrl") ?? null;
+  const scriptUrl = optionalString(fd, "scriptUrl") ?? null;
+  if (type === "WEB_APP" && !appUrl) throw new ValidationError(dict.actions.toolAppUrlRequired);
+  if (type === "DOWNLOADABLE" && !fileUrl && !scriptUrl) {
+    throw new ValidationError(dict.actions.toolFileRequired);
+  }
+
+  const fileSizeRaw = optionalString(fd, "fileSize");
+  const fileSize = fileSizeRaw ? Number(fileSizeRaw) : null;
+  const parsedFileSize = fileSize !== null && Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null;
+
+  return {
+    title,
+    slug: optionalString(fd, "slug") ?? "",
+    shortDescription,
+    description,
+    type,
+    billingType,
+    coverImageUrl: optionalString(fd, "coverImageUrl") ?? null,
+    videoDemoUrl: optionalString(fd, "videoDemoUrl") ?? null,
+    appUrl,
+    config: mergeAppUrl(config, appUrl),
+    prices: billingType === "FREE" ? [] : parsePricePlans(fd, dict),
+    versionCode,
+    changelog: optionalString(fd, "changelog") ?? null,
+    fileUrl,
+    fileName: optionalString(fd, "fileName") ?? null,
+    fileSize: parsedFileSize,
+    scriptUrl,
+  };
+}
+
+export async function createToolAction(fd: FormData) {
+  const admin = await requireAdmin();
+  const id = await toolAdminCommands.create(admin, parseToolForm(fd, await getDictionary()));
+  revalidateAdmin();
+  redirect(`/admin/tools/${id}`);
+}
+
+export async function updateToolAction(id: string, fd: FormData) {
+  const admin = await requireAdmin();
+  await toolAdminCommands.update(admin, id, parseToolForm(fd, await getDictionary()));
+  revalidateAdmin();
+  redirect(`/admin/tools/${id}`);
+}
+
+export async function deleteToolAction(id: string) {
+  const admin = await requireAdmin();
+  await toolAdminCommands.remove(admin, id);
+  revalidateAdmin();
+  redirect("/admin/tools");
+}
+
+export async function publishToolAction(id: string) {
+  const admin = await requireAdmin();
+  await toolAdminCommands.publish(admin, id);
+  revalidateAdmin();
+  redirect(`/admin/tools/${id}`);
+}
+
+export async function unpublishToolAction(id: string) {
+  const admin = await requireAdmin();
+  await toolAdminCommands.unpublish(admin, id);
+  revalidateAdmin();
+  redirect(`/admin/tools/${id}`);
+}
+
+// ---------------------------------------------------------------------------
 // Articles
 // ---------------------------------------------------------------------------
 
 function parseArticleForm(fd: FormData, dict: Dict): SaveArticleData {
   const title = str(fd, "title").trim();
-  const content = str(fd, "content").trim();
+  const rawContent = str(fd, "content").trim();
+  const content = sanitizeRichText(rawContent);
   const sourceName = str(fd, "sourceName").trim();
   if (!title) throw new ValidationError(dict.actions.articleTitleRequired);
-  if (!content) throw new ValidationError(dict.actions.articleContentRequired);
+  if (!content || isEmptyRichText(content)) throw new ValidationError(dict.actions.articleContentRequired);
   if (!sourceName) throw new ValidationError(dict.actions.articleSourceRequired);
 
   return {

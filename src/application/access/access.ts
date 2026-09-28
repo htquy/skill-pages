@@ -31,6 +31,14 @@ export function createAccessCommands(deps: AccessDeps) {
       return deps.access.listActiveByUser(userId);
     },
 
+    /**
+     * Danh sách skillId user đang sở hữu (chưa bị thu hồi).
+     * Trang danh sách gọi một lần rồi tra cứu trong Set để không N+1 query.
+     */
+    listOwnedSkillIds(userId: string): Promise<string[]> {
+      return deps.access.listActiveSkillIdsByUser(userId);
+    },
+
     async grantByAdmin(admin: CurrentUser, userId: string, skillId: string): Promise<SkillAccess> {
       const skill = await deps.skills.findPurchaseInfoById(skillId);
       if (!skill) {

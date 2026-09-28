@@ -10,6 +10,8 @@ import {
   TextArea,
   TextInput,
 } from "@/src/presentation/components/admin/form-field";
+import { RichTextEditor } from "@/src/presentation/components/admin/rich-text-editor";
+import { VideoDemoField } from "@/src/presentation/components/upload/video-demo-field";
 
 export function SkillForm({
   skill,
@@ -85,8 +87,13 @@ export function SkillForm({
         </Field>
       </div>
 
-      <Field label={dict.admin.forms.description} required>
-        <TextArea name="description" required defaultValue={skill?.description ?? ""} className="min-h-28" />
+      <Field label={dict.admin.forms.description} required hint={dict.admin.forms.descriptionHint}>
+        <RichTextEditor
+          name="description"
+          defaultValue={skill?.description ?? ""}
+          placeholder={dict.richText.placeholder}
+          dict={dict}
+        />
       </Field>
 
       <Field label={dict.admin.forms.promptContent} required hint={dict.admin.forms.promptContentHint}>
@@ -94,8 +101,20 @@ export function SkillForm({
       </Field>
 
       <Field label={dict.admin.forms.howToUse} hint={dict.admin.forms.howToUseHint}>
-        <TextArea name="instructions" defaultValue={skill?.instructions ?? ""} className="min-h-24" />
+        <RichTextEditor
+          name="instructions"
+          defaultValue={skill?.instructions ?? ""}
+          placeholder={dict.richText.placeholder}
+          dict={dict}
+        />
       </Field>
+
+      <VideoDemoField
+        defaultValue={skill?.videoDemoUrl ?? ""}
+        label={dict.upload.fieldLabel}
+        hint={dict.upload.fieldHint}
+        dict={dict}
+      />
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label={dict.admin.forms.inputFieldsJson} hint={dict.admin.forms.inputFieldsJsonHint}>

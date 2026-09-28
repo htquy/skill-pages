@@ -8,6 +8,7 @@ import {
   TextArea,
   TextInput,
 } from "@/src/presentation/components/admin/form-field";
+import { RichTextEditor } from "@/src/presentation/components/admin/rich-text-editor";
 
 export interface ArticleFormOptions {
   categories: { id: string; slug: string; name: string }[];
@@ -41,7 +42,12 @@ export function ArticleForm({
       </Field>
 
       <Field label={dict.admin.forms.content} required>
-        <TextArea name="content" required defaultValue={article?.content ?? ""} className="min-h-48" />
+        <RichTextEditor
+          name="content"
+          defaultValue={article?.content ?? ""}
+          placeholder={dict.richText.placeholder}
+          dict={dict}
+        />
       </Field>
 
       <div className="grid gap-5 sm:grid-cols-2">

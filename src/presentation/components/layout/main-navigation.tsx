@@ -8,6 +8,7 @@ export async function MainNavigation({ className }: { className?: string }) {
     "/": dict.nav.discover,
     "/news": dict.nav.aiNews,
     "/rankings": dict.nav.rankings,
+    "/tools": dict.nav.tools,
   };
 
   return (

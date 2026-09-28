@@ -40,6 +40,7 @@ function toSummary(skill: SkillWithSummary): SkillSummary {
     shortDescription: skill.shortDescription,
     accessType: toDomainAccess(skill.accessType),
     coverImageUrl: skill.coverImageUrl,
+    videoDemoUrl: skill.videoDemoUrl,
     viewCount: Number(skill.viewCount),
     favoriteCount: Number(skill.favoriteCount),
     ratingAverage: skill.ratingAverage === null ? null : Number(skill.ratingAverage),

@@ -23,6 +23,25 @@ body {
   color: #312e81;
 }
 
+/* Shimmer skeleton: quét ngang bằng `background-position` nên không cần
+   `overflow: hidden` cho các khối bo góc; `prefers-reduced-motion` tắt animation. */
+.skeleton {
+  background-color: #f4f4f5;
+  background-image: linear-gradient(90deg, #f4f4f5 0%, #e4e4e7 50%, #f4f4f5 100%);
+  background-repeat: no-repeat;
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -32,4 +51,70 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+/* Tiptap editor (admin rich text) */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: #a1a1aa;
+}
+
+.tiptap > * + * {
+  margin-top: 0.5rem;
+}
+
+.tiptap h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.tiptap h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.tiptap ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+
+.tiptap ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+
+.tiptap li + li {
+  margin-top: 0.25rem;
+}
+
+.tiptap blockquote {
+  border-left: 2px solid #ddd6fe;
+  padding-left: 0.75rem;
+  color: #52525b;
+}
+
+.tiptap pre {
+  background: #18181b;
+  color: #f4f4f5;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  font-size: 0.8125rem;
+  overflow-x: auto;
+}
+
+.tiptap code {
+  background: #f4f4f5;
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.85em;
+}
+
+.tiptap a {
+  color: #4f46e5;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
