@@ -18,7 +18,7 @@ function BankRow({ label, value, dict }: { label: string; value: string; dict: D
       <span className="shrink-0 text-sm text-zinc-500">{label}</span>
       <span className="flex items-center gap-2">
         <span className="font-mono text-sm font-medium text-zinc-900">{value}</span>
-        <CopyButton text={value} dict={dict} />
+        <CopyButton text={value} dict={dict} iconOnly />
       </span>
     </div>
   );

@@ -28,13 +28,17 @@ export function NavLink({
         className,
       )}
     >
-      {label}
-      {isActive ? (
+      {/* Bar nằm ngoài luồng và luôn được render nên đổi trạng thái không làm nhảy layout. */}
+      <span className="relative inline-block">
+        {label}
         <span
-          className="mt-0.5 block h-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"
           aria-hidden="true"
+          className={cn(
+            "absolute inset-x-0 -bottom-[3px] h-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-opacity duration-200",
+            isActive ? "opacity-100" : "opacity-0",
+          )}
         />
-      ) : null}
+      </span>
     </Link>
   );
 }
