@@ -1,6 +1,7 @@
 import { createSkillQueries } from "@/src/application/skills/queries";
 import { createNewsQueries } from "@/src/application/news/queries";
 import { createRankingQueries } from "@/src/application/rankings/queries";
+import { createToolQueries } from "@/src/application/tools/queries";
 import { createTaxonomyQueries } from "@/src/application/taxonomy/queries";
 import { createAccountQueries } from "@/src/application/account/queries";
 import { createEngagementCommands } from "@/src/application/engagement/commands";
@@ -12,9 +13,11 @@ import { createUserCommands } from "@/src/application/users/users";
 import { createStatistics } from "@/src/application/statistics/statistics";
 import { createSkillAdminCommands } from "@/src/application/admin/skills-admin";
 import { createArticleAdminCommands } from "@/src/application/admin/articles-admin";
+import { createToolAdminCommands } from "@/src/application/admin/tools-admin";
 import { createRankingAdminCommands } from "@/src/application/admin/rankings-admin";
 
 import { prismaSkillRepository } from "@/src/infrastructure/repositories/prisma-skill-repository";
+import { prismaToolRepository } from "@/src/infrastructure/repositories/prisma-tool-repository";
 import { prismaNewsRepository } from "@/src/infrastructure/repositories/prisma-news-repository";
 import { prismaRankingRepository } from "@/src/infrastructure/repositories/prisma-ranking-repository";
 import { prismaTaxonomyRepository } from "@/src/infrastructure/repositories/prisma-taxonomy-repository";
@@ -25,6 +28,7 @@ import { prismaSkillAccessRepository } from "@/src/infrastructure/repositories/p
 import { prismaAuditLogRepository } from "@/src/infrastructure/repositories/prisma-audit-log-repository";
 import { prismaUserRepository } from "@/src/infrastructure/repositories/prisma-user-repository";
 import { prismaSkillAdminRepository } from "@/src/infrastructure/repositories/prisma-skill-admin-repository";
+import { prismaToolAdminRepository } from "@/src/infrastructure/repositories/prisma-tool-admin-repository";
 import { prismaNewsAdminRepository, prismaNewsCategoryAdminRepository } from "@/src/infrastructure/repositories/prisma-news-admin-repository";
 import { prismaRankingAdminRepository } from "@/src/infrastructure/repositories/prisma-ranking-admin-repository";
 import { prismaWebhookEventRepository } from "@/src/infrastructure/repositories/prisma-webhook-event-repository";
@@ -45,6 +49,7 @@ import { siteConfig } from "@/src/lib/site";
 const paymentProvider = isSePayConfigured() ? sePayPaymentProvider : mockPaymentProvider;
 
 export const skillQueries = createSkillQueries({ skills: prismaSkillRepository });
+export const toolQueries = createToolQueries({ tools: prismaToolRepository });
 export const newsQueries = createNewsQueries({ news: prismaNewsRepository });
 export const rankingQueries = createRankingQueries({ rankings: prismaRankingRepository });
 export const taxonomyQueries = createTaxonomyQueries({ taxonomy: prismaTaxonomyRepository });
@@ -102,6 +107,11 @@ export const statistics = createStatistics({
 
 export const skillAdminCommands = createSkillAdminCommands({
   skills: prismaSkillAdminRepository,
+  audit: prismaAuditLogRepository,
+});
+
+export const toolAdminCommands = createToolAdminCommands({
+  tools: prismaToolAdminRepository,
   audit: prismaAuditLogRepository,
 });
 

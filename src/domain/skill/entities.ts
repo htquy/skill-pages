@@ -21,6 +21,7 @@ export interface SkillSummary {
   shortDescription: string;
   accessType: SkillAccessType;
   coverImageUrl: string | null;
+  videoDemoUrl: string | null;
   viewCount: number;
   favoriteCount: number;
   ratingAverage: number | null;

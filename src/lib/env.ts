@@ -66,3 +66,56 @@ export function getSePayConfig(): SePayConfig {
       process.env.SEPAY_EXPECTED_ACCOUNT_NUMBER ?? process.env.SEPAY_ACCOUNT_NUMBER ?? "",
   };
 }
+
+/**
+ * Cấu hình Cloudflare R2 (S3-compatible) dùng cho upload video demo.
+ * Endpoint được suy ra từ account id: `https://<account>.r2.cloudflarestorage.com`.
+ */
+export interface R2Config {
+  accountId: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  bucket: string;
+  /** Domain public phục vụ file (r2.dev hoặc custom domain). */
+  publicUrl: string;
+  endpoint: string;
+}
+
+const R2_REQUIRED_VARS = [
+  "R2_ACCOUNT_ID",
+  "R2_ACCESS_KEY_ID",
+  "R2_SECRET_ACCESS_KEY",
+  "R2_BUCKET_NAME",
+  "R2_PUBLIC_URL",
+] as const;
+
+export function isR2Configured(): boolean {
+  return R2_REQUIRED_VARS.every((name) => Boolean(process.env[name]));
+}
+
+export function getR2Config(): R2Config {
+  const values = R2_REQUIRED_VARS.map((name) => {
+    const value = process.env[name];
+    if (!value) {
+      throw new Error(`Missing required environment variable: ${name}`);
+    }
+    return value;
+  });
+
+  const [accountId, accessKeyId, secretAccessKey, bucket, publicUrl] = values as [
+    string,
+    string,
+    string,
+    string,
+    string,
+  ];
+
+  return {
+    accountId,
+    accessKeyId,
+    secretAccessKey,
+    bucket,
+    publicUrl: publicUrl.replace(/\/+$/, ""),
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+  };
+}

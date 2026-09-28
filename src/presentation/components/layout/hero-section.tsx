@@ -68,7 +68,7 @@ export async function HeroSection() {
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
             <Link
-              href="/rankings"
+              href="/tools"
               className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-medium text-zinc-900 shadow-sm transition-colors hover:bg-zinc-50"
             >
               {dict.hero.browseTools}

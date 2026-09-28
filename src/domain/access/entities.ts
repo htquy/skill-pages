@@ -26,6 +26,7 @@ export interface SkillAccessRepository {
   findActive(userId: string, skillId: string): Promise<SkillAccess | null>;
   listActiveByUser(userId: string): Promise<SkillAccessView[]>;
   listActiveByUserFetch(userId: string): Promise<SkillAccess[]>;
+  listActiveSkillIdsByUser(userId: string): Promise<string[]>;
   grant(input: {
     userId: string;
     skillId: string;

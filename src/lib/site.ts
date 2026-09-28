@@ -9,6 +9,7 @@ export const publicNav = [
   { href: "/" },
   { href: "/news" },
   { href: "/rankings" },
+  { href: "/tools" },
 ] as const;
 
 export const defaultPageSize = 12;

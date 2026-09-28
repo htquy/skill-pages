@@ -28,7 +28,8 @@ export function formatDateTime(date: Date | string): string {
 }
 
 export function readingMinutes(body: string): number {
-  const words = body.trim().split(/\s+/).length;
+  const text = body.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  const words = text.length === 0 ? 0 : text.split(" ").length;
   return Math.max(1, Math.round(words / 200));
 }
 

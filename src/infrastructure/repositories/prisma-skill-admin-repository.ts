@@ -107,6 +107,7 @@ export const prismaSkillAdminRepository: SkillAdminRepository = {
       accessType: skill.accessType,
       status: skill.status as SkillStatus,
       coverImageUrl: skill.coverImageUrl,
+      videoDemoUrl: skill.videoDemoUrl,
       authorId: skill.authorId,
       publishedAt: skill.publishedAt,
       viewCount: Number(skill.viewCount),
@@ -139,6 +140,7 @@ export const prismaSkillAdminRepository: SkillAdminRepository = {
         status: "DRAFT",
         authorId,
         coverImageUrl: data.coverImageUrl,
+        videoDemoUrl: data.videoDemoUrl,
         versions: {
           create: {
             version: 1,
@@ -186,6 +188,7 @@ export const prismaSkillAdminRepository: SkillAdminRepository = {
           description: data.description,
           accessType: data.accessType,
           coverImageUrl: data.coverImageUrl,
+          videoDemoUrl: data.videoDemoUrl,
           prices: {
             deleteMany: {},
             create:

@@ -1,17 +1,24 @@
 export const dynamic = "force-dynamic";
 
+import { Suspense } from "react";
 import { Container } from "@/src/presentation/components/layout/container";
 import { SkillGrid } from "@/src/presentation/components/skill/skill-grid";
+import { SkillGridSkeleton } from "@/src/presentation/components/skill/skill-grid-skeleton";
 import { EmptyState } from "@/src/presentation/components/shared/empty-state";
-import { toSkillCardViewModel } from "@/src/presentation/view-models/skill";
-import { accountQueries } from "@/src/infrastructure/composition";
+import { Skeleton } from "@/src/presentation/components/shared/skeleton";
+import { toSkillCardViewModel, createOwnershipLookup } from "@/src/presentation/view-models/skill";
+import { accountQueries, accessCommands } from "@/src/infrastructure/composition";
 import { requireUser } from "@/src/infrastructure/authentication/authorization";
+import type { CurrentUser } from "@/src/domain/identity/entities";
 import { getDictionary, trans } from "@/src/lib/i18n";
 
-export default async function SavedSkillsPage() {
-  const user = await requireUser();
-  const saved = await accountQueries.listSavedSkills(user);
-  const cards = saved.map(toSkillCardViewModel);
+async function SavedSkills({ user }: { user: CurrentUser }) {
+  const [saved, ownedSkillIds] = await Promise.all([
+    accountQueries.listSavedSkills(user),
+    accessCommands.listOwnedSkillIds(user.id),
+  ]);
+  const isOwned = createOwnershipLookup(ownedSkillIds);
+  const cards = saved.map((skill) => toSkillCardViewModel(skill, { isOwned: isOwned(skill.id) }));
   const dict = await getDictionary();
 
   const subtitle =
@@ -22,7 +29,7 @@ export default async function SavedSkillsPage() {
       : dict.account.libraryEmpty;
 
   return (
-    <Container className="py-12 md:py-16">
+    <>
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
           {dict.account.savedSkills}
@@ -33,11 +40,34 @@ export default async function SavedSkillsPage() {
       {cards.length > 0 ? (
         <SkillGrid skills={cards} />
       ) : (
-        <EmptyState
-          title={dict.account.emptyTitle}
-          description={dict.account.emptyDescription}
-        />
+        <EmptyState title={dict.account.emptyTitle} description={dict.account.emptyDescription} />
       )}
+    </>
+  );
+}
+
+function SavedSkillsSkeleton({ label }: { label: string }) {
+  return (
+    <>
+      <div className="mb-8">
+        <Skeleton className="h-9 w-64 rounded-md sm:h-12" />
+        <Skeleton className="mt-3 h-7 w-80 max-w-full rounded-md" />
+      </div>
+
+      <SkillGridSkeleton count={6} label={label} />
+    </>
+  );
+}
+
+export default async function SavedSkillsPage() {
+  const user = await requireUser();
+  const dict = await getDictionary();
+
+  return (
+    <Container className="py-12 md:py-16">
+      <Suspense fallback={<SavedSkillsSkeleton label={dict.common.loading} />}>
+        <SavedSkills user={user} />
+      </Suspense>
     </Container>
   );
 }

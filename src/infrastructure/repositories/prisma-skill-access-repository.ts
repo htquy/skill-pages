@@ -82,6 +82,14 @@ export const prismaSkillAccessRepository: SkillAccessRepository = {
     return rows.map(toAccess);
   },
 
+  async listActiveSkillIdsByUser(userId) {
+    const rows = await prisma.skillAccess.findMany({
+      where: { userId, revokedAt: null },
+      select: { skillId: true },
+    });
+    return rows.map((row) => row.skillId);
+  },
+
   async grant(input) {
     const row = await prisma.skillAccess.upsert({
       where: { userId_skillId: { userId: input.userId, skillId: input.skillId } },

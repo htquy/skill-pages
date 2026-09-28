@@ -26,6 +26,7 @@ export interface SkillAdminDetail {
   accessType: SkillAccessType;
   status: SkillStatus;
   coverImageUrl: string | null;
+  videoDemoUrl: string | null;
   authorId: string | null;
   publishedAt: Date | null;
   viewCount: number;
@@ -53,6 +54,7 @@ export interface SaveSkillData {
   description: string;
   accessType: SkillAccessType;
   coverImageUrl?: string | null;
+  videoDemoUrl?: string | null;
   price?: { currency: string; amount: number } | null;
   content: string;
   instructions?: string | null;

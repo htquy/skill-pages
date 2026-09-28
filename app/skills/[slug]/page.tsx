@@ -10,11 +10,14 @@ import { SkillBadge } from "@/src/presentation/components/skill/skill-badge";
 import { StarRating } from "@/src/presentation/components/skill/star-rating";
 import { SaveButton } from "@/src/presentation/components/skill/save-button";
 import { CopyButton } from "@/src/presentation/components/shared/copy-button";
-import { BuyNowButton } from "@/src/presentation/components/checkout/buy-now-button";
+import { PurchasePanel } from "@/src/presentation/components/checkout/purchase-panel";
+import { OwnedBadge } from "@/src/presentation/components/shared/owned-badge";
+import { RichText } from "@/src/presentation/components/shared/rich-text";
 import { skillQueries, engagementCommands, accessCommands } from "@/src/infrastructure/composition";
 import { getCurrentUser } from "@/src/infrastructure/authentication/authorization";
 import { formatMoney } from "@/src/domain/shared";
 import { formatDate, formatNumber } from "@/src/lib/utils";
+import { getVideoEmbedUrl, isDirectVideoUrl } from "@/src/lib/video";
 import { getDictionary, trans } from "@/src/lib/i18n";
 
 type Props = {
@@ -74,8 +77,14 @@ export default async function SkillDetailPage({ params }: Props) {
 
   const [dict, user] = await Promise.all([getDictionary(), getCurrentUser()]);
   const isFavorite = user ? await engagementCommands.isFavorite(user.id, slug) : false;
-  const hasAccess = skill.accessType === "FREE" || Boolean(user && await accessCommands.hasActiveAccess(user.id, skill.id));
+  const isOwned = skill.accessType === "PAID" && Boolean(user && (await accessCommands.hasActiveAccess(user.id, skill.id)));
+  const hasAccess = skill.accessType === "FREE" || isOwned;
   const visibleContent = hasAccess ? skill.content : dict.skillDetail.previewLocked;
+  // Chỉ nhúng được nguồn có iframe (YouTube/Vimeo); file mp4/webm dùng thẻ
+  // `<video>`; link lạ chỉ hiện để mở tab mới vì không rõ cách nhúng.
+  const videoEmbedUrl = skill.videoDemoUrl ? getVideoEmbedUrl(skill.videoDemoUrl) : null;
+  const videoFileUrl =
+    skill.videoDemoUrl && isDirectVideoUrl(skill.videoDemoUrl) ? skill.videoDemoUrl : null;
 
   if (user) {
     void engagementCommands
@@ -108,6 +117,7 @@ export default async function SkillDetailPage({ params }: Props) {
         <article className="lg:col-span-2">
           <div className="flex flex-wrap items-center gap-2">
             <SkillBadge accessType={skill.accessType} />
+            {isOwned ? <OwnedBadge dict={dict} /> : null}
             <StarRating rating={skill.ratingAverage ?? 0} count={skill.ratingCount} />
           </div>
 
@@ -180,18 +190,56 @@ export default async function SkillDetailPage({ params }: Props) {
           {skill.instructions ? (
             <section className="mt-10">
               <h2 className="text-lg font-semibold text-zinc-900">{dict.skillDetail.howToUse}</h2>
-              <div className="mt-3 whitespace-pre-wrap rounded-2xl border border-violet-100 bg-violet-50/50 p-5 text-sm leading-relaxed text-zinc-700">
-                {skill.instructions}
-              </div>
+              <RichText
+                html={skill.instructions}
+                className="mt-3 rounded-2xl border border-violet-100 bg-violet-50/50 p-5 text-sm"
+                fallbackClassName="text-sm text-zinc-700"
+              />
             </section>
           ) : null}
 
           {skill.description ? (
             <section className="mt-10">
               <h2 className="text-lg font-semibold text-zinc-900">{dict.skillDetail.about}</h2>
-              <div className="mt-3 whitespace-pre-wrap text-base leading-relaxed text-zinc-700">
-                {skill.description}
+              <RichText html={skill.description} className="mt-3" />
+            </section>
+          ) : null}
+
+          {skill.videoDemoUrl ? (
+            <section className="mt-10">
+              <h2 className="text-lg font-semibold text-zinc-900">{dict.skillDetail.videoDemo}</h2>
+              <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-950 shadow-sm">
+                {videoEmbedUrl ? (
+                  <iframe
+                    src={videoEmbedUrl}
+                    title={dict.skillDetail.videoDemo}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    loading="lazy"
+                    className="aspect-video w-full"
+                  />
+                ) : videoFileUrl ? (
+                  <video
+                    src={videoFileUrl}
+                    controls
+                    preload="metadata"
+                    playsInline
+                    className="aspect-video w-full"
+                  />
+                ) : (
+                  <div className="flex aspect-video w-full items-center justify-center p-6 text-center text-sm text-zinc-300">
+                    {dict.skillDetail.videoDemoOpen}
+                  </div>
+                )}
               </div>
+              <a
+                href={skill.videoDemoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex text-xs font-medium text-indigo-600 underline-offset-2 hover:underline"
+              >
+                {dict.skillDetail.videoDemoOpen}
+              </a>
             </section>
           ) : null}
 
@@ -244,13 +292,16 @@ export default async function SkillDetailPage({ params }: Props) {
               </div>
             )}
 
-            {skill.accessType === "PAID" && !hasAccess ? (
+            {skill.accessType === "PAID" ? (
               <div className="mt-4">
-                <BuyNowButton
-                  skillId={skill.id}
-                  skillSlug={skill.slug}
-                  skillTitle={skill.title}
-                  dict={dict}
+                <PurchasePanel
+                  skill={{
+                    id: skill.id,
+                    slug: skill.slug,
+                    title: skill.title,
+                    accessType: skill.accessType,
+                    isOwned,
+                  }}
                   variant="detail"
                 />
               </div>

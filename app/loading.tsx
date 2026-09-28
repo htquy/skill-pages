@@ -1,13 +1,20 @@
+import { Skeleton } from "@/src/presentation/components/shared/skeleton";
 import { getDictionary } from "@/src/lib/i18n";
 
 export default async function RootLoading() {
   const dict = await getDictionary();
 
   return (
-    <div className="flex flex-1 items-center justify-center px-6 py-24" role="status" aria-live="polite">
-      <div className="flex flex-col items-center gap-3">
-        <span className="size-8 animate-spin rounded-full border-2 border-zinc-200 border-t-indigo-600" />
-        <span className="text-sm text-zinc-500">{dict.common.loading}</span>
+    <div
+      className="flex flex-1 items-center justify-center px-6 py-24"
+      role="status"
+      aria-live="polite"
+    >
+      <span className="sr-only">{dict.common.loading}</span>
+      <div aria-hidden="true" className="w-full max-w-xs space-y-3">
+        <Skeleton className="h-4 w-1/3 rounded-md" />
+        <Skeleton className="h-3 w-full rounded-md" />
+        <Skeleton className="h-3 w-4/5 rounded-md" />
       </div>
     </div>
   );

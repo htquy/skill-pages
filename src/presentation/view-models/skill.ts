@@ -8,6 +8,8 @@ export interface SkillCardViewModel {
   description: string;
   accessType: SkillSummary["accessType"];
   coverImageUrl: string | null;
+  videoDemoUrl: string | null;
+  isOwned: boolean;
   categories: string[];
   industries: string[];
   useCases: string[];
@@ -18,7 +20,10 @@ export interface SkillCardViewModel {
   viewCountLabel: string;
 }
 
-export function toSkillCardViewModel(skill: SkillSummary): SkillCardViewModel {
+export function toSkillCardViewModel(
+  skill: SkillSummary,
+  options: { isOwned?: boolean } = {},
+): SkillCardViewModel {
   return {
     id: skill.id,
     slug: skill.slug,
@@ -26,6 +31,8 @@ export function toSkillCardViewModel(skill: SkillSummary): SkillCardViewModel {
     description: skill.shortDescription,
     accessType: skill.accessType,
     coverImageUrl: skill.coverImageUrl,
+    videoDemoUrl: skill.videoDemoUrl,
+    isOwned: options.isOwned ?? false,
     categories: skill.categories.map((c) => c.name),
     industries: skill.industries.map((i) => i.name),
     useCases: skill.useCases.map((u) => u.name),
@@ -35,4 +42,10 @@ export function toSkillCardViewModel(skill: SkillSummary): SkillCardViewModel {
     favoriteCountLabel: formatNumber(skill.favoriteCount),
     viewCountLabel: formatNumber(skill.viewCount),
   };
+}
+
+/** Set skillId đã sở hữu để tra cứu O(1) khi map sang view model. */
+export function createOwnershipLookup(ownedSkillIds: string[]): (skillId: string) => boolean {
+  const owned = new Set(ownedSkillIds);
+  return (skillId) => owned.has(skillId);
 }

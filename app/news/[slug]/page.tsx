@@ -7,9 +7,11 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, ExternalLink, Clock } from "lucide-react";
 import { Container } from "@/src/presentation/components/layout/container";
 import { NewsGrid } from "@/src/presentation/components/news/news-grid";
+import { RichText } from "@/src/presentation/components/shared/rich-text";
 import { toNewsCardViewModel } from "@/src/presentation/view-models/news";
 import { newsQueries } from "@/src/infrastructure/composition";
 import { formatDate } from "@/src/lib/utils";
+import { toPlainText } from "@/src/lib/rich-text";
 import { getDictionary, trans } from "@/src/lib/i18n";
 
 type Props = {
@@ -22,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!article) return {};
   return {
     title: article.title,
-    description: article.excerpt ?? article.content.slice(0, 150),
+    description: article.excerpt ?? toPlainText(article.content).slice(0, 150),
     openGraph: {
       title: article.title,
       description: article.excerpt ?? undefined,
@@ -38,11 +40,6 @@ export default async function NewsArticlePage({ params }: Props) {
   if (!article) notFound();
 
   const dict = await getDictionary();
-
-  const content = article.content
-    .split(/\n{2,}/)
-    .map((block) => block.trim())
-    .filter(Boolean);
 
   return (
     <Container className="max-w-3xl py-10 md:py-14">
@@ -99,11 +96,7 @@ export default async function NewsArticlePage({ params }: Props) {
           </div>
         ) : null}
 
-        <div className="mt-8 space-y-5 text-base leading-relaxed text-zinc-700">
-          {content.map((block, index) => (
-            <p key={index}>{block}</p>
-          ))}
-        </div>
+        <RichText html={article.content} className="mt-8" />
 
         {article.sourceUrl ? (
           <a
