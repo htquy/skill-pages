@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, CheckCircle2, Clock, Loader2, X } from "lucide-react";
 import { QrPaymentPanel, type BankTransferDetails } from "@/src/presentation/components/checkout/qr-payment-panel";
@@ -32,32 +32,8 @@ export interface PaymentModalProps {
   onPaid: () => void;
 }
 
-const COUNTDOWN_TICK_MS = 1000;
-
-function formatCountdown(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const minutes = Math.floor(total / 60);
-  const seconds = total % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-}
-
-/** Hết hạn ở client chỉ để hiển thị; nguồn chân lý vẫn là `expiresAt` ở server. */
-function useCountdown(expiresAt: string | null | undefined, active: boolean): number {
-  const [remaining, setRemaining] = useState(() =>
-    expiresAt ? Math.max(0, new Date(expiresAt).getTime() - Date.now()) : 0,
-  );
-
-  useEffect(() => {
-    if (!expiresAt || !active) return;
-
-    const tick = () => setRemaining(Math.max(0, new Date(expiresAt).getTime() - Date.now()));
-    tick();
-    const timer = setInterval(tick, COUNTDOWN_TICK_MS);
-    return () => clearInterval(timer);
-  }, [expiresAt, active]);
-
-  return remaining;
-}
+/** Subscription rỗng: `useSyncExternalStore` chỉ cần một hàm no-op ổn định. */
+const emptySubscribe = () => () => {};
 
 export function PaymentModal({
   open,
@@ -67,7 +43,6 @@ export function PaymentModal({
   email,
   errorMessage,
   details,
-  expiresAt,
   orderId,
   orderCode,
   dict,
@@ -75,10 +50,13 @@ export function PaymentModal({
   onRetry,
   onPaid,
 }: PaymentModalProps) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // `useSyncExternalStore` trả `false` khi SSR/hydrate và `true` sau đó, thay cho
+  // mẫu `useEffect(() => setMounted(true))` vốn gây cascading render.
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
@@ -86,7 +64,6 @@ export function PaymentModal({
 
   const pollingActive = open && stage === "qr" && Boolean(orderId);
   const { snapshot, checking, checkNow } = useOrderStatusPolling(pollingActive ? orderId : null);
-  const remaining = useCountdown(expiresAt, pollingActive);
 
   const status: OrderStatusSnapshot["status"] | null = snapshot?.status ?? null;
   const paid = status === "PAID";

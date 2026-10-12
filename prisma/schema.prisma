@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["public", "authentication", "catalog", "payment", "apps", "audit", "ai"]
 }
 
 // ---------------------------------------------------------------------------
@@ -14,11 +15,13 @@ datasource db {
 enum UserRole {
   CUSTOMER
   ADMIN
+  @@schema("authentication")
 }
 
 enum UserStatus {
   ACTIVE
   BLOCKED
+  @@schema("authentication")
 }
 
 enum OrderStatus {
@@ -28,6 +31,7 @@ enum OrderStatus {
   CANCELED
   FAILED
   REFUNDED
+  @@schema("payment")
 }
 
 enum PaymentStatus {
@@ -36,17 +40,20 @@ enum PaymentStatus {
   FAILED
   REVERSED
   REFUNDED
+  @@schema("payment")
 }
 
 enum SkillAccessSource {
   ORDER
   ADMIN_GRANT
   PROMOTION
+  @@schema("payment")
 }
 
 enum SkillAccessType {
   FREE
   PAID
+  @@schema("catalog")
 }
 
 enum WebhookEventStatus {
@@ -54,17 +61,20 @@ enum WebhookEventStatus {
   MATCHED
   REJECTED
   FAILED
+  @@schema("payment")
 }
 
 enum ContentStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+  @@schema("catalog")
 }
 
 enum AIToolStatus {
   ACTIVE
   INACTIVE
+  @@schema("catalog")
 }
 
 enum RankingPeriodType {
@@ -72,11 +82,13 @@ enum RankingPeriodType {
   MONTH
   QUARTER
   ALL_TIME
+  @@schema("catalog")
 }
 
 enum RankingStatus {
   DRAFT
   PUBLISHED
+  @@schema("catalog")
 }
 
 enum ToolType {
@@ -84,12 +96,14 @@ enum ToolType {
   EMBED_WIDGET // Widget nhúng Web doanh nghiệp (Chatbox, Popup...)
   MCP_SERVER // MCP Server cho AI Agent
   WEB_APP // Web App dùng trực tiếp
+  @@schema("catalog")
 }
 
 enum ToolBillingType {
   FREE // Miễn phí
   ONE_TIME // Mua đứt 1 lần
   SUBSCRIPTION // Mua/gia hạn theo chu kỳ (tháng, năm)
+  @@schema("catalog")
 }
 
 // ---------------------------------------------------------------------------
@@ -117,8 +131,13 @@ model User {
   orders      Order[]
   skillAccess SkillAccess[]
   auditLogs   AuditLog[]      @relation("AuditActor")
+  subscriptions UserSubscription[]
+  oauthAccessTokens OAuthAccessToken[]
+  oauthRefreshTokens OAuthRefreshToken[]
+  authorizationCodes AuthorizationCode[]
 
   @@map("users")
+  @@schema("authentication")
 }
 
 model Account {
@@ -138,6 +157,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@schema("authentication")
 }
 
 model Session {
@@ -149,6 +169,7 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
+  @@schema("authentication")
 }
 
 model VerificationToken {
@@ -157,6 +178,7 @@ model VerificationToken {
   expires    DateTime @db.Timestamptz(3)
 
   @@unique([identifier, token])
+  @@schema("authentication")
 }
 
 // ---------------------------------------------------------------------------
@@ -175,6 +197,7 @@ model Industry {
   rankings Ranking[]
 
   @@map("industries")
+  @@schema("catalog")
 }
 
 model SkillCategory {
@@ -189,6 +212,7 @@ model SkillCategory {
   rankings Ranking[]
 
   @@map("skill_categories")
+  @@schema("catalog")
 }
 
 model UseCase {
@@ -200,6 +224,7 @@ model UseCase {
   updatedAt   DateTime @updatedAt @db.Timestamptz(3)
 
   skills SkillUseCaseLink[]
+  @@schema("catalog")
 }
 
 model AITool {
@@ -219,6 +244,7 @@ model AITool {
   clicks         ToolClick[]
 
   @@index([status])
+  @@schema("catalog")
 }
 
 // ---------------------------------------------------------------------------
@@ -261,6 +287,7 @@ model Skill {
   @@index([accessType])
   @@index([favoriteCount])
   @@index([createdAt])
+  @@schema("catalog")
 }
 
 model SkillVersion {
@@ -277,6 +304,7 @@ model SkillVersion {
 
   @@unique([skillId, version])
   @@index([skillId, version])
+  @@schema("catalog")
 }
 
 model SkillPrice {
@@ -290,6 +318,7 @@ model SkillPrice {
   skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
 
   @@index([skillId, isActive])
+  @@schema("catalog")
 }
 
 model SkillCategoryLink {
@@ -301,6 +330,7 @@ model SkillCategoryLink {
 
   @@id([skillId, categoryId])
   @@index([categoryId, skillId])
+  @@schema("catalog")
 }
 
 model SkillIndustryLink {
@@ -312,6 +342,7 @@ model SkillIndustryLink {
 
   @@id([skillId, industryId])
   @@index([industryId, skillId])
+  @@schema("catalog")
 }
 
 model SkillUseCaseLink {
@@ -323,6 +354,7 @@ model SkillUseCaseLink {
 
   @@id([skillId, useCaseId])
   @@index([useCaseId, skillId])
+  @@schema("catalog")
 }
 
 model SkillToolLink {
@@ -334,6 +366,7 @@ model SkillToolLink {
 
   @@id([skillId, toolId])
   @@index([toolId, skillId])
+  @@schema("catalog")
 }
 
 // ---------------------------------------------------------------------------
@@ -363,6 +396,7 @@ model NewsArticle {
   @@index([sourceName])
   @@index([categoryId, status])
   @@map("news_articles")
+  @@schema("catalog")
 }
 
 model NewsCategory {
@@ -375,6 +409,7 @@ model NewsCategory {
   articles NewsArticle[] @relation("NewsArticleCategory")
 
   @@map("news_categories")
+  @@schema("catalog")
 }
 
 model NewsToolLink {
@@ -386,6 +421,7 @@ model NewsToolLink {
 
   @@id([articleId, toolId])
   @@index([toolId, articleId])
+  @@schema("catalog")
 }
 
 // ---------------------------------------------------------------------------
@@ -412,6 +448,7 @@ model Ranking {
   @@index([status])
   @@index([industryId, status])
   @@index([categoryId, status])
+  @@schema("catalog")
 }
 
 model RankingEntry {
@@ -430,6 +467,7 @@ model RankingEntry {
   @@unique([rankingId, toolId])
   @@index([rankingId, rank])
   @@index([toolId])
+  @@schema("catalog")
 }
 
 // ---------------------------------------------------------------------------
@@ -446,6 +484,7 @@ model SkillFavorite {
 
   @@id([userId, skillId])
   @@index([skillId, createdAt])
+  @@schema("catalog")
 }
 
 model SkillView {
@@ -460,6 +499,7 @@ model SkillView {
 
   @@index([skillId, createdAt])
   @@index([userId, createdAt])
+  @@schema("catalog")
 }
 
 model ToolClick {
@@ -473,6 +513,7 @@ model ToolClick {
   user User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([toolId, createdAt])
+  @@schema("catalog")
 }
 
 // ---------------------------------------------------------------------------
@@ -511,6 +552,7 @@ model Tool {
   @@index([type, status])
   @@index([billingType])
   @@map("tools")
+  @@schema("catalog")
 }
 
 model ToolPrice {
@@ -528,6 +570,7 @@ model ToolPrice {
 
   @@index([toolId, isActive])
   @@map("tool_prices")
+  @@schema("catalog")
 }
 
 model ToolVersion {
@@ -550,6 +593,7 @@ model ToolVersion {
   @@unique([toolId, versionCode])
   @@index([toolId, isLatest])
   @@map("tool_versions")
+  @@schema("catalog")
 }
 
 // ---------------------------------------------------------------------------
@@ -588,6 +632,7 @@ model Order {
   @@index([createdAt])
   @@index([status, expiresAt])
   @@map("orders")
+  @@schema("payment")
 }
 
 model PaymentTransaction {
@@ -609,6 +654,7 @@ model PaymentTransaction {
   @@index([orderId])
   @@index([status])
   @@map("payment_transactions")
+  @@schema("payment")
 }
 
 // Nhật ký thô mọi webhook nhận về: đối soát, chống trùng lặp và debug.
@@ -647,6 +693,7 @@ model WebhookEvent {
   @@index([referenceNumber])
   @@index([receivedAt])
   @@map("webhook_events")
+  @@schema("payment")
 }
 
 model SkillAccess {
@@ -667,6 +714,7 @@ model SkillAccess {
   @@unique([userId, skillId])
   @@index([skillId])
   @@map("skill_accesses")
+  @@schema("payment")
 }
 
 // ---------------------------------------------------------------------------
@@ -690,4 +738,407 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([createdAt])
   @@map("audit_logs")
+  @@schema("audit")
 }
+
+// ---------------------------------------------------------------------------
+// OAuth2 / OIDC provider (schema: authentication)
+// ---------------------------------------------------------------------------
+
+model OAuthClient {
+  id           String   @id @default(uuid())
+  name         String   @db.VarChar(160)
+  /// Public client_id g?i t? app/web/tool b�n th? ba.
+  clientId     String   @unique @db.VarChar(120)
+  /// SHA-256 hash c?a client secret; client public (desktop/mobile/PKCE-only) th� null.
+  clientSecretHash String? @db.VarChar(128)
+  /// Danh s�ch redirect_uri du?c ph�p (authorize ph?i exact-match).
+  redirectUris Json
+  /// Scopes client du?c ph�p xin, v� d? ["openid","profile","email"].
+  scopes       Json
+  /// Public client (SPA/desktop/mobile) kh�ng c� secret, b?t bu?c PKCE.
+  isPublic     Boolean  @default(true)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  authorizationCodes AuthorizationCode[]
+  accessTokens       OAuthAccessToken[]
+  refreshTokens      OAuthRefreshToken[]
+
+  @@index([isActive])
+  @@map("oauth_clients")
+  @@schema("authentication")
+}
+
+model AuthorizationCode {
+  id            String   @id @default(uuid())
+  code          String   @unique @db.VarChar(160)
+  clientId      String
+  userId        String
+  redirectUri   String   @db.Text
+  scopes        Json
+  /// PKCE: code_challenge nh?n t? authorize.
+  codeChallenge String   @db.VarChar(256)
+  codeChallengeMethod String @db.VarChar(16)
+  expiresAt     DateTime @db.Timestamptz(3)
+  consumedAt    DateTime? @db.Timestamptz(3)
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  client OAuthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, createdAt])
+  @@map("oauth_authorization_codes")
+  @@schema("authentication")
+}
+
+model OAuthAccessToken {
+  id        String   @id @default(uuid())
+  /// SHA-256 hash c?a token (JWT ho?c opaque), kh�ng luu plaintext.
+  tokenHash String   @unique @db.VarChar(128)
+  clientId  String
+  userId    String
+  scopes    Json
+  expiresAt DateTime @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  client OAuthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokens OAuthRefreshToken[]
+
+  @@index([clientId])
+  @@index([userId])
+  @@map("oauth_access_tokens")
+  @@schema("authentication")
+}
+
+model OAuthRefreshToken {
+  id             String   @id @default(uuid())
+  tokenHash      String   @unique @db.VarChar(128)
+  clientId       String
+  userId         String
+  accessTokenId  String?
+  scopes         Json
+  expiresAt      DateTime @db.Timestamptz(3)
+  revokedAt      DateTime? @db.Timestamptz(3)
+  /// Refresh token xoay v�ng: token cu tr? t?i token thay th?.
+  replacedById   String?
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  client      OAuthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken OAuthAccessToken? @relation(fields: [accessTokenId], references: [id], onDelete: SetNull)
+
+  @@index([clientId])
+  @@index([userId])
+  @@map("oauth_refresh_tokens")
+  @@schema("authentication")
+}
+
+// ---------------------------------------------------------------------------
+// Apps, menu & subscription (schema: apps)
+// ---------------------------------------------------------------------------
+
+enum AppType {
+  WEB_APP
+  DESKTOP_TOOL
+  MOBILE_APP
+  EMBED_WIDGET
+  MCP_SERVER
+  @@schema("apps")
+}
+
+enum AppStatus {
+  ACTIVE
+  INACTIVE
+  @@schema("apps")
+}
+
+enum MenuAccess {
+  FREE
+  PAID
+  @@schema("apps")
+}
+
+enum SubscriptionInterval {
+  MONTH
+  QUARTER
+  YEAR
+  CUSTOM
+  @@schema("apps")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELED
+  PENDING
+  @@schema("apps")
+}
+
+model App {
+  id          String    @id @default(uuid())
+  slug        String    @unique @db.VarChar(160)
+  name        String    @db.VarChar(200)
+  description String?
+  type        AppType   @default(WEB_APP)
+  status      AppStatus @default(ACTIVE)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+
+  menus         AppMenuItem[]
+  plans         SubscriptionPlan[]
+  subscriptions UserSubscription[]
+
+  @@index([status])
+  @@map("apps")
+  @@schema("apps")
+}
+
+/// Menu hi?n th? trong m?t app; item PAID ch? m? khi t�i kho?n c� g�i h?p l?.
+model AppMenuItem {
+  id        String     @id @default(uuid())
+  appId     String
+  parentId  String?
+  label     String     @db.VarChar(160)
+  path      String?    @db.VarChar(400)
+  icon      String?    @db.VarChar(80)
+  sortOrder Int        @default(0)
+  access    MenuAccess @default(FREE)
+  /// N?u set, g�i c?a user ph?i ch?a d�ng feature n�y m?i m?; null = ch? c?n g�i c�n h?n.
+  requiredFeatureId String?
+  createdAt DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime   @updatedAt @db.Timestamptz(3)
+
+  app             App  @relation(fields: [appId], references: [id], onDelete: Cascade)
+  parent          AppMenuItem? @relation("MenuTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children        AppMenuItem[] @relation("MenuTree")
+  requiredFeature Feature? @relation(fields: [requiredFeatureId], references: [id], onDelete: SetNull)
+
+  @@index([appId, parentId, sortOrder])
+  @@map("app_menu_items")
+  @@schema("apps")
+}
+
+/// Feature d?nh nghia ? c?p h? th?ng, g?n v�o g�i qua PlanFeature.
+model Feature {
+  id          String  @id @default(uuid())
+  key         String  @unique @db.VarChar(120)
+  name        String  @db.VarChar(200)
+  description String?
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  plans  PlanFeature[]
+  menus  AppMenuItem[]
+
+  @@map("features")
+  @@schema("apps")
+}
+
+/// G�i tr? ph�: admin t? c?u h�nh gi� / chu k? (1 th�ng, v�i th�ng, 1 nam...).
+model SubscriptionPlan {
+  id           String               @id @default(uuid())
+  appId        String
+  name         String               @db.VarChar(160)
+  description  String?
+  currency     String               @default("VND") @db.Char(3)
+  /// �on v? nh? nh?t, v� d? 99000 = 99,000 VND.
+  price        Int
+  interval     SubscriptionInterval @default(MONTH)
+  /// S? ng�y hi?u l?c c?a g�i khi mua/gia h?n (30, 90, 365...). 0 = vinh vi?n.
+  durationDays Int                  @default(30)
+  isActive     Boolean              @default(true)
+  createdAt    DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime             @updatedAt @db.Timestamptz(3)
+
+  app           App @relation(fields: [appId], references: [id], onDelete: Cascade)
+  features      PlanFeature[]
+  subscriptions UserSubscription[]
+
+  @@index([appId, isActive])
+  @@map("subscription_plans")
+  @@schema("apps")
+}
+
+model PlanFeature {
+  planId    String
+  featureId String
+
+  plan    SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  feature Feature          @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@id([planId, featureId])
+  @@index([featureId])
+  @@map("plan_features")
+  @@schema("apps")
+}
+
+model UserSubscription {
+  id        String             @id @default(uuid())
+  userId    String
+  appId     String
+  planId    String
+  status    SubscriptionStatus @default(ACTIVE)
+  startsAt  DateTime           @db.Timestamptz(3)
+  /// null = kh�ng h?t h?n (g�i vinh vi?n).
+  endsAt    DateTime?          @db.Timestamptz(3)
+  /// Tham chi?u don h�ng thanh to�n (payment.orders.id) khi c�.
+  orderId   String?            @db.VarChar(64)
+  createdAt DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime           @updatedAt @db.Timestamptz(3)
+
+  user User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  app  App             @relation(fields: [appId], references: [id], onDelete: Restrict)
+  plan SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([userId, appId, status])
+  @@index([appId, status, endsAt])
+  @@map("user_subscriptions")
+  @@schema("apps")
+}
+
+// ---------------------------------------------------------------------------
+// AI Gateway (Modular AI Gateway Service)
+// ---------------------------------------------------------------------------
+
+enum AiClientStatus {
+  ACTIVE
+  SUSPENDED
+  @@schema("ai")
+}
+
+enum AiKeyStatus {
+  ACTIVE
+  RATE_LIMITED
+  SUSPENDED
+  EXPIRED
+  @@schema("ai")
+}
+
+enum AiTaskType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  EMBEDDING
+  @@schema("ai")
+}
+
+enum AiTaskStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  @@schema("ai")
+}
+
+enum AiCallbackStatus {
+  NONE
+  PENDING
+  DELIVERED
+  FAILED
+  @@schema("ai")
+}
+
+/// Client ứng dụng (nội bộ hoặc bên ngoài) được cấp quyền gọi AI Gateway
+model AiClient {
+  id               String         @id @default(uuid())
+  name             String         @db.VarChar(160)
+  apiKey           String         @unique @db.VarChar(128)
+  status           AiClientStatus @default(ACTIVE)
+  rateLimitPerMin  Int            @default(60)
+  allowedProviders String[]       @default([])
+  allowedTasks     String[]       @default([])
+  createdAt        DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime       @updatedAt @db.Timestamptz(3)
+
+  providerKeys     AiProviderKey[]
+  tasks            AiTask[]
+  usageLogs        AiUsageLog[]
+
+  @@index([status])
+  @@map("ai_clients")
+  @@schema("ai")
+}
+
+/// Kho API Key của các nhà cung cấp AI với cơ chế xoay vòng và Circuit Breaker
+model AiProviderKey {
+  id            String      @id @default(uuid())
+  provider      String      @db.VarChar(60) // openai, gemini, anthropic, fal-ai, elevenlabs, etc.
+  keySecret     String      @db.Text
+  alias         String?     @db.VarChar(120)
+  status        AiKeyStatus @default(ACTIVE)
+  cooldownUntil DateTime?   @db.Timestamptz(3)
+  failureCount  Int         @default(0)
+  successCount  Int         @default(0)
+  weight        Int         @default(1)
+  lastUsedAt    DateTime?   @db.Timestamptz(3)
+  /// BYOK: null = Key chung của hệ thống, có clientId = Key riêng của Client
+  clientId      String?     @db.VarChar(120)
+  createdAt     DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime    @updatedAt @db.Timestamptz(3)
+
+  client        AiClient?   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([provider, status, cooldownUntil])
+  @@index([clientId])
+  @@map("ai_provider_keys")
+  @@schema("ai")
+}
+
+/// Tác vụ AI bất đồng bộ (Image / Video / Heavy LLM Queue)
+model AiTask {
+  id             String           @id @default(uuid())
+  clientId       String?          @db.VarChar(120)
+  taskType       AiTaskType
+  status         AiTaskStatus     @default(PENDING)
+  provider       String           @db.VarChar(60)
+  model          String           @db.VarChar(120)
+  prompt         String?          @db.Text
+  inputParams    Json?
+  outputResult   Json?
+  errorMessage   String?          @db.Text
+  callbackUrl    String?          @db.VarChar(500)
+  callbackStatus AiCallbackStatus @default(NONE)
+  executionTimeMs Int?
+  tokensConsumed Int?
+  costUsd        Decimal?         @db.Decimal(10, 6)
+  createdAt      DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime         @updatedAt @db.Timestamptz(3)
+
+  client         AiClient?        @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([clientId, createdAt])
+  @@map("ai_tasks")
+  @@schema("ai")
+}
+
+/// Nhật ký sử dụng, Token Tracking & Audit Log cho Gateway
+model AiUsageLog {
+  id               String     @id @default(uuid())
+  clientId         String?    @db.VarChar(120)
+  taskId           String?    @db.VarChar(120)
+  taskType         AiTaskType
+  provider         String     @db.VarChar(60)
+  model            String     @db.VarChar(120)
+  promptTokens     Int        @default(0)
+  completionTokens Int        @default(0)
+  totalTokens      Int        @default(0)
+  latencyMs        Int        @default(0)
+  statusCode       Int        @default(200)
+  errorMessage     String?    @db.Text
+  ipAddress        String?    @db.VarChar(64)
+  createdAt        DateTime   @default(now()) @db.Timestamptz(3)
+
+  client           AiClient?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  @@index([clientId, createdAt])
+  @@index([provider, model, createdAt])
+  @@map("ai_usage_logs")
+  @@schema("ai")
+}
+

@@ -10,8 +10,10 @@ import {
   Trophy,
   Wrench,
   ShoppingCart,
+  Boxes,
   Webhook,
   BarChart3,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import type { Dict } from "@/src/lib/i18n/config";
@@ -19,12 +21,14 @@ import type { Dict } from "@/src/lib/i18n/config";
 function adminNavItems(dict: Dict) {
   return [
     { href: "/admin", label: dict.admin.nav.dashboard, icon: LayoutDashboard },
+    { href: "/admin/ai-gateway", label: dict.admin.nav.aiGateway, icon: Bot },
     { href: "/admin/users", label: dict.admin.nav.users, icon: Users },
     { href: "/admin/articles", label: dict.admin.nav.articles, icon: FileText },
     { href: "/admin/skills", label: dict.admin.nav.skills, icon: BookOpen },
     { href: "/admin/rankings", label: dict.admin.nav.rankings, icon: Trophy },
     { href: "/admin/tools", label: dict.admin.nav.tools, icon: Wrench },
     { href: "/admin/orders", label: dict.admin.nav.orders, icon: ShoppingCart },
+    { href: "/admin/apps", label: dict.admin.nav.apps, icon: Boxes },
     { href: "/admin/webhook-events", label: dict.admin.nav.webhookEvents, icon: Webhook },
     { href: "/admin/statistics", label: dict.admin.nav.statistics, icon: BarChart3 },
   ];

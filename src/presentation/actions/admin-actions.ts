@@ -163,7 +163,8 @@ function mergeAppUrl(
 ): Record<string, unknown> | null {
   if (appUrl) return { ...config, appUrl };
   if (!("appUrl" in config)) return Object.keys(config).length > 0 ? config : null;
-  const { appUrl: _removed, ...rest } = config;
+  const rest = { ...config };
+  delete rest.appUrl;
   return Object.keys(rest).length > 0 ? rest : null;
 }
 

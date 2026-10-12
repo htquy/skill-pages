@@ -54,9 +54,6 @@ CREATE INDEX "webhook_events_receivedAt_idx" ON "webhook_events"("receivedAt");
 -- CreateIndex
 CREATE INDEX "orders_status_expiresAt_idx" ON "orders"("status", "expiresAt");
 
--- CreateIndex
-CREATE INDEX "payment_transactions_webhookEventId_idx" ON "payment_transactions"("webhookEventId");
-
 -- AddForeignKey
 ALTER TABLE "payment_transactions" ADD CONSTRAINT "payment_transactions_webhookEventId_fkey" FOREIGN KEY ("webhookEventId") REFERENCES "webhook_events"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
