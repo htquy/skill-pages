@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import Form from "next/form";
 import { Search } from "lucide-react";
 import { Container } from "@/src/presentation/components/layout/container";
 import { Logo } from "@/src/presentation/components/layout/logo";
@@ -11,7 +12,7 @@ import { getDictionary, getLocale } from "@/src/lib/i18n";
 
 function HeaderSearch({ dict }: { dict: Awaited<ReturnType<typeof getDictionary>> }) {
   return (
-    <form action="/search" role="search" className="hidden md:block">
+    <Form action="/search" role="search" className="hidden md:block">
       <label htmlFor="header-search" className="sr-only">
         {dict.siteHeader.searchSkills}
       </label>
@@ -28,7 +29,7 @@ function HeaderSearch({ dict }: { dict: Awaited<ReturnType<typeof getDictionary>
           className="w-44 rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-sm text-zinc-900 shadow-sm transition-colors placeholder:text-zinc-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 lg:w-56"
         />
       </div>
-    </form>
+    </Form>
   );
 }
 

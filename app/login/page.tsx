@@ -8,12 +8,22 @@ import { signInWithGoogle } from "@/src/presentation/actions/auth-actions";
 import { siteConfig } from "@/src/lib/site";
 import { getDictionary, trans } from "@/src/lib/i18n";
 
-export default async function LoginPage() {
+export default async function LoginPage(props: {
+  searchParams?: Promise<{ callbackUrl?: string }>;
+}) {
+  const searchParams = props.searchParams ? await props.searchParams : undefined;
+  const callbackUrl = searchParams?.callbackUrl;
+
   const user = await getCurrentUser();
   if (user) {
-    redirect("/account");
+    redirect(callbackUrl || "/account");
   }
   const dict = await getDictionary();
+
+  const handleSignIn = async () => {
+    "use server";
+    await signInWithGoogle(callbackUrl);
+  };
 
   return (
     <div className="flex flex-1 items-center justify-center bg-gradient-to-b from-indigo-50/60 via-white to-white px-6 py-16">
@@ -30,7 +40,7 @@ export default async function LoginPage() {
           {dict.login.subtitle}
         </p>
 
-        <form action={signInWithGoogle} className="mt-8">
+        <form action={handleSignIn} className="mt-8">
           <button
             type="submit"
             className="flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-900 shadow-sm transition-colors hover:bg-zinc-50"

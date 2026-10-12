@@ -1,4 +1,6 @@
-import { PrismaClient, type RankingPeriodType } from "@prisma/client";
+
+
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -6,61 +8,89 @@ function daysAgo(days: number): Date {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 }
 
-function minutesAgo(minutes: number): Date {
-  return new Date(Date.now() - minutes * 60 * 1000);
-}
-
 async function main() {
-  console.log("Cleaning existing data…");
-  await prisma.toolClick.deleteMany();
-  await prisma.skillView.deleteMany();
-  await prisma.skillFavorite.deleteMany();
-  await prisma.rankingEntry.deleteMany();
-  await prisma.ranking.deleteMany();
-  await prisma.newsToolLink.deleteMany();
-  await prisma.newsArticle.deleteMany();
-  await prisma.newsCategory.deleteMany();
-  await prisma.skillPrice.deleteMany();
-  await prisma.skillVersion.deleteMany();
-  await prisma.skillToolLink.deleteMany();
-  await prisma.skillUseCaseLink.deleteMany();
-  await prisma.skillIndustryLink.deleteMany();
-  await prisma.skillCategoryLink.deleteMany();
-  await prisma.skill.deleteMany();
-  await prisma.aITool.deleteMany();
-  await prisma.useCase.deleteMany();
-  await prisma.skillCategory.deleteMany();
-  await prisma.industry.deleteMany();
-  await prisma.verificationToken.deleteMany();
-  await prisma.session.deleteMany();
-  await prisma.account.deleteMany();
-  await prisma.user.deleteMany();
+  const shouldClean = process.argv.includes("--clean");
+
+  if (shouldClean) {
+    console.log("Cleaning existing data (--clean flag specified)…");
+    await prisma.toolClick.deleteMany();
+    await prisma.skillView.deleteMany();
+    await prisma.skillFavorite.deleteMany();
+    await prisma.rankingEntry.deleteMany();
+    await prisma.ranking.deleteMany();
+    await prisma.newsToolLink.deleteMany();
+    await prisma.newsArticle.deleteMany();
+    await prisma.newsCategory.deleteMany();
+    await prisma.skillPrice.deleteMany();
+    await prisma.skillVersion.deleteMany();
+    await prisma.skillToolLink.deleteMany();
+    await prisma.skillUseCaseLink.deleteMany();
+    await prisma.skillIndustryLink.deleteMany();
+    await prisma.skillCategoryLink.deleteMany();
+    await prisma.skill.deleteMany();
+    await prisma.toolPrice.deleteMany();
+    await prisma.toolVersion.deleteMany();
+    await prisma.tool.deleteMany();
+    await prisma.aITool.deleteMany();
+    await prisma.useCase.deleteMany();
+    await prisma.skillCategory.deleteMany();
+    await prisma.industry.deleteMany();
+    await prisma.userSubscription.deleteMany();
+    await prisma.planFeature.deleteMany();
+    await prisma.subscriptionPlan.deleteMany();
+    await prisma.appMenuItem.deleteMany();
+    await prisma.app.deleteMany();
+    await prisma.feature.deleteMany();
+    await prisma.oAuthRefreshToken.deleteMany();
+    await prisma.oAuthAccessToken.deleteMany();
+    await prisma.authorizationCode.deleteMany();
+    await prisma.oAuthClient.deleteMany();
+    await prisma.session.deleteMany();
+    await prisma.account.deleteMany();
+    await prisma.user.deleteMany();
+  } else {
+    console.log("Chế độ: INSERT / UPDATE (UPSERT) an toàn trên DB thực local…");
+  }
 
   // ---------------------------------------------------------------------------
-  // Users
+  // 1. Users (UPSERT)
   // ---------------------------------------------------------------------------
   const adminId = "user-admin-0001";
   const demoId = "user-demo-0001";
-  await prisma.user.createMany({
-    data: [
-      {
-        id: adminId,
-        name: "Platform Admin",
-        email: "admin@promptworks.app",
-        role: "ADMIN",
-      },
-      {
-        id: demoId,
-        name: "Demo Explorer",
-        email: "explorer@promptworks.app",
-        role: "CUSTOMER",
-      },
-    ],
+
+  await prisma.user.upsert({
+    where: { id: adminId },
+    create: {
+      id: adminId,
+      name: "Platform Admin",
+      email: "admin@promptworks.app",
+      role: "ADMIN",
+    },
+    update: {
+      name: "Platform Admin",
+      email: "admin@promptworks.app",
+      role: "ADMIN",
+    },
   });
-  console.log("Users created");
+
+  await prisma.user.upsert({
+    where: { id: demoId },
+    create: {
+      id: demoId,
+      name: "Demo Explorer",
+      email: "explorer@promptworks.app",
+      role: "CUSTOMER",
+    },
+    update: {
+      name: "Demo Explorer",
+      email: "explorer@promptworks.app",
+      role: "CUSTOMER",
+    },
+  });
+  console.log("✔ Users upserted (Admin & Demo)");
 
   // ---------------------------------------------------------------------------
-  // Taxonomy
+  // 2. Taxonomy (UPSERT)
   // ---------------------------------------------------------------------------
   const industries = [
     { slug: "marketing", name: "Marketing" },
@@ -70,8 +100,13 @@ async function main() {
     { slug: "design", name: "Design" },
     { slug: "operations", name: "Operations" },
   ];
-  await prisma.industry.createMany({ data: industries });
-  console.log("Industries created");
+  for (const item of industries) {
+    await prisma.industry.upsert({
+      where: { slug: item.slug },
+      create: item,
+      update: { name: item.name },
+    });
+  }
 
   const categories = [
     { slug: "prompt", name: "Prompt" },
@@ -79,8 +114,13 @@ async function main() {
     { slug: "skill", name: "Skill" },
     { slug: "template", name: "Template" },
   ];
-  await prisma.skillCategory.createMany({ data: categories });
-  console.log("Skill categories created");
+  for (const item of categories) {
+    await prisma.skillCategory.upsert({
+      where: { slug: item.slug },
+      create: item,
+      update: { name: item.name },
+    });
+  }
 
   const useCases = [
     { slug: "content-generation", name: "Content generation" },
@@ -90,11 +130,17 @@ async function main() {
     { slug: "ideation", name: "Ideation" },
     { slug: "document-writing", name: "Document writing" },
   ];
-  await prisma.useCase.createMany({ data: useCases });
-  console.log("Use cases created");
+  for (const item of useCases) {
+    await prisma.useCase.upsert({
+      where: { slug: item.slug },
+      create: item,
+      update: { name: item.name },
+    });
+  }
 
   const tools = [
     {
+      id: "chatgpt",
       slug: "chatgpt",
       name: "ChatGPT",
       description: "OpenAI's flagship conversational assistant.",
@@ -102,6 +148,7 @@ async function main() {
       logoUrl: null,
     },
     {
+      id: "claude",
       slug: "claude",
       name: "Claude",
       description: "Anthropic's assistant for nuanced, long-form work.",
@@ -109,6 +156,7 @@ async function main() {
       logoUrl: null,
     },
     {
+      id: "midjourney",
       slug: "midjourney",
       name: "Midjourney",
       description: "High-quality image generation from text prompts.",
@@ -116,6 +164,7 @@ async function main() {
       logoUrl: null,
     },
     {
+      id: "notebooklm",
       slug: "notebooklm",
       name: "NotebookLM",
       description: "Research assistant grounded in your own sources.",
@@ -123,6 +172,7 @@ async function main() {
       logoUrl: null,
     },
     {
+      id: "copilot",
       slug: "copilot",
       name: "GitHub Copilot",
       description: "AI pair programmer that lives in your editor.",
@@ -130,429 +180,607 @@ async function main() {
       logoUrl: null,
     },
   ];
-  await prisma.aITool.createMany({ data: tools });
-  console.log("Tools created");
-
-  // ---------------------------------------------------------------------------
-  // Skills
-  // ---------------------------------------------------------------------------
-  const skills = [
-    {
-      id: "skl-close-sales-reply",
-      slug: "close-faster-with-structured-sales-replies",
-      title: "Close faster with structured sales replies",
-      shortDescription:
-        "Turn a messy intro call into a clear, structured follow-up that moves the deal forward.",
-      description:
-        "This skill takes rough notes from a discovery call and turns them into a structured, personalized follow-up: a one-line recap, a value summary that speaks to the stated pain, a proposed next step with an owner, and a gentle objection inventory. It was built from hundreds of high-performing B2B follow-ups.",
-      accessType: "PAID",
-      content:
-        "You are a senior B2B sales leader helping me reply to a prospect after a discovery call.\n\nUse my notes. Keep the tone warm but concise.\n\nStructure the reply as sections with bold headers:\n- Recap in one sentence\n- Why this matters to them (quote their stated pain)\n- The next step (one, owned, with a time)\n- One potential objection, addressed\n\nMy discovery notes:\n<<call_notes>>",
-      instructions:
-        "Paste your messy call notes as the <<call_notes>> placeholder. Then rewrite the first paragraph in your own voice before sending.",
-      variables: { call_notes: "Free text", outcome: "open | closed | lost" },
-      changelog: "v1 released",
-      industries: ["sales"],
-      categories: ["prompt"],
-      useCases: ["content-generation"],
-      tools: ["chatgpt", "claude"],
-      prices: [{ currency: "USD", amount: 9 }],
-      favorites: 142,
-      views: 810,
-      ratingAverage: 4.8,
-      ratingCount: 37,
-    },
-    {
-      id: "skl-podcast-snip",
-      slug: "podcast-to-snip",
-      title: "Podcast-to-snip: extract shareable moments",
-      shortDescription:
-        "Turn a 1-hour podcast into 5 sharp, shareable clips with titles and hooks.",
-      description:
-        "A workflow that ingests a podcast transcript, ranks the most surprising moments, rewrites them as short standalone clips with a scroll-stopping hook, and outputs a ready-to-post thread or newsletter snippet.",
-      accessType: "FREE",
-      content:
-        "You are a clip editor for a creator economy brand.\n\nGiven this transcript, find the 5 most surprising or practical moments.\n\nFor each, output:\n1. A hook line under 120 characters\n2. A 3-sentence standalone summary (no context needed)\n3. A suggested visual cue\n4. Why this moment would make people share it\n\nTranscript:\n<<transcript>>",
-      instructions:
-        "Paste the full transcript into <<transcript>>. Ask follow-ups to adjust tone (professional vs casual) before generating the thread.",
-      variables: { transcript: "Pasted transcript", tone: "professional | casual" },
-      changelog: "v2: added visual cues",
-      industries: ["marketing"],
-      categories: ["workflow"],
-      useCases: ["content-generation", "data-analysis"],
-      tools: ["chatgpt", "notebooklm"],
-      prices: [],
-      favorites: 211,
-      views: 1204,
-      ratingAverage: 4.9,
-      ratingCount: 53,
-    },
-    {
-      id: "skl-code-review",
-      slug: "ai-assisted-code-review-check",
-      title: "AI-assisted code review checklist",
-      shortDescription:
-        "Run a structured, security-aware review pass on any pull request diff.",
-      description:
-        "A deterministic review checklist that separates style nits from real risks, flags security footguns, and produces a prioritized list an engineer can act on instead of a wall of trivia.",
-      accessType: "PAID",
-      content:
-        "You are a pragmatic senior engineer reviewing this diff.\n\nAssess only:\n1. Correctness traps (off-by-one, race conditions, timezone math)\n2. Security (input validation, secrets, authz)\n3. API and data-shape concerns\n4. Test coverage gaps for changed paths\n\nFor each finding: severity (block | fix | nit), file, reason, and a concrete suggested change. End with a 3-line summary.",
-      instructions:
-        "Strip the diff down to the + lines if it is very large. Ask for the context of the change if unclear before reviewing.",
-      variables: { diff: "Pasted diff", priority: "block | fix | nit" },
-      changelog: "v1 released",
-      industries: ["engineering"],
-      categories: ["skill"],
-      useCases: ["code-review"],
-      tools: ["copilot", "claude"],
-      prices: [{ currency: "USD", amount: 4 }],
-      favorites: 96,
-      views: 620,
-      ratingAverage: 4.6,
-      ratingCount: 29,
-    },
-    {
-      id: "skl-doc-to-ad",
-      slug: "doc-to-ad-copy-funnel",
-      title: "Doc-to-ad-copy funnel for marketing teams",
-      shortDescription:
-        "Turn a product brief into 20 ad variants across four funnel stages.",
-      description:
-        "Converts a single product document into a full paid-social funnel: awareness hooks, interest bullets, consideration proof, and conversion CTAs — each stage clearly labeled so the team can iterate per platform.",
-      accessType: "FREE",
-      content:
-        "You are a performance marketing copywriter.\n\nFrom this product doc, generate 20 ad variants: 5 for awareness (hook-led), 5 for interest (feature bullets), 5 for consideration (social proof and use case), 5 for conversion (CTA-led).\n\nFor each variant: headline under 30 chars, body under 300 chars, and one platform it fits best (Meta | TikTok | LinkedIn | Google).\n\nProduct doc:\n<<product_doc>>",
-      instructions:
-        "Paste the product brief or landing page copy into <<product_doc>>. Re-run for different regional tones if needed.",
-      variables: { product_doc: "URL or pasted copy", region: "e.g. US, EU" },
-      changelog: "v1 released",
-      industries: ["marketing"],
-      categories: ["template"],
-      useCases: ["content-generation", "ideation"],
-      tools: ["claude", "chatgpt"],
-      prices: [],
-      favorites: 178,
-      views: 940,
-      ratingAverage: 4.7,
-      ratingCount: 44,
-    },
-    {
-      id: "skl-support-ticket",
-      slug: "support-ticket-escalation-note",
-      title: "Support ticket → escalation note in 30 seconds",
-      shortDescription:
-        "Draft a crisp escalation note from a rambling customer support ticket.",
-      description:
-        "Condenses support conversations into an escalation handoff: the customer's goal, the blocker, what was already tried, and the first thing the next engineer should check.",
-      accessType: "FREE",
-      content:
-        "You are a Support Engineering lead.\n\nFrom this ticket thread, write an escalation note with exactly 4 parts:\n- Customer goal (one line)\n- Blocker (one line)\n- Tried so far (bullets)\n- First thing to check (one recommendation)\n\nKeep it under 150 words total. Do not invent technical facts.\n\nTicket:\n<<ticket_thread>>",
-      instructions:
-        "Paste the exported ticket thread into <<ticket_thread>>. Verify the 'Tried so far' bullets against the actual timeline before sending.",
-      variables: { ticket_thread: "Pasted thread", severity: "P1 | P2 | P3" },
-      changelog: "v1 released",
-      industries: ["operations"],
-      categories: ["prompt"],
-      useCases: ["customer-support", "document-writing"],
-      tools: ["claude"],
-      prices: [],
-      favorites: 63,
-      views: 410,
-      ratingAverage: 4.4,
-      ratingCount: 18,
-    },
-    {
-      id: "skl-user-research",
-      slug: "interviews-to-insights-matrix",
-      title: "Interviews → insights matrix for PMs",
-      shortDescription:
-        "Cluster raw interview transcripts into jobs-to-be-done insights with evidence.",
-      description:
-        "Turns interview transcripts into a 'jobs-to-be-done' matrix: the job, frequency, pain, evidence quote, and a corresponding opportunity score. Keeps every claim anchored to a direct quote so the team can audit the synthesis.",
-      accessType: "PAID",
-      content:
-        "You are a UX researcher using the Jobs-to-be-Done framework.\n\nCluster these transcripts into jobs. For each job output:\n- Job statement (verb + object + context)\n- Frequency (daily | weekly | monthly | rare)\n- Core pain\n- One direct quote as evidence\n- Opportunity score 1–10\n\nResolve contradictions by listing both quotes with speaker labels.\n\nTranscripts:\n<<transcripts>>",
-      instructions:
-        "Paste 3–6 transcripts separated by ---. Ask to drop low-signal jobs before prioritizing.",
-      variables: { transcripts: "Pasted transcripts", sample_size: "number of participants" },
-      changelog: "v1 released",
-      industries: ["product", "design"],
-      categories: ["skill"],
-      useCases: ["data-analysis"],
-      tools: ["notebooklm", "chatgpt"],
-      prices: [{ currency: "USD", amount: 12 }],
-      favorites: 87,
-      views: 505,
-      ratingAverage: 4.5,
-      ratingCount: 22,
-    },
-  ] as const;
-
-  for (const skill of skills) {
-    const {
-      id,
-      slug,
-      title,
-      shortDescription,
-      description,
-      content,
-      instructions,
-      variables,
-      changelog,
-      industries,
-      categories,
-      useCases,
-      tools,
-      prices,
-      favorites,
-      views,
-      ratingAverage,
-      ratingCount,
-    } = skill;
-
-    await prisma.skill.create({
-      data: {
-        id,
-        slug,
-        title,
-        shortDescription,
-        description,
-        accessType: skill.accessType,
-        status: "PUBLISHED",
-        authorId: adminId,
-        viewCount: views,
-        favoriteCount: favorites,
-        ratingAverage,
-        ratingCount,
-        publishedAt: daysAgo(12),
-        versions: {
-          create: {
-            version: 1,
-            content,
-            instructions,
-            variables: variables as object,
-            changelog,
-          },
-        },
-        prices: {
-          create: prices.map((price) => ({
-            currency: price.currency,
-            amount: price.amount,
-            isActive: true,
-          })),
-        },
-        industries: {
-          create: industries.map((slug) => ({
-            industry: { connect: { slug } },
-          })),
-        },
-        categories: {
-          create: categories.map((slug) => ({
-            category: { connect: { slug } },
-          })),
-        },
-        useCases: {
-          create: useCases.map((slug) => ({ useCase: { connect: { slug } } })),
-        },
-        tools: {
-          create: tools.map((slug) => ({ tool: { connect: { slug } } })),
-        },
-      },
+  for (const item of tools) {
+    await prisma.aITool.upsert({
+      where: { id: item.id },
+      create: item,
+      update: item,
     });
   }
-  console.log(`Skills created: ${skills.length}`);
+  console.log("✔ Taxonomy & AI Tools upserted");
 
   // ---------------------------------------------------------------------------
-  // News
+  // 3. Downloadable Tools & Distributables (schema: catalog -> tools)
   // ---------------------------------------------------------------------------
-  const newsCategories = [
-    { slug: "launch", name: "Launches" },
-    { slug: "research", name: "Research" },
-    { slug: "practice", name: "Practices" },
+  const desktopExeTool = await prisma.tool.upsert({
+    where: { slug: "smart-money-desktop-win" },
+    create: {
+      id: "tool-smart-money-desktop",
+      slug: "smart-money-desktop-win",
+      title: "SmartMoney Desktop (Windows Installer)",
+      shortDescription: "Phần mềm quản lý tài chính máy tính chạy trên Windows (EXE installer).",
+      description: "Ứng dụng máy tính quản lý sổ quỹ, tra cứu giao dịch, báo cáo tài chính ngoại tuyến và đồng bộ hóa qua đám mây khi có kết nối mạng.",
+      type: "DOWNLOADABLE",
+      billingType: "SUBSCRIPTION",
+      status: "PUBLISHED",
+      config: {
+        supportedOS: ["Windows 10", "Windows 11"],
+        arch: ["x64", "arm64"],
+      },
+      publishedAt: daysAgo(5),
+    },
+    update: {
+      title: "SmartMoney Desktop (Windows Installer)",
+      status: "PUBLISHED",
+    },
+  });
+
+  await prisma.toolPrice.upsert({
+    where: { id: "tp-win-month" },
+    create: {
+      id: "tp-win-month",
+      toolId: desktopExeTool.id,
+      currency: "VND",
+      amount: 99000,
+      durationDays: 30,
+      isActive: true,
+    },
+    update: { amount: 99000, durationDays: 30, isActive: true },
+  });
+
+  await prisma.toolPrice.upsert({
+    where: { id: "tp-win-year" },
+    create: {
+      id: "tp-win-year",
+      toolId: desktopExeTool.id,
+      currency: "VND",
+      amount: 890000,
+      durationDays: 365,
+      isActive: true,
+    },
+    update: { amount: 890000, durationDays: 365, isActive: true },
+  });
+
+  await prisma.toolVersion.upsert({
+    where: {
+      toolId_versionCode: {
+        toolId: desktopExeTool.id,
+        versionCode: "1.0.0",
+      },
+    },
+    create: {
+      id: "tv-win-100",
+      toolId: desktopExeTool.id,
+      versionCode: "1.0.0",
+      fileName: "SmartMoney-Setup-1.0.0.exe",
+      fileUrl: "https://pub-72586750bed84d87a484e63bbf7b87c0.r2.dev/builds/SmartMoney-Setup-1.0.0.exe",
+      fileSize: BigInt(48500000),
+      isLatest: true,
+      changelog: "Phiên bản chính thức đầu tiên hỗ trợ xác thực SSO OAuth2 PKCE và đồng bộ số dư.",
+    },
+    update: {
+      isLatest: true,
+      fileUrl: "https://pub-72586750bed84d87a484e63bbf7b87c0.r2.dev/builds/SmartMoney-Setup-1.0.0.exe",
+    },
+  });
+  console.log("✔ Downloadable Tools (EXE/Installer) upserted");
+
+  // ---------------------------------------------------------------------------
+  // 4. OAuth Clients (Enterprise SSO / PKCE) (schema: authentication)
+  // ---------------------------------------------------------------------------
+  await prisma.oAuthClient.upsert({
+    where: { clientId: "demo-windows-tool" },
+    create: {
+      id: "client-smart-money-win",
+      name: "SmartMoney Desktop Application (Windows)",
+      clientId: "demo-windows-tool",
+      clientSecretHash: null,
+      redirectUris: ["http://127.0.0.1:8080/callback", "https://oauth.pstmn.io/v1/callback"],
+      scopes: ["openid", "profile", "email"],
+      isPublic: true,
+      isActive: true,
+    },
+    update: {
+      name: "SmartMoney Desktop Application (Windows)",
+      redirectUris: ["http://127.0.0.1:8080/callback", "https://oauth.pstmn.io/v1/callback"],
+      scopes: ["openid", "profile", "email"],
+      isPublic: true,
+      isActive: true,
+    },
+  });
+
+  await prisma.oAuthClient.upsert({
+    where: { clientId: "demo-web-sso" },
+    create: {
+      id: "client-smart-money-web",
+      name: "SmartMoney Web Portal & Sub-apps",
+      clientId: "demo-web-sso",
+      clientSecretHash: null,
+      redirectUris: ["http://localhost:3000/api/auth/callback", "https://app.example.com/callback"],
+      scopes: ["openid", "profile", "email"],
+      isPublic: true,
+      isActive: true,
+    },
+    update: {
+      name: "SmartMoney Web Portal & Sub-apps",
+      redirectUris: ["http://localhost:3000/api/auth/callback", "https://app.example.com/callback"],
+      isActive: true,
+    },
+  });
+  // VideoTool Desktop (NativeAOT/Avalonia) — native app, public client dùng PKCE loopback.
+  // Redirect URI chỉ khai báo host/path; authorization server cho phép cổng loopback ngẫu nhiên
+  // theo RFC 8252 §7.3 (xem `isAllowedLoopbackRedirect` trong oauth-service).
+  await prisma.oAuthClient.upsert({
+    where: { clientId: "video-tool-desktop" },
+    create: {
+      id: "client-video-tool-desktop",
+      name: "VideoTool Desktop (NativeAOT)",
+      clientId: "video-tool-desktop",
+      clientSecretHash: null,
+      redirectUris: ["http://127.0.0.1/callback"],
+      scopes: ["openid", "profile", "email"],
+      isPublic: true,
+      isActive: true,
+    },
+    update: {
+      name: "VideoTool Desktop (NativeAOT)",
+      redirectUris: ["http://127.0.0.1/callback"],
+      scopes: ["openid", "profile", "email"],
+      isPublic: true,
+      isActive: true,
+    },
+  });
+  console.log("✔ OAuth Clients upserted: demo-windows-tool, demo-web-sso, video-tool-desktop");
+
+  // ---------------------------------------------------------------------------
+  // 5. Apps, Features, Subscription Plans & Dynamic Menus (schema: apps)
+  // ---------------------------------------------------------------------------
+  const desktopApp = await prisma.app.upsert({
+    where: { slug: "smart-money-desktop" },
+    create: {
+      id: "app-smart-money-desktop",
+      slug: "smart-money-desktop",
+      name: "SmartMoney Pro Desktop",
+      description: "Ứng dụng máy tính quản lý tài chính doanh nghiệp và cá nhân",
+      type: "DESKTOP_TOOL",
+      status: "ACTIVE",
+    },
+    update: {
+      name: "SmartMoney Pro Desktop",
+      description: "Ứng dụng máy tính quản lý tài chính doanh nghiệp và cá nhân",
+      type: "DESKTOP_TOOL",
+      status: "ACTIVE",
+    },
+  });
+
+  const featReport = await prisma.feature.upsert({
+    where: { key: "FINANCIAL_REPORT" },
+    create: {
+      id: "feat-fin-report",
+      key: "FINANCIAL_REPORT",
+      name: "Báo cáo tài chính chuyên sâu",
+      description: "Phân tích báo cáo lãi lỗ, dòng tiền và biểu đồ tăng trưởng",
+    },
+    update: {
+      name: "Báo cáo tài chính chuyên sâu",
+      description: "Phân tích báo cáo lãi lỗ, dòng tiền và biểu đồ tăng trưởng",
+    },
+  });
+
+  const featAi = await prisma.feature.upsert({
+    where: { key: "AI_ADVISOR" },
+    create: {
+      id: "feat-ai-advisor",
+      key: "AI_ADVISOR",
+      name: "Trợ lý AI SmartMoney",
+      description: "Gợi ý chiến lược cắt giảm chi phí và tối ưu nguồn vốn",
+    },
+    update: {
+      name: "Trợ lý AI SmartMoney",
+      description: "Gợi ý chiến lược cắt giảm chi phí và tối ưu nguồn vốn",
+    },
+  });
+
+  const featExport = await prisma.feature.upsert({
+    where: { key: "EXCEL_EXPORT" },
+    create: {
+      id: "feat-excel-export",
+      key: "EXCEL_EXPORT",
+      name: "Xuất dữ liệu Excel & PDF",
+      description: "Tải file dữ liệu báo cáo kế toán không giới hạn",
+    },
+    update: {
+      name: "Xuất dữ liệu Excel & PDF",
+      description: "Tải file dữ liệu báo cáo kế toán không giới hạn",
+    },
+  });
+
+  // Plans (1 tháng, 3 tháng, 1 năm)
+  const planMonth = await prisma.subscriptionPlan.upsert({
+    where: { id: "plan-month-01" },
+    create: {
+      id: "plan-month-01",
+      appId: desktopApp.id,
+      name: "Gói Tiêu Chuẩn 1 Tháng",
+      description: "Thích hợp cho cá nhân và người mới bắt đầu",
+      currency: "VND",
+      price: 99000,
+      interval: "MONTH",
+      durationDays: 30,
+      isActive: true,
+    },
+    update: {
+      name: "Gói Tiêu Chuẩn 1 Tháng",
+      price: 99000,
+      durationDays: 30,
+      isActive: true,
+    },
+  });
+
+  const planQuarter = await prisma.subscriptionPlan.upsert({
+    where: { id: "plan-quarter-01" },
+    create: {
+      id: "plan-quarter-01",
+      appId: desktopApp.id,
+      name: "Gói Nâng Cao 3 Tháng",
+      description: "Tiết kiệm 15%, mở khóa đầy đủ tính năng",
+      currency: "VND",
+      price: 249000,
+      interval: "QUARTER",
+      durationDays: 90,
+      isActive: true,
+    },
+    update: {
+      name: "Gói Nâng Cao 3 Tháng",
+      price: 249000,
+      durationDays: 90,
+      isActive: true,
+    },
+  });
+
+  const planYear = await prisma.subscriptionPlan.upsert({
+    where: { id: "plan-year-01" },
+    create: {
+      id: "plan-year-01",
+      appId: desktopApp.id,
+      name: "Gói VIP Doanh Nghiệp 1 Năm",
+      description: "Đầy đủ tính năng, hỗ trợ kỹ thuật ưu tiên 24/7",
+      currency: "VND",
+      price: 890000,
+      interval: "YEAR",
+      durationDays: 365,
+      isActive: true,
+    },
+    update: {
+      name: "Gói VIP Doanh Nghiệp 1 Năm",
+      price: 890000,
+      durationDays: 365,
+      isActive: true,
+    },
+  });
+
+  // Plan features mapping
+  const mappings = [
+    { planId: planMonth.id, featureId: featReport.id },
+    { planId: planMonth.id, featureId: featExport.id },
+    { planId: planQuarter.id, featureId: featReport.id },
+    { planId: planQuarter.id, featureId: featExport.id },
+    { planId: planQuarter.id, featureId: featAi.id },
+    { planId: planYear.id, featureId: featReport.id },
+    { planId: planYear.id, featureId: featExport.id },
+    { planId: planYear.id, featureId: featAi.id },
   ];
-  await prisma.newsCategory.createMany({ data: newsCategories });
-  console.log("News categories created");
+  for (const m of mappings) {
+    await prisma.planFeature.upsert({
+      where: {
+        planId_featureId: {
+          planId: m.planId,
+          featureId: m.featureId,
+        },
+      },
+      create: m,
+      update: {},
+    });
+  }
 
-  const articles = [
+  // Dynamic Menus (FREE vs PAID)
+  const menuData = [
     {
-      slug: "building-a-personal-knowledge-flywheel",
-      title: "Building a personal knowledge flywheel with NotebookLM",
-      excerpt:
-        "How a weekly source-digest routine turns scattered bookmarks into notes you can actually retrieve.",
-      content:
-        "Most knowledge capture dies in a bookmark folder. The team behind this year's quiet success stories shares a simple loop: clip the source, generate a one-paragraph digest, assign a job-to-be-done tag, and weekly-review the top ten.\n\nThe flywheel works because every step is cheap. NotebookLM turns a 20-page report into three bullets in seconds, and the weekly review rewards you with a 'noticed connections' note that compounds.\n\nStart small: one source a day. The retrieval win comes from the review pass, not the clipping.",
-      sourceName: "The PromptWorks Desk",
-      sourceUrl: null,
-      category: "practice",
-      tools: ["notebooklm", "chatgpt"],
-      publishedDaysAgo: 1,
-      minutesAgoPad: true,
+      id: "menu-dashboard",
+      appId: desktopApp.id,
+      label: "Tổng quan tài chính",
+      path: "/dashboard",
+      icon: "LayoutDashboard",
+      sortOrder: 1,
+      access: "FREE" as const,
+      requiredFeatureId: null,
     },
     {
-      slug: "claude-three-point-five-tone-control",
-      title: "Claude's new tone-control mode is a quiet game changer for drafts",
-      excerpt:
-        "Early tests show fewer rewrites needed when teams lock a brand voice before generating.",
-      content:
-        "Teams that pinned a brand voice before generation reported a 40% drop in back-and-forth edits in early tests. The pattern: write the voice spec first, then ask for a draft.\n\nA good voice spec is short: who we sound like, who we never sound like, three adjectives, and two forbidden words. Claude respects it far better than a throwaway 'make it friendly' line.\n\nCombine this with structured output for your templates and the drafting loop starts to feel productive rather than exhausting.",
-      sourceName: "Field Notes",
-      sourceUrl: null,
-      category: "launch",
-      tools: ["claude"],
-      publishedDaysAgo: 3,
-      minutesAgoPad: false,
+      id: "menu-transactions",
+      appId: desktopApp.id,
+      label: "Sổ giao dịch",
+      path: "/transactions",
+      icon: "Receipt",
+      sortOrder: 2,
+      access: "FREE" as const,
+      requiredFeatureId: null,
     },
     {
-      slug: "scaling-support-with-ai-drafts",
-      title: "Scaling support with AI drafts: a 6-week case study",
-      excerpt:
-        "A mid-size SaaS cut first-response time by 33% using drafts, not auto-replies.",
-      content:
-        "The trap people hit is letting the model answer directly. The winning setup drafts a response inside the ticket with a linked context card, and a human approves it in one click.\n\nOver six weeks the team kept morale high because agents still owned every customer conversation, but no longer typed the same five answers from scratch. First-response time fell from 6.2 to 4.1 hours.\n\nThe key metric to watch is not resolution time alone — it's how often drafts for complex tickets get rewritten. That number tells you when to update your skill.",
-      sourceName: "The PromptWorks Desk",
-      sourceUrl: null,
-      category: "practice",
-      tools: ["chatgpt", "claude"],
-      publishedDaysAgo: 6,
-      minutesAgoPad: false,
+      id: "menu-reports",
+      appId: desktopApp.id,
+      label: "Báo cáo phân tích chuyên sâu",
+      path: "/reports",
+      icon: "BarChart3",
+      sortOrder: 3,
+      access: "PAID" as const,
+      requiredFeatureId: featReport.id,
     },
     {
-      slug: "ai-code-review-doesnt-judge",
-      title: "Why AI code review feels brutal — and how to make it kind",
-      excerpt:
-        "A checklist for turning your reviewer skill from a wall of nits into a prioritized list.",
-      content:
-        "Default AI reviewers produce an unfiltered wall of suggestions, which demoralizes junior engineers and buries the real issues. The fix is a contract in the prompt: separate blocking bugs from quick fixes, require a reason for every nit, and never invent style preferences.\n\nTeams that capped findings at the top ten and forced a severity label reported reviews that actually get read. The same prompt that works for a junior assists a senior by automating the boring pass.\n\nRemember to keep the diff context short — large diffs cause the model to skip straight to trivia.",
-      sourceName: "Field Notes",
-      sourceUrl: null,
-      category: "practice",
-      tools: ["copilot", "claude"],
-      publishedDaysAgo: 9,
-      minutesAgoPad: false,
+      id: "menu-ai",
+      appId: desktopApp.id,
+      label: "Trợ lý AI SmartMoney",
+      path: "/ai-advisor",
+      icon: "Bot",
+      sortOrder: 4,
+      access: "PAID" as const,
+      requiredFeatureId: featAi.id,
     },
     {
-      slug: "midjourney-style-locking",
-      title: "Style-locking Midjourney for consistent brand art",
-      excerpt:
-        "Seed and parameter discipline turn one-off generations into a repeatable visual system.",
-      content:
-        "Brands abandon AI art because the style drifts between generations. Professionals lock style with a consistent parameter set: same aspect ratio, same style reference, and a caption that names the brand role.\n\nThe trick is treating 'style' as a prompt block you reuse verbatim rather than describing it freshly each time. Version the block in your skill, and every new asset inherits the look.\n\nKeep a test card of three known scenes; if the outputs drift on the card, update the block before starting production work.",
-      sourceName: "The PromptWorks Desk",
-      sourceUrl: null,
-      category: "launch",
-      tools: ["midjourney"],
-      publishedDaysAgo: 14,
-      minutesAgoPad: false,
+      id: "menu-export",
+      appId: desktopApp.id,
+      label: "Xuất báo cáo kế toán",
+      path: "/export",
+      icon: "Download",
+      sortOrder: 5,
+      access: "PAID" as const,
+      requiredFeatureId: featExport.id,
     },
   ];
 
-  const articleIds = new Map<string, string>();
-  for (let index = 0; index < articles.length; index++) {
-    const article = articles[index];
-    const id = `news-${index + 1}`;
-    articleIds.set(article.slug, id);
-    await prisma.newsArticle.create({
-      data: {
-        id,
-        slug: article.slug,
-        title: article.title,
-        excerpt: article.excerpt,
-        content: article.content,
-        sourceName: article.sourceName,
-        sourceUrl: article.sourceUrl,
-        status: "PUBLISHED",
-        publishedAt: article.minutesAgoPad
-          ? minutesAgo(30 + index * 90)
-          : daysAgo(article.publishedDaysAgo),
-        tools: {
-          create: article.tools.map((slug) => ({ tool: { connect: { slug } } })),
-        },
-        category: { connect: { slug: article.category } },
+  for (const menu of menuData) {
+    await prisma.appMenuItem.upsert({
+      where: { id: menu.id },
+      create: menu,
+      update: {
+        label: menu.label,
+        path: menu.path,
+        icon: menu.icon,
+        sortOrder: menu.sortOrder,
+        access: menu.access,
+        requiredFeatureId: menu.requiredFeatureId,
       },
     });
   }
-  console.log(`News articles created: ${articles.length}`);
+  console.log("✔ Apps, Plans & Dynamic Menus upserted");
 
   // ---------------------------------------------------------------------------
-  // Rankings
+  // 5b. VideoTool Desktop — sản phẩm native dùng entitlement hub (schema: apps)
   // ---------------------------------------------------------------------------
-  const rankingToolStats: Record<string, { views: number; favorites: number; clicks: number }> = {
-    chatgpt: { views: 95420, favorites: 12940, clicks: 8100 },
-    claude: { views: 84210, favorites: 11230, clicks: 6900 },
-    midjourney: { views: 61340, favorites: 7240, clicks: 5100 },
-    notebooklm: { views: 52780, favorites: 6930, clicks: 4300 },
-    copilot: { views: 48890, favorites: 5410, clicks: 3900 },
-  };
+  const videoApp = await prisma.app.upsert({
+    where: { slug: "video-tool" },
+    create: {
+      id: "app-video-tool",
+      slug: "video-tool",
+      name: "Video Tool",
+      description: "Công cụ xử lý video FFmpeg (NativeAOT + Avalonia)",
+      type: "DESKTOP_TOOL",
+      status: "ACTIVE",
+    },
+    update: {
+      name: "Video Tool",
+      description: "Công cụ xử lý video FFmpeg (NativeAOT + Avalonia)",
+      type: "DESKTOP_TOOL",
+      status: "ACTIVE",
+    },
+  });
 
-  const periods: RankingPeriodType[] = ["WEEK", "MONTH", "QUARTER", "ALL_TIME"];
-  for (let index = 0; index < periods.length; index++) {
-    const periodType = periods[index];
-    const decay = 1 - index * 0.12;
-    const entries = Object.entries(rankingToolStats)
-      .sort(([, a], [, b]) => {
-        const scoreA = (a.views + a.favorites * 8 + a.clicks * 4) * decay;
-        const scoreB = (b.views + b.favorites * 8 + b.clicks * 4) * decay;
-        return scoreB - scoreA;
-      })
-      .map(([slug], rankIndex) => {
-        const stats = rankingToolStats[slug];
-        const score = (stats.views + stats.favorites * 8 + stats.clicks * 4) * decay;
-        return {
-          toolId: slug,
-          rank: rankIndex + 1,
-          score,
-          views: Math.round(stats.views * decay),
-          favorites: Math.round(stats.favorites * decay),
-          clicks: Math.round(stats.clicks * decay),
-        };
-      });
+  const featBatch = await prisma.feature.upsert({
+    where: { key: "VIDEO_BATCH" },
+    create: {
+      id: "feat-video-batch",
+      key: "VIDEO_BATCH",
+      name: "Xử lý hàng loạt",
+      description: "Đưa nhiều file vào hàng đợi và xử lý cùng lúc",
+    },
+    update: { name: "Xử lý hàng loạt" },
+  });
 
-    await prisma.ranking.create({
-      data: {
-        id: `ranking-${index + 1}-${periodType.toLowerCase()}`,
-        slug: `top-ai-tools-${periodType.toLowerCase()}`,
-        name:
-          periodType === "ALL_TIME"
-            ? "All-time favorite AI tools"
-            : `Most used AI tools ${periodType.toLowerCase()}`,
-        periodType,
-        periodStart: daysAgo(periodType === "WEEK" ? 7 : periodType === "MONTH" ? 30 : 90),
-        periodEnd: new Date(),
-        status: "PUBLISHED",
-        entries: { create: entries },
-      },
+  const featGpu = await prisma.feature.upsert({
+    where: { key: "VIDEO_GPU" },
+    create: {
+      id: "feat-video-gpu",
+      key: "VIDEO_GPU",
+      name: "Tăng tốc GPU (NVENC)",
+      description: "Dùng card đồ họa để tăng tốc mã hóa video",
+    },
+    update: { name: "Tăng tốc GPU (NVENC)" },
+  });
+
+  const featNoWatermark = await prisma.feature.upsert({
+    where: { key: "VIDEO_NO_WATERMARK" },
+    create: {
+      id: "feat-video-no-watermark",
+      key: "VIDEO_NO_WATERMARK",
+      name: "Xuất không watermark",
+      description: "Bỏ logo/watermark trên video xuất ra",
+    },
+    update: { name: "Xuất không watermark" },
+  });
+
+  const videoPlanMonth = await prisma.subscriptionPlan.upsert({
+    where: { id: "plan-video-month" },
+    create: {
+      id: "plan-video-month",
+      appId: videoApp.id,
+      name: "Video Tool 1 Tháng",
+      description: "Mở khóa xử lý hàng loạt",
+      currency: "VND",
+      price: 99000,
+      interval: "MONTH",
+      durationDays: 30,
+      isActive: true,
+    },
+    update: { price: 99000, durationDays: 30, isActive: true },
+  });
+
+  const videoPlanYear = await prisma.subscriptionPlan.upsert({
+    where: { id: "plan-video-year" },
+    create: {
+      id: "plan-video-year",
+      appId: videoApp.id,
+      name: "Video Tool 1 Năm",
+      description: "Toàn bộ tính năng: hàng loạt, GPU, không watermark",
+      currency: "VND",
+      price: 790000,
+      interval: "YEAR",
+      durationDays: 365,
+      isActive: true,
+    },
+    update: { price: 790000, durationDays: 365, isActive: true },
+  });
+
+  const videoMappings = [
+    { planId: videoPlanMonth.id, featureId: featBatch.id },
+    { planId: videoPlanYear.id, featureId: featBatch.id },
+    { planId: videoPlanYear.id, featureId: featGpu.id },
+    { planId: videoPlanYear.id, featureId: featNoWatermark.id },
+  ];
+  for (const m of videoMappings) {
+    await prisma.planFeature.upsert({
+      where: { planId_featureId: { planId: m.planId, featureId: m.featureId } },
+      create: m,
+      update: {},
     });
   }
-  console.log("Rankings created: 4 periods");
+
+  const videoMenus = [
+    { id: "menu-video-trim", label: "Cắt video", path: "/trim", icon: "\uE8C6", sortOrder: 1, access: "FREE" as const, requiredFeatureId: null },
+    { id: "menu-video-compress", label: "Nén video", path: "/compress", icon: "\uE721", sortOrder: 2, access: "FREE" as const, requiredFeatureId: null },
+    { id: "menu-video-convert", label: "Chuyển định dạng", path: "/convert", icon: "\uE8AB", sortOrder: 3, access: "FREE" as const, requiredFeatureId: null },
+    { id: "menu-video-audio", label: "Tách / xóa audio", path: "/audio", icon: "\uE8D6", sortOrder: 4, access: "FREE" as const, requiredFeatureId: null },
+    { id: "menu-video-merge", label: "Ghép video", path: "/merge", icon: "\uE723", sortOrder: 5, access: "FREE" as const, requiredFeatureId: null },
+    { id: "menu-video-queue", label: "Hàng đợi xử lý", path: "/queue", icon: "\uE8FD", sortOrder: 6, access: "FREE" as const, requiredFeatureId: null },
+    { id: "menu-video-batch", label: "Xử lý hàng loạt", path: "/batch", icon: "\uE8EF", sortOrder: 7, access: "PAID" as const, requiredFeatureId: featBatch.id },
+    { id: "menu-video-gpu", label: "Tăng tốc GPU (NVENC)", path: "/gpu", icon: "\uE9D9", sortOrder: 8, access: "PAID" as const, requiredFeatureId: featGpu.id },
+    { id: "menu-video-watermark", label: "Xuất không watermark", path: "/watermark", icon: "\uE790", sortOrder: 9, access: "PAID" as const, requiredFeatureId: featNoWatermark.id },
+  ];
+  for (const menu of videoMenus) {
+    await prisma.appMenuItem.upsert({
+      where: { id: menu.id },
+      create: { ...menu, appId: videoApp.id },
+      update: { ...menu, appId: videoApp.id },
+    });
+  }
+
+  await prisma.userSubscription.upsert({
+    where: { id: "sub-video-demo-year" },
+    create: {
+      id: "sub-video-demo-year",
+      userId: demoId,
+      appId: videoApp.id,
+      planId: videoPlanYear.id,
+      status: "ACTIVE",
+      startsAt: new Date(),
+      endsAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    },
+    update: {
+      status: "ACTIVE",
+      endsAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    },
+  });
+  console.log("✔ VideoTool app, features, plans, menus & demo subscription upserted");
 
   // ---------------------------------------------------------------------------
-  // Engagement (demo user)
+  // 6. User Subscription (Demo user có gói 1 năm)
   // ---------------------------------------------------------------------------
-  await prisma.skillFavorite.create({
-    data: { userId: demoId, skillId: "skl-podcast-snip" },
+  await prisma.userSubscription.upsert({
+    where: { id: "sub-demo-year" },
+    create: {
+      id: "sub-demo-year",
+      userId: demoId,
+      appId: desktopApp.id,
+      planId: planYear.id,
+      status: "ACTIVE",
+      startsAt: new Date(),
+      endsAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    },
+    update: {
+      status: "ACTIVE",
+      endsAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    },
   });
-  await prisma.skillFavorite.create({
-    data: { userId: demoId, skillId: "skl-close-sales-reply" },
-  });
-  await prisma.skillView.createMany({
-    data: [
-      { skillId: "skl-podcast-snip", userId: demoId },
-      { skillId: "skl-doc-to-ad", userId: demoId },
-      { skillId: "skl-code-review", userId: null, sessionHash: "seed-anon" },
-    ],
-  });
-  console.log("Engagement created");
+  console.log("✔ User Subscription (Demo VIP 1 Năm) upserted");
 
-  console.log("\nSeed complete ✔");
-  console.log("Sign-in emails (Google OAuth must be configured):");
-  console.log("  - admin@promptworks.app");
-  console.log("  - explorer@promptworks.app");
+  // ---------------------------------------------------------------------------
+  // 6. AI Gateway Seed (Clients & Provider Keys)
+  // ---------------------------------------------------------------------------
+  const demoAiClient = await prisma.aiClient.upsert({
+    where: { apiKey: "sk_gateway_demo_123" },
+    create: {
+      name: "Smart Money AI Desktop Tool",
+      apiKey: "sk_gateway_demo_123",
+      status: "ACTIVE",
+      rateLimitPerMin: 120,
+      allowedProviders: ["openai", "gemini", "fal-ai", "luma", "openai-tts"],
+      allowedTasks: ["TEXT", "IMAGE", "VIDEO", "AUDIO"],
+    },
+    update: {
+      status: "ACTIVE",
+      rateLimitPerMin: 120,
+    },
+  });
+  console.log(`✔ AI Gateway Client upserted: ${demoAiClient.name} (API Key: ${demoAiClient.apiKey})`);
+
+  // Provider keys (System Pool)
+  const defaultOpenAiKey = process.env.OPENAI_API_KEY || "sk-mock-openai-key-primary";
+  await prisma.aiProviderKey.upsert({
+    where: { id: "openai-primary-key" },
+    create: {
+      id: "openai-primary-key",
+      provider: "openai",
+      alias: "OpenAI Primary System Key",
+      keySecret: defaultOpenAiKey,
+      status: "ACTIVE",
+      weight: 10,
+    },
+    update: {
+      keySecret: defaultOpenAiKey,
+      status: "ACTIVE",
+    },
+  });
+
+  const defaultGeminiKey = process.env.GEMINI_API_KEY || "AIzaSyMockGeminiKey";
+  await prisma.aiProviderKey.upsert({
+    where: { id: "gemini-primary-key" },
+    create: {
+      id: "gemini-primary-key",
+      provider: "gemini",
+      alias: "Gemini Pro System Key",
+      keySecret: defaultGeminiKey,
+      status: "ACTIVE",
+      weight: 10,
+    },
+    update: {
+      keySecret: defaultGeminiKey,
+      status: "ACTIVE",
+    },
+  });
+  console.log("✔ AI Gateway Provider Keys upserted (OpenAI, Gemini)");
+
+  console.log("\n=======================================================");
+  console.log("✔ Dữ liệu thực tế trên Local DB đã được cập nhật thành công!");
+  console.log("  - Tài khoản Admin: admin@promptworks.app");
+  console.log("  - Tài khoản Demo (VIP 1 năm): explorer@promptworks.app");
+  console.log("  - AI Gateway Test Key: sk_gateway_demo_123");
+  console.log("  - OAuth Client ID: demo-windows-tool");
+  console.log("  - OAuth Client ID (native): video-tool-desktop");
+  console.log("  - App Slug: smart-money-desktop / video-tool");
+  console.log("=======================================================\n");
 }
 
 main()
   .catch((error) => {
-    console.error(error);
+    console.error("Lỗi cập nhật DB:", error);
     process.exit(1);
   })
   .finally(async () => {

@@ -129,3 +129,59 @@ export const rankingAdminCommands = createRankingAdminCommands({
 export const skillAccessRepository = prismaSkillAccessRepository;
 export const orderRepository = prismaOrderRepository;
 export const webhookEventRepository = prismaWebhookEventRepository;
+
+import { prismaOAuthRepository } from "@/src/infrastructure/repositories/prisma-oauth-repository";
+import { createOAuthService } from "@/src/application/identity/oauth-service";
+export const oauthService = createOAuthService({
+  oauth: prismaOAuthRepository,
+  users: prismaUserRepository,
+});
+
+import { prismaAppRepository } from "@/src/infrastructure/repositories/prisma-app-repository";
+import { createAppsService } from "@/src/application/apps/apps-service";
+export const appsService = createAppsService({
+  apps: prismaAppRepository,
+  users: prismaUserRepository,
+});
+
+// ---------------------------------------------------------------------------
+// AI Gateway Module Composition
+// ---------------------------------------------------------------------------
+import { prismaAiRepository } from "@/src/infrastructure/ai/repositories/prisma-ai-repository";
+import { KeyManagerService } from "@/src/application/ai/key-manager.service";
+import { taskQueue } from "@/src/infrastructure/ai/queue/task-queue";
+import { s3MediaStorage } from "@/src/infrastructure/ai/storage/s3-media-storage";
+import { openAIAdapter } from "@/src/infrastructure/ai/adapters/openai.adapter";
+import { geminiAdapter } from "@/src/infrastructure/ai/adapters/gemini.adapter";
+import { falAiFluxAdapter } from "@/src/infrastructure/ai/adapters/fal-flux.adapter";
+import { lumaVideoAdapter } from "@/src/infrastructure/ai/adapters/video.adapter";
+import { audioTtsAdapter } from "@/src/infrastructure/ai/adapters/edge-tts.adapter";
+import { AiGatewayService } from "@/src/application/ai/ai-gateway.service";
+import { TaskWorkerService } from "@/src/application/ai/task-worker.service";
+
+export const aiRepository = prismaAiRepository;
+export const keyManagerService = new KeyManagerService(prismaAiRepository);
+
+const imageProvidersMap = new Map([["fal-ai", falAiFluxAdapter]]);
+const videoProvidersMap = new Map([["luma", lumaVideoAdapter]]);
+
+export const taskWorkerService = new TaskWorkerService({
+  queue: taskQueue,
+  repository: prismaAiRepository,
+  keyManager: keyManagerService,
+  imageProviders: imageProvidersMap,
+  videoProviders: videoProvidersMap,
+  storage: s3MediaStorage,
+});
+
+export const aiGatewayService = new AiGatewayService({
+  repository: prismaAiRepository,
+  keyManager: keyManagerService,
+  queue: taskQueue,
+  textProviders: [openAIAdapter, geminiAdapter],
+  imageProviders: [falAiFluxAdapter],
+  videoProviders: [lumaVideoAdapter],
+  audioProviders: [audioTtsAdapter],
+});
+
+

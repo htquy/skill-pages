@@ -1,6 +1,10 @@
 import type { TaxonomyOption } from "@/src/domain/taxonomy/entities";
 import type { SkillAccessType } from "@/src/domain/skill";
 import { getDictionary, trans } from "@/src/lib/i18n";
+import {
+  FilterForm,
+  FilterSubmitButton,
+} from "@/src/presentation/components/shared/filter-form";
 
 export interface SkillFiltersValues {
   q: string;
@@ -49,21 +53,29 @@ function Select({
 }
 
 export async function SkillFilters({
+  action,
   values,
   industries,
   categories,
   tools,
+  resetKey,
 }: {
+  action: string;
   values: SkillFiltersValues;
   industries: TaxonomyOption[];
   categories: TaxonomyOption[];
   tools: TaxonomyOption[];
+  resetKey?: string;
 }) {
   const dict = await getDictionary();
   const allLabel = dict.common.all;
 
   return (
-    <form method="get" className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <FilterForm
+      action={action}
+      resetKey={resetKey}
+      className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+    >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <div className="flex flex-col gap-1.5 sm:col-span-2 lg:col-span-2">
           <label htmlFor="skill-q" className="text-xs font-medium text-zinc-500">
@@ -133,13 +145,8 @@ export async function SkillFilters({
       </div>
 
       <div className="mt-3 flex items-center justify-end gap-2">
-        <button
-          type="submit"
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-700"
-        >
-          {trans(dict.filters.apply)}
-        </button>
+        <FilterSubmitButton label={trans(dict.filters.apply)} />
       </div>
-    </form>
+    </FilterForm>
   );
 }

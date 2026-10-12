@@ -29,43 +29,55 @@ app/
     tools/ …              Tools: list, new, detail, edit, delete, publish
     articles/ …           Articles: list, new, detail, edit, delete, publish
     rankings/ …           Rankings: list, new, detail, edit, delete, publish, recalc
+    apps/                 Apps & plans: products, plans, dynamic menus, grant subscriptions
     orders/ …             Orders: list + detail
     webhook-events/ …     Payment webhooks: reconciliation of unmatched transfers
     users/ …              Users: list + detail, block/unblock, role change
     statistics/           Charts for revenue, users, sales
   tools/                  Public tool catalog: list + detail
-  api/                    API routes (auth, orders, SePay webhook, R2 uploads)
+  api/                    Thin routing wrappers → src/server/controllers
   …
 src/
-  application/            Application services / use cases (commands + queries)
-  domain/                 Domain types & repository interfaces
+  application/            Application services / use cases (commands + queries), per module
+  domain/                 Domain types & repository interfaces, per module
   infrastructure/         Repositories, auth, payments, composition root (DI)
+  server/controllers/     HTTP controllers: OAuth, Apps, Order, Payment, Catalog, Upload
   presentation/           React components, server actions, view models
   lib/                    Utils, validation, site config
 prisma/
-  schema.prisma           Database schema
+  schema.prisma           Database schema (PostgreSQL multi-schema)
   migrations/             Prisma migrations
   seed.ts                 Seed/demo data
 ```
 
 ## Database overview (`prisma/schema.prisma`)
 
-- **Identity** — `User` (role `CUSTOMER | ADMIN`, status `ACTIVE | BLOCKED`), Auth.js
-  `Account`, `Session`, `VerificationToken`.
-- **Taxonomy** — `Industry`, `SkillCategory`, `UseCase`, `AITool`.
-- **Skill catalog** — `Skill`, `SkillVersion` (versioned prompt content), `SkillPrice`
+The database is split into five PostgreSQL schemas — `authentication`, `apps`, `payment`,
+`catalog`, `audit` — declared per model with Prisma `@@schema`. Modules must **not** join
+across schemas; they communicate through service facades. See
+[`../ai-monolith-project-skills/15-microservice-modular-architecture.md`](../ai-monolith-project-skills/15-microservice-modular-architecture.md).
+
+- **Identity** (`authentication`) — `User` (role `CUSTOMER | ADMIN`, status `ACTIVE | BLOCKED`),
+  Auth.js `Account`, `Session`, `VerificationToken`. OAuth2/OIDC SSO: `OAuthClient`,
+  `AuthorizationCode`, `OAuthAccessToken` (SHA-256 hashed), `OAuthRefreshToken`.
+- **Apps & subscriptions** (`apps`) — `App` (type `WEB_APP | DESKTOP_TOOL | MOBILE_APP |
+  EMBED_WIDGET | MCP_SERVER`), `AppMenuItem` (dynamic menu, `access FREE | PAID`,
+  optional `requiredFeature`), `Feature`, `SubscriptionPlan` (interval `MONTH | QUARTER |
+  YEAR | CUSTOM`, `durationDays`, `0` = lifetime), `PlanFeature`, `UserSubscription`.
+- **Taxonomy** (`catalog`) — `Industry`, `SkillCategory`, `UseCase`, `AITool`.
+- **Skill catalog** (`catalog`) — `Skill`, `SkillVersion` (versioned prompt content), `SkillPrice`
   (per-currency pricing, stored in minor units), link tables for taxonomy/tools.
-- **Tool catalog** — `Tool` (type `DOWNLOADABLE | EMBED_WIDGET | MCP_SERVER | WEB_APP`,
+- **Tool catalog** (`catalog`) — `Tool` (type `DOWNLOADABLE | EMBED_WIDGET | MCP_SERVER | WEB_APP`,
   billing `FREE | ONE_TIME | SUBSCRIPTION`, `status` reuses `ContentStatus`),
   `ToolVersion` (the latest release, package file or script URL) and `ToolPrice`
   (per-currency, minor units, `durationDays` where `0` = lifetime).
-- **News** — `NewsArticle`, `NewsCategory`, `NewsToolLink`.
-- **Rankings** — `Ranking` (period `WEEK | MONTH | QUARTER | ALL_TIME`), `RankingEntry`
+- **News** (`catalog`) — `NewsArticle`, `NewsCategory`, `NewsToolLink`.
+- **Rankings** (`catalog`) — `Ranking` (period `WEEK | MONTH | QUARTER | ALL_TIME`), `RankingEntry`
   (per-tool score/views/favorites/clicks).
-- **Engagement** — `SkillFavorite`, `SkillView`, `ToolClick`.
-- **Commerce** — `Order` (status `PENDING | PAID | EXPIRED | CANCELED | FAILED | REFUNDED`),
-  `PaymentTransaction`, `SkillAccess` (granted by `ORDER`, `ADMIN_GRANT` or `PROMOTION`).
-- **Audit** — `AuditLog` for admin actions.
+- **Engagement** (`catalog`) — `SkillFavorite`, `SkillView`, `ToolClick`.
+- **Commerce** (`payment`) — `Order` (status `PENDING | PAID | EXPIRED | CANCELED | FAILED | REFUNDED`),
+  `PaymentTransaction`, `WebhookEvent`, `SkillAccess` (granted by `ORDER`, `ADMIN_GRANT` or `PROMOTION`).
+- **Audit** (`audit`) — `AuditLog` for admin actions.
 
 ## Admin console
 
@@ -81,10 +93,65 @@ sidebar. Every module provides:
 | Articles    | ✔    | q, status      | ✔      | ✔      | ✔    | ✔      | Publish/unpublish, category/tools |
 | Rankings    | ✔    | —              | ✔      | ✔      | ✔    | ✔      | Publish/unpublish, recalculate scores |
 | Orders      | ✔    | q, status      | ✔      | —      | —    | —      | Read-only: orders are system-generated |
+| Apps        | ✔    | —              | ✔      | ✔      | —    | —      | Plans, dynamic menus, grant/extend subscriptions |
 | Users       | ✔    | q, role, status| ✔      | —      | —    | —      | Block/unblock, promote/demote role |
 
 Admin mutations are performed through server actions (`src/presentation/actions/admin-actions.ts`)
 and recorded to `AuditLog`.
+
+## Enterprise SSO (OAuth2 Authorization Server + PKCE)
+
+Every third-party app, sub-web or desktop tool signs in through a standard OAuth2
+authorization-code flow with **PKCE (S256 only)**. Implemented in
+`src/server/controllers/oauth.controller.ts`; routes under `app/api/auth/oauth/`.
+
+1. Client generates `code_verifier` + `code_challenge = BASE64URL(SHA256(verifier))`.
+2. Browser opens `GET /api/auth/oauth/authorize?client_id=…&redirect_uri=…&response_type=code&scope=openid profile email&code_challenge=…&code_challenge_method=S256&state=…`.
+3. The user signs in and confirms on the consent screen; the system redirects to
+   `redirect_uri?code=…&state=…`.
+4. Client calls `POST /api/auth/oauth/token` (`grant_type=authorization_code`, `code`,
+   `redirect_uri`, `code_verifier`, plus `client_id`/`client_secret` or HTTP Basic) and
+   receives `access_token` + rotating `refresh_token`.
+5. Later calls send `Authorization: Bearer <access_token>`.
+
+| Endpoint | Method | Purpose |
+| --- | --- | --- |
+| `/api/auth/oauth/authorize` | GET | Consent + authorization code |
+| `/api/auth/oauth/token` | POST | Exchange/refresh tokens |
+| `/api/auth/oauth/userinfo` | GET/POST | Current user for a bearer token |
+| `/api/auth/oauth/revoke` | POST | Revoke an access/refresh token |
+| `/api/auth/oauth/.well-known/openid-configuration` | GET | Server metadata (RFC 8414) |
+| `/api/auth/oauth/clients` | POST | Register a client (**admin only**) |
+
+Access/refresh tokens are opaque and stored only as SHA-256 hashes; refresh tokens rotate
+on every use. Set `SERVER_API_SECRET` to allow trusted server-to-server `?userId=` calls.
+
+## Apps, plans & the entitlement hub
+
+Apps are sellable products with configuration-driven pricing and dynamic menus
+(admin: `/admin/apps`). A subscription plan carries an interval (`MONTH`, `QUARTER`,
+`YEAR`, `CUSTOM`), a `durationDays` (0 = lifetime) and the set of `Feature` keys it
+unlocks. Menu items are per-app, optionally nested, and marked `FREE` or `PAID` with an
+optional `requiredFeature`.
+
+The **Entitlement Hub** is the single place any app/tool asks "is this user paid, and
+which menus/features are open?":
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/apps` | Active apps + plans |
+| `GET /api/apps/:slug` | App detail + plans |
+| `GET /api/apps/:slug/check-access` (alias `/entitlement`) | Full entitlement: `isPaid`, `hasActiveSubscription`, `status`, `subscription` (`planName`, `interval`, `daysRemaining`, `isLifetime`), `unlockedFeatures`, `menus` |
+| `GET /api/apps/:slug/menus` | Dynamic, per-user menu tree (`isAccessible`, `isLocked`, `lockReason`) |
+
+Authentication accepts any of: `Authorization: Bearer <access_token>` (external
+OAuth2 apps), the session cookie (same-domain web), or `?userId=…` **with** the shared
+secret (`x-internal-secret` header or `?secret=`, see `SERVER_API_SECRET`) for
+server-to-server calls.
+
+Admin endpoints (all require admin): `POST /api/admin/apps`,
+`POST /api/admin/apps/:slug/plans`, `POST /api/admin/apps/:slug/menus`,
+`POST /api/admin/apps/:slug/grant`.
 
 ## Getting started
 

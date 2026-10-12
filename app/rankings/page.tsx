@@ -1,15 +1,23 @@
 export const dynamic = "force-dynamic";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { Trophy } from "lucide-react";
 import { Container } from "@/src/presentation/components/layout/container";
 import { RankingFilters } from "@/src/presentation/components/ranking/ranking-filters";
 import { RankingTable } from "@/src/presentation/components/ranking/ranking-table";
 import { EmptyState } from "@/src/presentation/components/shared/empty-state";
+import { TableSkeleton } from "@/src/presentation/components/shared/table-skeleton";
 import { rankingQueries, taxonomyQueries } from "@/src/infrastructure/composition";
 import { rankingFiltersSchema } from "@/src/lib/validation";
 import type { RankingPeriodType } from "@/src/domain/ranking/entities";
 import { getDictionary, trans } from "@/src/lib/i18n";
+
+interface RankingQueryFilters {
+  industry?: string;
+  category?: string;
+  periodType?: RankingPeriodType;
+}
 
 function buildHref(filters: {
   industry?: string;
@@ -24,11 +32,50 @@ function buildHref(filters: {
   return query ? `/rankings?${query}` : "/rankings";
 }
 
+function filterKey(filters: RankingQueryFilters) {
+  return [filters.industry, filters.category, filters.periodType].map((value) => value ?? "").join("|");
+}
+
+async function RankingResults({ filters }: { filters: RankingQueryFilters }) {
+  const [periods, ranking] = await Promise.all([
+    rankingQueries.listPeriodOptions(),
+    rankingQueries.get(filters),
+  ]);
+  const dict = await getDictionary();
+
+  return (
+    <>
+      {ranking ? (
+        <RankingTable ranking={ranking} />
+      ) : (
+        <EmptyState
+          title={dict.rankings.emptyTitle}
+          description={dict.rankings.emptyDescription}
+          action={
+            <Link
+              href="/rankings"
+              className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
+            >
+              {dict.rankings.clearAction}
+            </Link>
+          }
+        />
+      )}
+      <p className="mt-4 text-xs text-zinc-400">
+        {trans(dict.rankings.footnote, {
+          periods:
+            periods.length === 0 ? "WEEK, MONTH, QUARTER, ALL_TIME" : periods.join(", "),
+        })}
+      </p>
+    </>
+  );
+}
+
 export default async function RankingsPage({ searchParams }: PageProps<"/rankings">) {
   const sp = await searchParams;
   const parsed = rankingFiltersSchema.safeParse(sp);
 
-  const filters = parsed.success
+  const filters: RankingQueryFilters = parsed.success
     ? {
         industry: parsed.data.industry,
         category: parsed.data.category,
@@ -36,15 +83,9 @@ export default async function RankingsPage({ searchParams }: PageProps<"/ranking
       }
     : {};
 
-  const [taxonomy, periods, ranking] = await Promise.all([
-    taxonomyQueries.getSnapshot(),
-    rankingQueries.listPeriodOptions(),
-    rankingQueries.get(filters),
-  ]);
+  const [dict, taxonomy] = await Promise.all([getDictionary(), taxonomyQueries.getSnapshot()]);
 
   const activePeriod = parsed.success ? coercePeriod(parsed.data.period) ?? "ALL_TIME" : "ALL_TIME";
-
-  const dict = await getDictionary();
 
   const PERIOD_TABS: { value: RankingPeriodType; label: string }[] = [
     { value: "WEEK", label: dict.rankings.weeks },
@@ -93,6 +134,8 @@ export default async function RankingsPage({ searchParams }: PageProps<"/ranking
       </nav>
 
       <RankingFilters
+        action="/rankings"
+        resetKey={filterKey(filters)}
         values={{
           industry: filters.industry,
           category: filters.category,
@@ -103,30 +146,9 @@ export default async function RankingsPage({ searchParams }: PageProps<"/ranking
       />
 
       <div className="mt-8">
-        {ranking ? (
-          <RankingTable ranking={ranking} />
-        ) : (
-          <EmptyState
-            title={dict.rankings.emptyTitle}
-            description={dict.rankings.emptyDescription}
-            action={
-              <Link
-                href="/rankings"
-                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
-              >
-                {dict.rankings.clearAction}
-              </Link>
-            }
-          />
-        )}
-        <p className="mt-4 text-xs text-zinc-400">
-          {trans(dict.rankings.footnote, {
-            periods:
-              periods.length === 0
-                ? "WEEK, MONTH, QUARTER, ALL_TIME"
-                : periods.join(", "),
-          })}
-        </p>
+        <Suspense key={filterKey(filters)} fallback={<TableSkeleton columns={5} label={dict.common.loading} />}>
+          <RankingResults filters={filters} />
+        </Suspense>
       </div>
     </Container>
   );

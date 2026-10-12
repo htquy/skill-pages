@@ -21,6 +21,15 @@ export function isGoogleAuthConfigured(): boolean {
 }
 
 /**
+ * Secret dùng chung cho các lời gọi server-to-server vào Entitlement Hub
+ * (`/api/apps/:slug/check-access`, `/menus`) khi xác thực bằng `?userId=`.
+ * Không cấu hình => endpoint từ chối xác thực kiểu này (chỉ nhận Bearer/session).
+ */
+export function getServerApiSecret(): string | undefined {
+  return process.env.SERVER_API_SECRET || undefined;
+}
+
+/**
  * Cấu hình tích hợp SePay (BankHub) + VietQR.
  *
  * Toàn bộ biến môi trường liên quan thanh toán nằm ở đây để không rò rỉ secret

@@ -5,12 +5,10 @@ import Link from "next/link";
 import { Container } from "@/src/presentation/components/layout/container";
 import { HeroSection } from "@/src/presentation/components/layout/hero-section";
 import { SkillFilters } from "@/src/presentation/components/skill/skill-filters";
-import { SkillFiltersSkeleton } from "@/src/presentation/components/skill/skill-filters-skeleton";
 import { SkillGrid } from "@/src/presentation/components/skill/skill-grid";
 import { SkillGridSkeleton } from "@/src/presentation/components/skill/skill-grid-skeleton";
 import { EmptyState } from "@/src/presentation/components/shared/empty-state";
 import { Pagination } from "@/src/presentation/components/shared/pagination";
-import { Skeleton } from "@/src/presentation/components/shared/skeleton";
 import { toSkillCardViewModel, createOwnershipLookup } from "@/src/presentation/view-models/skill";
 import { skillQueries, taxonomyQueries, accessCommands } from "@/src/infrastructure/composition";
 import { getCurrentUser } from "@/src/infrastructure/authentication/authorization";
@@ -26,16 +24,21 @@ function toUrlSearchParams(searchParams: Record<string, string | string[] | unde
   return params;
 }
 
-interface CatalogProps {
+function filterKey(filters: SkillFiltersValues) {
+  return [filters.q, filters.industry, filters.category, filters.useCase, filters.tool, filters.access]
+    .map((value) => value ?? "")
+    .join("|");
+}
+
+interface CatalogResultsProps {
   filters: SkillFiltersValues;
   pagination: { page: number; pageSize: number };
   searchParams: Record<string, string | string[] | undefined>;
 }
 
-async function Catalog({ filters, pagination, searchParams }: CatalogProps) {
+async function CatalogResults({ filters, pagination, searchParams }: CatalogResultsProps) {
   const user = await getCurrentUser();
-  const [taxonomy, result, ownedSkillIds] = await Promise.all([
-    taxonomyQueries.getSnapshot(),
+  const [result, ownedSkillIds] = await Promise.all([
     skillQueries.search(
       {
         q: filters.q || undefined,
@@ -60,70 +63,32 @@ async function Catalog({ filters, pagination, searchParams }: CatalogProps) {
 
   return (
     <>
-      <div className="mb-6 flex items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-            {dict.results.libraryTitle}
-          </h2>
-          <p className="mt-1 text-zinc-600">{dict.results.librarySubtitle}</p>
-        </div>
-        <p className="hidden text-sm text-zinc-500 sm:block">
-          {trans(dict.results.other, { count: result.total })}
-        </p>
-      </div>
-
-      <SkillFilters
-        values={filters}
-        industries={taxonomy.industries}
-        categories={taxonomy.categories}
-        tools={taxonomy.tools}
-      />
-
-      <div className="mt-8">
-        {cards.length > 0 ? (
-          <>
-            <SkillGrid skills={cards} />
-            <Pagination
-              info={{ page: pagination.page, totalPages: result.totalPages, total: result.total }}
-              path="/"
-              params={toUrlSearchParams(searchParams)}
-            />
-          </>
-        ) : (
-          <EmptyState
-            title={dict.search.emptyTitle}
-            description={dict.search.emptyDescription}
-            action={
-              <Link
-                href={hasActiveFilters ? "/" : "/#catalog"}
-                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
-              >
-                {dict.common.clear}
-              </Link>
-            }
+      <p className="mb-4 text-sm text-zinc-500">
+        {trans(dict.results.other, { count: result.total })}
+      </p>
+      {cards.length > 0 ? (
+        <>
+          <SkillGrid skills={cards} />
+          <Pagination
+            info={{ page: pagination.page, totalPages: result.totalPages, total: result.total }}
+            path="/"
+            params={toUrlSearchParams(searchParams)}
           />
-        )}
-      </div>
-    </>
-  );
-}
-
-function CatalogSkeleton({ label }: { label: string }) {
-  return (
-    <>
-      <div className="mb-6 flex items-end justify-between gap-4">
-        <div>
-          <Skeleton className="h-8 w-72 rounded-md sm:h-10" />
-          <Skeleton className="mt-1 h-6 w-96 max-w-full rounded-md" />
-        </div>
-        <Skeleton className="hidden h-5 w-24 rounded-md sm:block" />
-      </div>
-
-      <SkillFiltersSkeleton />
-
-      <div className="mt-8">
-        <SkillGridSkeleton count={6} label={label} />
-      </div>
+        </>
+      ) : (
+        <EmptyState
+          title={dict.search.emptyTitle}
+          description={dict.search.emptyDescription}
+          action={
+            <Link
+              href={hasActiveFilters ? "/" : "/#catalog"}
+              className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
+            >
+              {dict.common.clear}
+            </Link>
+          }
+        />
+      )}
     </>
   );
 }
@@ -138,15 +103,36 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
     ? { page: parsedPagination.data.page, pageSize: parsedPagination.data.pageSize }
     : { page: 1, pageSize: 12 };
 
-  const dict = await getDictionary();
+  const [dict, taxonomy] = await Promise.all([getDictionary(), taxonomyQueries.getSnapshot()]);
 
   return (
     <>
       <HeroSection />
       <Container id="catalog" className="scroll-mt-20 py-12 md:py-16">
-        <Suspense fallback={<CatalogSkeleton label={dict.common.loading} />}>
-          <Catalog filters={filters} pagination={pagination} searchParams={sp} />
-        </Suspense>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+            {dict.results.libraryTitle}
+          </h2>
+          <p className="mt-1 text-zinc-600">{dict.results.librarySubtitle}</p>
+        </div>
+
+        <SkillFilters
+          action="/"
+          resetKey={filterKey(filters)}
+          values={filters}
+          industries={taxonomy.industries}
+          categories={taxonomy.categories}
+          tools={taxonomy.tools}
+        />
+
+        <div className="mt-8">
+          <Suspense
+            key={filterKey(filters)}
+            fallback={<SkillGridSkeleton count={6} label={dict.common.loading} />}
+          >
+            <CatalogResults filters={filters} pagination={pagination} searchParams={sp} />
+          </Suspense>
+        </div>
       </Container>
     </>
   );

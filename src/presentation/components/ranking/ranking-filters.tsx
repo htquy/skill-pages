@@ -2,6 +2,10 @@ import type { TaxonomyOption } from "@/src/domain/taxonomy/entities";
 import type { RankingPeriodType } from "@/src/domain/ranking/entities";
 import { getDictionary } from "@/src/lib/i18n";
 import type { Dict } from "@/src/lib/i18n/config";
+import {
+  FilterForm,
+  FilterSubmitButton,
+} from "@/src/presentation/components/shared/filter-form";
 
 export interface RankingFiltersValues {
   industry?: string;
@@ -56,19 +60,27 @@ function periodOptions(dict: Dict): { value: RankingPeriodType; label: string }[
 }
 
 export async function RankingFilters({
+  action,
   values,
   industries,
   categories,
+  resetKey,
 }: {
+  action: string;
   values: RankingFiltersValues;
   industries: TaxonomyOption[];
   categories: TaxonomyOption[];
+  resetKey?: string;
 }) {
   const dict = await getDictionary();
   const allLabel = dict.common.all;
 
   return (
-    <form method="get" className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <FilterForm
+      action={action}
+      resetKey={resetKey}
+      className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+    >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field
           id="ranking-industry"
@@ -96,13 +108,8 @@ export async function RankingFilters({
         />
       </div>
       <div className="mt-3 flex items-center justify-end">
-        <button
-          type="submit"
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-700"
-        >
-          {dict.common.apply}
-        </button>
+        <FilterSubmitButton label={dict.common.apply} />
       </div>
-    </form>
+    </FilterForm>
   );
 }

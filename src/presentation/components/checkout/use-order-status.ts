@@ -22,7 +22,12 @@ export function isTerminalStatus(status: OrderStatus): boolean {
  * đơn lẻ, không có shared cache, và dự án không dùng thư viện polling nào.
  */
 export function useOrderStatusPolling(orderId: string | null, intervalMs = 4000) {
-  const [snapshot, setSnapshot] = useState<OrderStatusSnapshot | null>(null);
+  // Gắn orderId vào snapshot để tự vô hiệu hoá kết quả của đơn cũ khi đổi đơn,
+  // tránh phải reset state trong effect (gây cascading render).
+  const [state, setState] = useState<{ orderId: string | null; snapshot: OrderStatusSnapshot | null }>({
+    orderId,
+    snapshot: null,
+  });
   const [checking, setChecking] = useState(false);
   const inFlight = useRef(false);
   /** Đơn đã kết thúc thì dừng hẳn việc poll để không gọi vô ích. */
@@ -35,7 +40,7 @@ export function useOrderStatusPolling(orderId: string | null, intervalMs = 4000)
       const response = await fetch(`/api/orders/${orderId}/status`, { cache: "no-store" });
       if (!response.ok) return null;
       const body = (await response.json()) as OrderStatusSnapshot;
-      setSnapshot(body);
+      setState({ orderId, snapshot: body });
       stopped.current = isTerminalStatus(body.status);
       return body;
     } catch {
@@ -52,7 +57,6 @@ export function useOrderStatusPolling(orderId: string | null, intervalMs = 4000)
   }, [check]);
 
   useEffect(() => {
-    setSnapshot(null);
     stopped.current = false;
     if (!orderId) return;
 
@@ -64,6 +68,8 @@ export function useOrderStatusPolling(orderId: string | null, intervalMs = 4000)
 
     return () => clearInterval(timer);
   }, [check, orderId, intervalMs]);
+
+  const snapshot = state.orderId === orderId ? state.snapshot : null;
 
   return { snapshot, checking, checkNow };
 }

@@ -215,6 +215,7 @@ function PriceRow({ price, dict }: { price: ToolPriceInfo; dict: Dict }) {
 /** `appUrl` có input riêng nên không lặp lại trong ô JSON. */
 function toConfigInput(config: Record<string, unknown> | null | undefined): string {
   if (!config) return "";
-  const { appUrl: _appUrl, ...rest } = config;
+  const rest = { ...config };
+  delete rest.appUrl;
   return Object.keys(rest).length > 0 ? JSON.stringify(rest, null, 2) : "";
 }
