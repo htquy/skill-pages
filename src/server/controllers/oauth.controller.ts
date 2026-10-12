@@ -33,6 +33,20 @@ function parseBasicAuth(header: string | null): { clientId: string; clientSecret
   }
 }
 
+function getRequestOrigin(request: Request): string {
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
+  if (forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+  const host = request.headers.get("host");
+  if (host) {
+    return `https://${host}`;
+  }
+  const url = new URL(request.url);
+  return url.origin;
+}
+
 export const oauthCorsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -103,7 +117,8 @@ export class OAuthController {
       // Kiểm tra phiên đăng nhập; chưa đăng nhập thì đưa về trang login rồi quay lại.
       const session = await auth();
       if (!session || !session.user || !session.user.id) {
-        const loginUrl = new URL("/login", siteConfig.url || url.origin);
+        const origin = getRequestOrigin(request);
+        const loginUrl = new URL("/login", origin);
         loginUrl.searchParams.set("callbackUrl", request.url);
         return NextResponse.redirect(loginUrl.toString(), 302);
       }
@@ -116,7 +131,15 @@ export class OAuthController {
         return NextResponse.redirect(deniedUrl.toString(), 302);
       }
 
-      if (decision !== "allow") {
+      // Tự động phê duyệt (Skip Consent Screen theo RFC 6749 Section 10.2) cho các client
+      // nội bộ / chính chủ của hệ thống (video-tool-desktop, demo-windows-tool, demo-web-sso)
+      // để sau khi đăng nhập Web xong, server lập tức redirect thẳng về App/Tool.
+      const isInternalClient =
+        client.clientId === "video-tool-desktop" ||
+        client.clientId === "demo-windows-tool" ||
+        client.clientId === "demo-web-sso";
+
+      if (decision !== "allow" && !isInternalClient) {
         return this.renderConsentPage({
           clientName: client.name,
           scopes: scope.split(" ").filter(Boolean),
@@ -368,8 +391,7 @@ export class OAuthController {
    * GET /api/auth/oauth/.well-known/openid-configuration
    */
   static async handleDiscovery(request: Request): Promise<NextResponse> {
-    const url = new URL(request.url);
-    const origin = siteConfig.url || url.origin;
+    const origin = getRequestOrigin(request);
     // Issuer = gốc OAuth; discovery chuẩn nằm tại <issuer>/.well-known/openid-configuration.
     const issuer = `${origin}/api/auth/oauth`;
 
