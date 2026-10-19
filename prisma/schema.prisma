@@ -888,6 +888,8 @@ model App {
   createdAt   DateTime  @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
 
+  sources       AppSource[]
+  releases      AppRelease[]
   menus         AppMenuItem[]
   plans         SubscriptionPlan[]
   subscriptions UserSubscription[]
@@ -1142,3 +1144,59 @@ model AiUsageLog {
   @@schema("ai")
 }
 
+
+// Distribution artifacts and pinned releases, entirely within apps schema.
+model AppSource {
+  id               String @id @default(uuid())
+  appId            String
+  key              String @db.VarChar(80)
+  name             String @db.VarChar(200)
+  version          String @db.VarChar(40)
+  kind             String @db.VarChar(20)
+  format           String @db.VarChar(10)
+  platform         String @db.VarChar(40)
+  url              String @db.Text
+  sha256           String @db.Char(64)
+  size             Float
+  fileName         String @db.VarChar(200)
+  installDirectory String @db.VarChar(240)
+  entryPoint       String @db.VarChar(240)
+  requiredFiles    Json @default("[]")
+  description      String @default("") @db.Text
+  metadata         Json @default("{}")
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @db.Timestamptz(3)
+  app              App @relation(fields: [appId], references: [id], onDelete: Restrict)
+  items            AppReleaseItem[]
+  @@unique([appId, key, version, platform])
+  @@index([url])
+  @@map("app_sources")
+  @@schema("apps")
+}
+model AppRelease {
+  id          String @id @default(uuid())
+  appId       String
+  version     String @db.VarChar(40)
+  channel     String @default("stable") @db.VarChar(20)
+  platform    String @default("win-x64") @db.VarChar(40)
+  status      String @default("DRAFT") @db.VarChar(20)
+  notes       String @default("") @db.Text
+  publishedAt DateTime? @db.Timestamptz(3)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  app         App @relation(fields: [appId], references: [id], onDelete: Restrict)
+  items       AppReleaseItem[]
+  @@unique([appId, version, channel, platform])
+  @@index([appId, channel, platform, status])
+  @@map("app_releases")
+  @@schema("apps")
+}
+model AppReleaseItem {
+  releaseId String
+  sourceId  String
+  release AppRelease @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  source AppSource @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  @@id([releaseId, sourceId])
+  @@index([sourceId])
+  @@map("app_release_items")
+  @@schema("apps")
+}

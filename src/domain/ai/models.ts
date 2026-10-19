@@ -245,3 +245,56 @@ export interface ProblemDetails {
   timestamp: string;
   [key: string]: unknown;
 }
+
+// ---------------------------------------------------------------------------
+// Dynamic AI Capability Catalog & Profile Manifest Contracts
+// ---------------------------------------------------------------------------
+
+export type AiCapability =
+  | "text.generate"
+  | "text.extract"
+  | "image.generate"
+  | "video.generate"
+  | "audio.speech";
+
+export type AiExecutionMode = "gateway_proxy" | "direct_byok";
+export type AiProfileStatus = "enabled" | "disabled" | "degraded";
+
+export interface AIProfile {
+  profileId: string;
+  version: number;
+  displayName: string;
+  description: string;
+  capability: AiCapability;
+  providerId: string;
+  upstreamModelId: string;
+  executionMode: AiExecutionMode;
+  status: AiProfileStatus;
+  limits?: Record<string, unknown>;
+  supportedParameters?: string[];
+  pricing?: {
+    estimatedCostUsd?: number;
+    currency?: string;
+  };
+}
+
+export interface CatalogResponse {
+  catalogVersion: number;
+  version: number;
+  generatedAt: string;
+  profiles: AIProfile[];
+  providers: Array<{
+    id: string;
+    displayName: string;
+    enabled: boolean;
+    capabilities: string[];
+    models: Array<{
+      id: string;
+      displayName: string;
+      enabled: boolean;
+      capabilities: string[];
+      limits?: Record<string, unknown>;
+    }>;
+  }>;
+}
+

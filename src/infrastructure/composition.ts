@@ -185,3 +185,8 @@ export const aiGatewayService = new AiGatewayService({
 });
 
 
+
+import { DistributionService } from "@/src/application/apps/distribution-service";
+import { prismaDistributionRepository } from "@/src/infrastructure/repositories/prisma-distribution-repository";
+import { distributionStorage } from "@/src/infrastructure/storage/distribution-storage";
+export const distributionService = new DistributionService(prismaAppRepository, prismaDistributionRepository, distributionStorage);

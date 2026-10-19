@@ -107,6 +107,7 @@ export async function createPresignedPartUrls(input: {
   key: string;
   uploadId: string;
   partNumbers: number[];
+  expiresInSeconds?: number;
 }): Promise<{ partNumber: number; url: string }[]> {
   const client = getClient();
   const { bucket } = getR2Config();
@@ -118,7 +119,7 @@ export async function createPresignedPartUrls(input: {
         UploadId: input.uploadId,
         PartNumber: partNumber,
       });
-      const url = await getSignedUrl(client, command, { expiresIn: PRESIGN_EXPIRES_IN_SECONDS });
+      const url = await getSignedUrl(client, command, { expiresIn: input.expiresInSeconds ?? PRESIGN_EXPIRES_IN_SECONDS });
       return { partNumber, url };
     }),
   );

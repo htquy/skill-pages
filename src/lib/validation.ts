@@ -103,6 +103,7 @@ export const R2_ALLOWED_TOOL_FILE_CONTENT_TYPES = [
 ] as const;
 
 export const R2_TOOL_FILE_EXTENSIONS = [
+  "onnx", "bin", "safetensors", "sha256",
   "zip",
   "gz",
   "tgz",
@@ -129,7 +130,7 @@ export const R2_TOOL_FILE_EXTENSIONS = [
   "txt",
 ] as const;
 
-export const R2_UPLOAD_KINDS = ["media", "tool-file"] as const;
+export const R2_UPLOAD_KINDS = ["media", "tool-file", "app-source"] as const;
 
 export type R2UploadKind = (typeof R2_UPLOAD_KINDS)[number];
 
@@ -137,6 +138,7 @@ export type R2UploadKind = (typeof R2_UPLOAD_KINDS)[number];
 export const R2_UPLOAD_PREFIXES: Record<R2UploadKind, string> = {
   media: "skill-videos",
   "tool-file": "tool-files",
+  "app-source": "app-sources",
 };
 
 function fileExtensionOf(fileName: string): string {
@@ -148,13 +150,16 @@ const uploadBaseSchema = {
   kind: z.enum(R2_UPLOAD_KINDS).optional().default("media"),
   fileName: z.string().trim().min(1).max(200),
   contentType: z.string().trim().min(1).max(120),
-  size: z.number().int().positive().max(R2_MAX_FILE_SIZE_BYTES),
+  size: z.number().int().positive().max(20 * 1024 ** 3),
 };
 
 function refineUpload(
-  value: { kind: R2UploadKind; fileName: string; contentType: string },
+  value: { kind: R2UploadKind; fileName: string; contentType: string; size: number },
   ctx: z.RefinementCtx,
 ) {
+  if (value.kind !== "app-source" && value.size > R2_MAX_FILE_SIZE_BYTES) {
+    ctx.addIssue({ code: "custom", message: "File exceeds 2 GiB", path: ["size"] });
+  }
   if (value.kind === "media") {
     if (!(R2_ALLOWED_CONTENT_TYPES as readonly string[]).includes(value.contentType)) {
       ctx.addIssue({ code: "custom", message: "unsupported-content-type", path: ["contentType"] });

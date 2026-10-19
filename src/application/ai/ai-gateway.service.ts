@@ -10,6 +10,8 @@ import {
   UnifiedTextResponse,
   UnifiedVideoRequest,
   UnifiedVideoTaskResponse,
+  AIProfile,
+  CatalogResponse,
 } from "@/src/domain/ai/models";
 import {
   IAiRepository,
@@ -377,6 +379,226 @@ export class AiGatewayService {
       throw new AiTaskNotFoundError(taskId);
     }
     return task;
+  }
+
+  /**
+   * Lấy danh mục Model/Provider (Catalog) theo quyền của caller (không lộ API secrets)
+   * Kiểm tra động theo trạng thái API Key trong Database
+   */
+  async getCatalog(auth: GatewayAuthContext, requestedCapability?: string): Promise<CatalogResponse> {
+    const allowedProviders = auth.client.allowedProviders || ["*"];
+    const isAllowedProvider = (p: string) => allowedProviders.includes("*") || allowedProviders.includes(p);
+    const allowedTasks = auth.client.allowedTasks || ["*"];
+    const isAllowedTask = (t: string) => allowedTasks.includes("*") || allowedTasks.includes(t);
+
+    // Kiểm tra trạng thái Key thật trong database
+    const allKeys = await this.repository.getAllKeys();
+    const activeProviders = new Set<string>();
+    for (const k of allKeys) {
+      if (k.status === "ACTIVE" || (k.status === "RATE_LIMITED" && k.cooldownUntil && new Date() >= new Date(k.cooldownUntil))) {
+        activeProviders.add(k.provider.toLowerCase());
+      }
+    }
+    // Edge-TTS là provider miễn phí không cần key
+    activeProviders.add("edgetts");
+
+    // Dynamic AI Profiles Registry
+    const allProfiles: AIProfile[] = [
+      {
+        profileId: "text.chat.fast",
+        version: 1,
+        displayName: "GPT-4o Mini",
+        description: "Mô hình phản hồi nhanh, tối ưu chi phí cho hội thoại và lập kịch bản",
+        capability: "text.generate",
+        providerId: "openai",
+        upstreamModelId: "gpt-4o-mini",
+        executionMode: "gateway_proxy",
+        status: activeProviders.has("openai") ? "enabled" : "degraded",
+        limits: { maxOutputTokens: 4096 },
+        supportedParameters: ["temperature", "maxTokens", "stream", "systemPrompt"],
+        pricing: { estimatedCostUsd: 0.00015, currency: "USD" },
+      },
+      {
+        profileId: "text.chat.pro",
+        version: 1,
+        displayName: "GPT-4o",
+        description: "Mô hình lập luận cao cấp cho đạo diễn phân cảnh chi tiết",
+        capability: "text.generate",
+        providerId: "openai",
+        upstreamModelId: "gpt-4o",
+        executionMode: "gateway_proxy",
+        status: activeProviders.has("openai") ? "enabled" : "degraded",
+        limits: { maxOutputTokens: 8192 },
+        supportedParameters: ["temperature", "maxTokens", "stream", "systemPrompt"],
+        pricing: { estimatedCostUsd: 0.0025, currency: "USD" },
+      },
+      {
+        profileId: "text.gemini.flash",
+        version: 1,
+        displayName: "Gemini 2.0 Flash",
+        description: "Mô hình Google tốc độ cao và ngữ cảnh lớn",
+        capability: "text.generate",
+        providerId: "gemini",
+        upstreamModelId: "gemini-2.0-flash",
+        executionMode: "gateway_proxy",
+        status: activeProviders.has("gemini") ? "enabled" : "degraded",
+        limits: { maxOutputTokens: 8192 },
+        supportedParameters: ["temperature", "maxTokens", "stream", "systemPrompt"],
+        pricing: { estimatedCostUsd: 0.0001, currency: "USD" },
+      },
+      {
+        profileId: "text.gemini.pro",
+        version: 1,
+        displayName: "Gemini 1.5 Pro",
+        description: "Mô hình Google lập luận sâu sắc cho kịch bản chuyên sâu",
+        capability: "text.generate",
+        providerId: "gemini",
+        upstreamModelId: "gemini-1.5-pro",
+        executionMode: "gateway_proxy",
+        status: activeProviders.has("gemini") ? "enabled" : "degraded",
+        limits: { maxOutputTokens: 8192 },
+        supportedParameters: ["temperature", "maxTokens", "stream", "systemPrompt"],
+        pricing: { estimatedCostUsd: 0.00125, currency: "USD" },
+      },
+      {
+        profileId: "image.flux.schnell",
+        version: 1,
+        displayName: "FLUX.1 Schnell",
+        description: "Sinh ảnh chất lượng cao tốc độ 4 bước",
+        capability: "image.generate",
+        providerId: "fal-ai",
+        upstreamModelId: "flux/schnell",
+        executionMode: "gateway_proxy",
+        status: activeProviders.has("fal-ai") ? "enabled" : "degraded",
+        limits: { allowedAspectRatios: ["1:1", "16:9", "9:16", "4:3", "3:4"] },
+        supportedParameters: ["prompt", "aspectRatio", "seed", "callbackUrl"],
+        pricing: { estimatedCostUsd: 0.003, currency: "USD" },
+      },
+      {
+        profileId: "image.flux.dev",
+        version: 1,
+        displayName: "FLUX.1 Dev",
+        description: "Sinh ảnh chất lượng cao chân thực",
+        capability: "image.generate",
+        providerId: "fal-ai",
+        upstreamModelId: "flux/dev",
+        executionMode: "gateway_proxy",
+        status: activeProviders.has("fal-ai") ? "enabled" : "degraded",
+        limits: { allowedAspectRatios: ["1:1", "16:9", "9:16", "4:3", "3:4"] },
+        supportedParameters: ["prompt", "aspectRatio", "seed", "callbackUrl"],
+        pricing: { estimatedCostUsd: 0.025, currency: "USD" },
+      },
+      {
+        profileId: "video.luma.ray2",
+        version: 1,
+        displayName: "Luma Ray-2",
+        description: "Sinh video chuyển động tự nhiên",
+        capability: "video.generate",
+        providerId: "luma",
+        upstreamModelId: "ray-2",
+        executionMode: "gateway_proxy",
+        status: activeProviders.has("luma") ? "enabled" : "degraded",
+        limits: { minDuration: 3, maxDuration: 9, allowedAspectRatios: ["16:9", "9:16", "1:1"] },
+        supportedParameters: ["prompt", "imageUrl", "aspectRatio", "durationSeconds"],
+        pricing: { estimatedCostUsd: 0.15, currency: "USD" },
+      },
+      {
+        profileId: "audio.edgetts.neural",
+        version: 1,
+        displayName: "Edge-TTS Neural",
+        description: "Giọng đọc tiếng Việt tự nhiên miễn phí",
+        capability: "audio.speech",
+        providerId: "edgetts",
+        upstreamModelId: "tts-1",
+        executionMode: "gateway_proxy",
+        status: "enabled",
+        limits: { defaultVoice: "vi-VN-NamMinhNeural" },
+        supportedParameters: ["text", "voice", "speed", "format"],
+        pricing: { estimatedCostUsd: 0.0, currency: "USD" },
+      },
+    ];
+
+    // Lọc theo quyền của caller (client.allowedProviders, client.allowedTasks)
+    let filteredProfiles = allProfiles.filter((p) => {
+      if (!isAllowedProvider(p.providerId)) return false;
+      const taskType = p.capability.startsWith("text") ? "TEXT"
+        : p.capability.startsWith("image") ? "IMAGE"
+        : p.capability.startsWith("video") ? "VIDEO"
+        : "AUDIO";
+      return isAllowedTask(taskType);
+    });
+
+    if (requestedCapability) {
+      filteredProfiles = filteredProfiles.filter((p) => p.capability === requestedCapability);
+    }
+
+    // Tổ chức danh sách providers cho các client dùng schema providers
+    const providersMap = new Map<string, {
+      id: string;
+      displayName: string;
+      enabled: boolean;
+      capabilities: Set<string>;
+      models: Array<{
+        id: string;
+        displayName: string;
+        enabled: boolean;
+        capabilities: string[];
+        limits?: Record<string, unknown>;
+      }>;
+    }>();
+
+    for (const prof of filteredProfiles) {
+      let prov = providersMap.get(prof.providerId);
+      if (!prov) {
+        const displayName = prof.providerId === "openai" ? "OpenAI"
+          : prof.providerId === "gemini" ? "Google Gemini"
+          : prof.providerId === "fal-ai" ? "Fal AI"
+          : prof.providerId === "luma" ? "Luma Dream Machine"
+          : "Edge TTS";
+        prov = {
+          id: prof.providerId,
+          displayName,
+          enabled: prof.status === "enabled",
+          capabilities: new Set<string>(),
+          models: [],
+        };
+        providersMap.set(prof.providerId, prov);
+      }
+      const capShort = prof.capability.split(".")[0];
+      prov.capabilities.add(capShort);
+      prov.models.push({
+        id: prof.upstreamModelId,
+        displayName: prof.displayName,
+        enabled: prof.status === "enabled",
+        capabilities: [capShort],
+        limits: prof.limits,
+      });
+    }
+
+    const providersList = Array.from(providersMap.values()).map((p) => ({
+      id: p.id,
+      displayName: p.displayName,
+      enabled: p.enabled,
+      capabilities: Array.from(p.capabilities),
+      models: p.models,
+    }));
+
+    return {
+      catalogVersion: 1,
+      version: 1,
+      generatedAt: new Date().toISOString(),
+      profiles: filteredProfiles,
+      providers: providersList,
+    };
+  }
+
+  async getProfile(profileId: string, auth: GatewayAuthContext): Promise<AIProfile> {
+    const catalog = await this.getCatalog(auth);
+    const profile = catalog.profiles.find((p) => p.profileId === profileId);
+    if (!profile) {
+      throw new AiValidationError(`Profile '${profileId}' not found or not accessible`);
+    }
+    return profile;
   }
 
   private validatePermissions(client: AiClientDto, provider: string, taskType: string) {

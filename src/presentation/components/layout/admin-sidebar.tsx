@@ -29,6 +29,7 @@ function adminNavItems(dict: Dict) {
     { href: "/admin/tools", label: dict.admin.nav.tools, icon: Wrench },
     { href: "/admin/orders", label: dict.admin.nav.orders, icon: ShoppingCart },
     { href: "/admin/apps", label: dict.admin.nav.apps, icon: Boxes },
+    { href: "/admin/app-releases", label: "Phiên bản & tài nguyên", icon: Boxes },
     { href: "/admin/webhook-events", label: dict.admin.nav.webhookEvents, icon: Webhook },
     { href: "/admin/statistics", label: dict.admin.nav.statistics, icon: BarChart3 },
   ];
