@@ -839,4 +839,125 @@ export const vi: Dict = {
     rankingNameRequired: "Tên là bắt buộc",
     invalidSkillReference: "Tham chiếu kỹ năng không hợp lệ",
   },
+  landing: {
+    hero: {
+      badge: "Kỹ năng AI thực chiến đã kiểm duyệt",
+      titleLead: "Tạo quy trình làm việc AI chuẩn xác trong 15 phút",
+      titleAccent: "không còn thử sai vô tận",
+      subtitle: "Hơn 1,420 prompt và quy trình làm việc chuẩn cho Claude, ChatGPT và Cursor. Sao chép, tùy biến và áp dụng trực tiếp vào công việc.",
+      ctaPrimary: "Khám phá thư viện kỹ năng",
+      ctaSecondary: "Xem bảng xếp hạng AI",
+      proof: "Được tin dùng bởi hơn 2,840 chuyên gia, marketer và kỹ sư phần mềm",
+    },
+    taglineReveal: {
+      lead: "Đừng lãng phí hàng giờ chỉnh sửa những câu trả lời chung chung từ AI.",
+      accent: "Triển khai ngay các prompt chuẩn hóa đã qua kiểm duyệt để nhận kết quả chính xác ngay lần chạy đầu tiên.",
+    },
+    problemSolution: {
+      badge: "Vấn đề cốt lõi",
+      title: "Cái giá đắt đỏ của việc viết prompt cảm tính",
+      problemTitle: "Khi chưa có quy trình chuẩn",
+      problemPoints: [
+        "Mất hàng giờ viết lại vì AI trả về kết quả ảo giác",
+        "Văn phong và định dạng không đồng nhất giữa các nhân sự",
+        "Kết quả dễ sai lệch mỗi khi nhà cung cấp nâng cấp mô hình",
+      ],
+      solutionTitle: "Với kho kỹ năng PromptWorks",
+      solutionPoints: [
+        "Cấu trúc chặt chẽ với rào chắn chống ảo giác tối đa",
+        "Có sẵn biến số rõ ràng và bản xem trước kết quả kỳ vọng",
+        "Được tối ưu và duy trì tương thích trên Claude, GPT-4o và Gemini",
+      ],
+    },
+    benefits: {
+      badge: "Lợi ích vượt trội",
+      title: "Thiết kế để tăng tốc độ, độ chính xác và tính tự chủ",
+      items: [
+        {
+          title: "Tiết kiệm 85% thời gian viết prompt",
+          description: "Bỏ qua các thử nghiệm cú pháp phức tạp. Sao chép cấu trúc chuẩn để có ngay kết quả sản xuất hoàn chỉnh.",
+        },
+        {
+          title: "Tối ưu hóa riêng cho từng mô hình",
+          description: "Mỗi kỹ năng được tinh chỉnh chi tiết cho Claude 3.7 Sonnet, GPT-4o, Gemini 2.5 và Cursor.",
+        },
+        {
+          title: "Đầy đủ ngữ cảnh và dữ liệu mẫu",
+          description: "Đi kèm thông số đầu vào thực tế, vị trí điền biến số và bản mẫu kết quả trước khi bạn bấm chạy.",
+        },
+        {
+          title: "Cập nhật liên tục theo phiên bản mới",
+          description: "Các kỹ năng tự động được tinh chỉnh lại khi nhà cung cấp nâng cấp phiên bản mô hình mà không mất phí.",
+        },
+      ],
+    },
+    howItWorks: {
+      badge: "Quy trình 3 bước",
+      title: "Từ bài toán đến kết quả hoàn chỉnh dưới 1 phút",
+      step1Title: "Chọn đúng trường hợp sử dụng",
+      step1Desc: "Lọc theo ngành nghề (Marketing, Lập trình, Video, Vận hành) hoặc công cụ AI bạn quen dùng.",
+      step2Title: "Điền thông số trong 30 giây",
+      step2Desc: "Nhập dữ liệu dự án của bạn vào các vị trí biến số được đánh dấu rõ ràng.",
+      step3Title: "Dán và nhận sản phẩm hoàn chỉnh",
+      step3Desc: "Đưa trực tiếp vào giao diện AI yêu thích và tận hưởng sản phẩm đầu ra chuẩn xác.",
+    },
+    metrics: {
+      stat1Value: "1,420+",
+      stat1Label: "Prompt và kỹ năng kiểm duyệt",
+      stat2Value: "98.2%",
+      stat2Label: "Tỷ lệ chuẩn xác ngay lần đầu",
+      stat3Value: "15 phút",
+      stat3Label: "Thời gian thiết lập quy trình",
+      stat4Value: "4.9 / 5",
+      stat4Label: "Đánh giá từ 2,840+ người dùng",
+    },
+    testimonials: [
+      {
+        quote: "PromptWorks giúp đội ngũ kỹ thuật của chúng tôi rút ngắn thời gian làm tài liệu từ 6 tiếng xuống còn 45 phút mà không gặp lỗi ảo giác API.",
+        name: "Nguyễn Hải",
+        role: "Trưởng nhóm Kiến trúc Công nghệ tại VNPAY",
+      },
+      {
+        quote: "Quy trình phân rã kịch bản video cho Sora và Claude đã mang lại lợi thế tốc độ vượt trội cho studio của chúng tôi khi bàn giao cho khách hàng.",
+        name: "Trần Minh Thư",
+        role: "Giám đốc Sáng tạo tại AdMedia Studio",
+      },
+    ],
+    faq: {
+      badge: "Câu hỏi thường gặp",
+      title: "Mọi điều bạn cần biết trước khi bắt đầu",
+      items: [
+        {
+          q: "Các kỹ năng này có dùng được cho tài khoản AI miễn phí không?",
+          a: "Có. Tất cả kỹ năng được xây dựng trên nguyên tắc kỹ nghệ prompt chuẩn mực. Mặc dù các mô hình cao cấp (Claude 3.7, GPT-4o) cho kết quả tinh tế nhất, tài khoản miễn phí vẫn chạy rất tốt.",
+        },
+        {
+          q: "Tôi có được sử dụng kết quả tạo ra vào mục đích thương mại không?",
+          a: "Hoàn toàn có. Mọi nội dung bạn tạo ra từ việc áp dụng kỹ năng là tài sản trí tuệ của bạn, không có bất kỳ giới hạn bản quyền nào từ chúng tôi.",
+        },
+        {
+          q: "Sau khi thanh toán tôi truy cập nội dung như thế nào?",
+          a: "Truy cập diễn ra tức thì. Ngay sau khi mở khóa, toàn bộ prompt mẫu, biến số cấu hình và hướng dẫn chi tiết sẽ xuất hiện ngay trên trang kỹ năng và trong tài khoản của bạn.",
+        },
+        {
+          q: "Nếu nhà phát triển AI cập nhật làm prompt bị lỗi thì sao?",
+          a: "Đội ngũ kỹ thuật của chúng tôi kiểm thử và cập nhật lại toàn bộ prompt trong vòng 48 giờ sau mỗi bản cập nhật lớn của mô hình. Bạn được nhận các bản cập nhật này miễn phí.",
+        },
+        {
+          q: "Chính sách hoàn tiền của nền tảng như thế nào?",
+          a: "Chúng tôi áp dụng chính sách đảm bảo hoàn tiền trong vòng 7 ngày. Nếu kỹ năng không mang lại kết quả như mô tả, bạn chỉ cần liên hệ hỗ trợ để được hoàn tiền 100%.",
+        },
+        {
+          q: "Doanh nghiệp có thể đặt hàng thiết kế kỹ năng riêng không?",
+          a: "Có. Chúng tôi nhận hợp tác cùng các doanh nghiệp để đo kiểm, chuẩn hóa và xây dựng bộ thư viện prompt chuyên biệt cho quy trình nội bộ của bạn.",
+        },
+      ],
+    },
+    finalCta: {
+      title: "Sẵn sàng tạm biệt cảm giác bế tắc trước màn hình AI?",
+      subtitle: "Gia nhập cộng đồng hơn 2,840 chuyên gia đang hoàn thành công việc nhanh hơn và chuẩn xác hơn mỗi ngày.",
+      button: "Khám phá thư viện kỹ năng ngay",
+      guarantee: "Đảm bảo hoàn tiền 7 ngày · Truy cập tức thì · Không thu phí định kỳ ẩn",
+    },
+  },
 };
