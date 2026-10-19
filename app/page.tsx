@@ -3,7 +3,14 @@ export const dynamic = "force-dynamic";
 import { Suspense } from "react";
 import Link from "next/link";
 import { Container } from "@/src/presentation/components/layout/container";
-import { HeroSection } from "@/src/presentation/components/layout/hero-section";
+import { HeroRedesign } from "@/src/presentation/components/landing/hero-redesign";
+import { TaglineReveal } from "@/src/presentation/components/landing/tagline-reveal";
+import { ProblemSolution } from "@/src/presentation/components/landing/problem-solution";
+import { BenefitsSection } from "@/src/presentation/components/landing/benefits-section";
+import { HowItWorks } from "@/src/presentation/components/landing/how-it-works";
+import { SocialProof } from "@/src/presentation/components/landing/social-proof";
+import { FaqSection } from "@/src/presentation/components/landing/faq-section";
+import { FinalCta } from "@/src/presentation/components/landing/final-cta";
 import { SkillFilters } from "@/src/presentation/components/skill/skill-filters";
 import { SkillGrid } from "@/src/presentation/components/skill/skill-grid";
 import { SkillGridSkeleton } from "@/src/presentation/components/skill/skill-grid-skeleton";
@@ -82,7 +89,7 @@ async function CatalogResults({ filters, pagination, searchParams }: CatalogResu
           action={
             <Link
               href={hasActiveFilters ? "/" : "/#catalog"}
-              className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
+              className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
             >
               {dict.common.clear}
             </Link>
@@ -107,13 +114,23 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
   return (
     <>
-      <HeroSection />
-      <Container id="catalog" className="scroll-mt-20 py-12 md:py-16">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+      <HeroRedesign />
+      <TaglineReveal
+        lead={dict.landing.taglineReveal.lead}
+        accent={dict.landing.taglineReveal.accent}
+      />
+      <ProblemSolution />
+      <BenefitsSection />
+      <HowItWorks />
+
+      <Container id="catalog" className="scroll-mt-20 py-16 sm:py-24">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl [text-wrap:balance]">
             {dict.results.libraryTitle}
           </h2>
-          <p className="mt-1 text-zinc-600">{dict.results.librarySubtitle}</p>
+          <p className="mt-2 text-base text-zinc-600 [text-wrap:pretty]">
+            {dict.results.librarySubtitle}
+          </p>
         </div>
 
         <SkillFilters
@@ -134,6 +151,14 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           </Suspense>
         </div>
       </Container>
+
+      <SocialProof />
+      <FaqSection
+        badge={dict.landing.faq.badge}
+        title={dict.landing.faq.title}
+        items={dict.landing.faq.items}
+      />
+      <FinalCta />
     </>
   );
 }
