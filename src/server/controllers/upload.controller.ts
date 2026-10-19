@@ -17,7 +17,6 @@ import {
   createMultipartUpload,
   createPresignedPartUrls,
   createPresignedUploadUrl,
-  partCountFor,
   publicUrlFor,
 } from "@/src/infrastructure/storage/r2";
 
@@ -72,19 +71,21 @@ export class UploadController {
       const parsed = r2MultipartInitSchema.safeParse(await request.json().catch(() => null));
       if (!parsed.success) return this.invalidInput(parsed);
 
-      const partNumbers = Array.from({ length: partCountFor(parsed.data.size) }, (_, index) => index + 1);
+      const partSize = parsed.data.kind === "app-source" ? 64 * 1024 * 1024 : R2_PART_SIZE_BYTES;
+      const partNumbers = Array.from({ length: Math.ceil(parsed.data.size / partSize) }, (_, index) => index + 1);
       const key = buildObjectKey(
         parsed.data.fileName,
         parsed.data.contentType,
         R2_UPLOAD_PREFIXES[parsed.data.kind],
       );
       const { uploadId } = await createMultipartUpload({ key, contentType: parsed.data.contentType });
-      const parts = await createPresignedPartUrls({ key, uploadId, partNumbers });
+      const parts = await createPresignedPartUrls({ key, uploadId, partNumbers,
+        expiresInSeconds: parsed.data.kind === "app-source" ? 6 * 60 * 60 : undefined });
 
       return NextResponse.json({
         key,
         uploadId,
-        partSize: R2_PART_SIZE_BYTES,
+        partSize,
         publicUrl: publicUrlFor(key),
         parts,
       });

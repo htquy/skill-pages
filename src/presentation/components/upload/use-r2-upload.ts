@@ -48,17 +48,19 @@ const TOOL_FILE_CONTENT_TYPES = [
 ];
 
 const TOOL_FILE_EXTENSIONS = [
+  "onnx", "bin", "safetensors", "sha256",
   "zip", "gz", "tgz", "tar", "7z", "rar",
   "exe", "msi", "dmg", "pkg", "deb", "rpm", "appimage",
   "js", "mjs", "cjs", "ts", "py", "sh", "ps1",
   "json", "yaml", "yml", "txt",
 ];
 
-export type UploadKind = "media" | "tool-file";
+export type UploadKind = "media" | "tool-file" | "app-source";
 
 const ALLOWED_CONTENT_TYPES: Record<UploadKind, string[]> = {
   media: MEDIA_CONTENT_TYPES,
   "tool-file": TOOL_FILE_CONTENT_TYPES,
+  "app-source": TOOL_FILE_CONTENT_TYPES,
 };
 
 /** Tệp nhị phân không tin content-type nên kiểm tra thêm phần mở rộng. */
@@ -161,11 +163,11 @@ export function useR2Upload(kind: UploadKind = "media") {
         setState({ ...INITIAL_STATE, status: "error", error: "invalid-type" });
         return null;
       }
-      if (kind === "tool-file" && !hasAllowedExtension(file.name)) {
+      if (kind !== "media" && !hasAllowedExtension(file.name)) {
         setState({ ...INITIAL_STATE, status: "error", error: "invalid-type" });
         return null;
       }
-      if (file.size > MAX_FILE_SIZE_BYTES) {
+      if (file.size > (kind === "app-source" ? 20 * 1024 ** 3 : MAX_FILE_SIZE_BYTES)) {
         setState({ ...INITIAL_STATE, status: "error", error: "too-large" });
         return null;
       }

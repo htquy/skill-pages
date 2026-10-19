@@ -16,9 +16,9 @@ Hệ thống xác thực trung tâm được xây dựng theo chuẩn công nghi
 
 ## 2. BẢNG THÔNG TIN ENDPOINTS & CLIENT MẪU
 
-> **Base URL:** `https://your-domain.com` (hoặc `http://localhost:3000` trên môi trường dev nội bộ).
-
-### 2.1. Danh mục Endpoints
+> **Base URL:** `https://www.onedaybetter.online` (Production) hoặc `http://localhost:3000` (Dev).
+>
+> ⚠️ **LƯU Ý CỐT LÕI VỀ DOMAIN (CANONICAL URL):** Luôn sử dụng tiền tố `www.` (`https://www.onedaybetter.online`). Nếu gọi vào apex domain không có `www` (`https://onedaybetter.online`), CDN / Vercel Edge sẽ trả về `HTTP 308 Permanent Redirect` sang `www`. Theo chuẩn bảo mật RFC 7235 & RFC 9110, các HTTP Client (`HttpClient` trong .NET, Java, Go, v.v.) sẽ **tự động tước bỏ (strip) header `Authorization: Bearer <token>`** khi chuyển hướng sang host khác, khiến các request gọi vào `/userinfo` hoặc `/check-access` nhận lỗi `401 Unauthorized` (`Bearer access token required`). Tool Native AOT đã được tích hợp sẵn `AuthHttp.cs` và `AppEndpoints.NormalizeUrl` để tự động bảo toàn header này.
 
 | Mục đích | Phương thức | Endpoint URL | Ghi chú |
 | :--- | :--- | :--- | :--- |

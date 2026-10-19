@@ -216,4 +216,69 @@ export class AiGatewayController {
       });
     }
   }
+
+  /**
+   * GET /api/v1/ai/catalog
+   */
+  static async getCatalog(request: Request): Promise<Response> {
+    const { apiKey, ipAddress } = AiGatewayController.extractAuth(request);
+
+    try {
+      const auth = await aiGatewayService.authenticateClient(apiKey, ipAddress);
+      const url = new URL(request.url);
+      const capability = url.searchParams.get("capability") || undefined;
+      const catalog = await aiGatewayService.getCatalog(auth, capability);
+
+      const etag = `W/"cat-${catalog.catalogVersion}-${catalog.profiles.length}"`;
+      const clientEtag = request.headers.get("if-none-match");
+      if (clientEtag && clientEtag === etag) {
+        return new Response(null, {
+          status: 304,
+          headers: {
+            "ETag": etag,
+            "Cache-Control": "public, max-age=60",
+          },
+        });
+      }
+
+      return NextResponse.json(catalog, {
+        headers: {
+          "ETag": etag,
+          "Cache-Control": "public, max-age=60",
+        },
+      });
+    } catch (error) {
+      const problem = toProblemDetailsResponse(error, "/api/v1/ai/catalog");
+      return NextResponse.json(problem, {
+        status: problem.status,
+        headers: { "Content-Type": "application/problem+json" },
+      });
+    }
+  }
+
+  /**
+   * GET /api/v1/ai/profiles/[profileId]
+   */
+  static async getProfile(request: Request, profileId: string): Promise<Response> {
+    const { apiKey, ipAddress } = AiGatewayController.extractAuth(request);
+
+    try {
+      const auth = await aiGatewayService.authenticateClient(apiKey, ipAddress);
+      const profile = await aiGatewayService.getProfile(profileId, auth);
+      const etag = `W/"prof-${profile.profileId}-v${profile.version}"`;
+
+      return NextResponse.json(profile, {
+        headers: {
+          "ETag": etag,
+          "Cache-Control": "public, max-age=300",
+        },
+      });
+    } catch (error) {
+      const problem = toProblemDetailsResponse(error, `/api/v1/ai/profiles/${profileId}`);
+      return NextResponse.json(problem, {
+        status: problem.status,
+        headers: { "Content-Type": "application/problem+json" },
+      });
+    }
+  }
 }
