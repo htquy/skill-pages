@@ -47,6 +47,47 @@ export class DistributionService {
   async transition(slug: string, id: string, status: "PUBLISHED" | "WITHDRAWN") {
     return this.repository.transitionRelease((await this.app(slug)).id, id, status);
   }
+  /**
+   * GitHub Actions gọi sau khi build tag vX.Y.Z và upload ZIP lên R2:
+   * tạo source `app` cho version đó và một release ghim source mới + các tài nguyên của release đang phát hành.
+   * Idempotent: chạy lại cùng version trả về release đã có (không tạo trùng). `publish` = phát hành luôn.
+   */
+  async registerCiRelease(slug: string, input: {
+    version: string; channel: string; platform: string; notes: string; publish: boolean;
+    application: { url: string; sha256: string; size: number; fileName: string; entryPoint: string; requiredFiles: string[] };
+  }) {
+    const app = await this.app(slug);
+    const existingRelease = (await this.repository.listReleases(app.id))
+      .find(r => r.version === input.version && r.channel === input.channel && r.platform === input.platform);
+    if (existingRelease) {
+      const appSource = existingRelease.sources.find(s => s.kind === "APPLICATION");
+      if (appSource && appSource.sha256 !== input.application.sha256)
+        throw new ValidationError(`Release ${input.version} đã tồn tại với gói khác (SHA256 khác). Tăng version thay vì ghi đè.`);
+      if (input.publish && existingRelease.status === "DRAFT") await this.repository.transitionRelease(app.id, existingRelease.id, "PUBLISHED");
+      return { releaseId: existingRelease.id, created: false, status: input.publish && existingRelease.status === "DRAFT" ? "PUBLISHED" : existingRelease.status };
+    }
+    const sources = await this.repository.listSources(app.id);
+    let appSource = sources.find(s => s.key === "app" && s.version === input.version && s.platform === input.platform);
+    if (appSource && appSource.sha256 !== input.application.sha256)
+      throw new ValidationError(`Source app@${input.version} đã có với SHA256 khác. Tăng version thay vì ghi đè.`);
+    appSource ??= await this.saveSource(slug, {
+      key: "app", name: `${app.name} ${input.version}`, version: input.version, kind: "APPLICATION", format: "ZIP",
+      platform: input.platform, url: input.application.url, sha256: input.application.sha256, size: input.application.size,
+      fileName: input.application.fileName, installDirectory: "", entryPoint: input.application.entryPoint,
+      requiredFiles: input.application.requiredFiles, description: "", metadata: { publishedBy: "github-actions" },
+    });
+    // Giữ nguyên các tài nguyên (model, binaries...) của bản đang phát hành: chỉ app thay đổi.
+    const current = (await this.repository.listReleases(app.id))
+      .filter(r => r.status === "PUBLISHED" && r.channel === input.channel && r.platform === input.platform)
+      .sort((a, b) => compareVersions(b.version, a.version))[0];
+    const resourceIds = current ? current.sources.filter(s => s.kind === "RESOURCE").map(s => s.id) : [];
+    const release = await this.createRelease(slug, {
+      version: input.version, channel: input.channel, platform: input.platform, notes: input.notes,
+      sourceIds: [appSource.id, ...resourceIds],
+    });
+    if (input.publish) await this.repository.transitionRelease(app.id, release.id, "PUBLISHED");
+    return { releaseId: release.id, created: true, status: input.publish ? "PUBLISHED" : "DRAFT" };
+  }
   async deleteRelease(slug: string, id: string) { return this.repository.deleteRelease((await this.app(slug)).id, id); }
   async manifest(slug: string, channel: string, platform: string) {
     const app = await this.app(slug);

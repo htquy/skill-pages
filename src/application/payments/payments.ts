@@ -18,6 +18,8 @@ export interface PaymentsDeps {
   orders: OrderRepository;
   access: SkillAccessRepository;
   audit: AuditLogRepository;
+  /** Hủy kỳ đăng ký do đơn APP_PLAN tạo ra (khi hoàn tiền). */
+  revokePlanOrder: (orderId: string) => Promise<void>;
 }
 
 export function createPaymentCommands(deps: PaymentsDeps) {
@@ -48,7 +50,8 @@ export function createPaymentCommands(deps: PaymentsDeps) {
       }
 
       const updated = await deps.orders.updateStatus(orderId, "REFUNDED", { refundedAt: new Date() });
-      await deps.access.revoke(order.userId, order.skillId);
+      if (order.skillId) await deps.access.revoke(order.userId, order.skillId);
+      if (order.planPriceId) await deps.revokePlanOrder(order.id);
       await deps.audit.record({
         actorUserId: admin.id,
         action: AuditAction.ORDER_REFUNDED,

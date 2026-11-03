@@ -6,6 +6,7 @@ import { createTaxonomyQueries } from "@/src/application/taxonomy/queries";
 import { createAccountQueries } from "@/src/application/account/queries";
 import { createEngagementCommands } from "@/src/application/engagement/commands";
 import { createOrderCommands } from "@/src/application/orders/orders";
+import { createAppsService } from "@/src/application/apps/apps-service";
 import { createPaymentCommands } from "@/src/application/payments/payments";
 import { createSePayWebhookHandler } from "@/src/application/payments/sepay-webhook";
 import { createAccessCommands } from "@/src/application/access/access";
@@ -62,10 +63,16 @@ export const engagementCommands = createEngagementCommands({
   engagement: prismaEngagementRepository,
 });
 
+export const appsService = createAppsService({
+  apps: prismaAppRepository,
+  users: prismaUserRepository,
+});
+
 export const orderCommands = createOrderCommands({
   orders: prismaOrderRepository,
   skills: prismaSkillRepository,
   access: prismaSkillAccessRepository,
+  plans: appsService,
 });
 
 export const paymentCommands = createPaymentCommands({
@@ -75,6 +82,7 @@ export const paymentCommands = createPaymentCommands({
   orders: prismaOrderRepository,
   access: prismaSkillAccessRepository,
   audit: prismaAuditLogRepository,
+  revokePlanOrder: (orderId) => appsService.revokeSubscriptionForOrder(orderId),
 });
 
 export const sePayWebhook = createSePayWebhookHandler({
@@ -84,6 +92,7 @@ export const sePayWebhook = createSePayWebhookHandler({
   orders: prismaOrderRepository,
   audit: prismaAuditLogRepository,
   notifier: consolePurchaseDeliveryNotifier,
+  fulfilPlan: (input) => appsService.fulfilPaidPlanOrder(input),
   siteUrl: siteConfig.url,
 });
 
@@ -138,11 +147,6 @@ export const oauthService = createOAuthService({
 });
 
 import { prismaAppRepository } from "@/src/infrastructure/repositories/prisma-app-repository";
-import { createAppsService } from "@/src/application/apps/apps-service";
-export const appsService = createAppsService({
-  apps: prismaAppRepository,
-  users: prismaUserRepository,
-});
 
 // ---------------------------------------------------------------------------
 // AI Gateway Module Composition

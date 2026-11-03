@@ -23,7 +23,7 @@ export default async function AccountPage() {
             className="size-20 rounded-full border-4 border-white shadow-md ring-1 ring-zinc-200"
           />
         ) : (
-          <span className="flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 text-2xl font-bold text-white shadow-md">
+          <span className="flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-violet-600 text-2xl font-bold text-white shadow-md">
             {(user.name ?? user.email ?? "U").slice(0, 2).toUpperCase()}
           </span>
         )}
@@ -44,7 +44,7 @@ export default async function AccountPage() {
           href="/account/saved"
           className="group flex items-center gap-4 border-b border-zinc-100 px-6 py-5 transition-colors hover:bg-zinc-50"
         >
-          <span className="flex size-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+          <span className="flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
             <Bookmark className="size-5" aria-hidden="true" />
           </span>
           <span className="flex-1">

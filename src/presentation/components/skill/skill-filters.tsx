@@ -39,7 +39,7 @@ function Select({
         id={id}
         name={name}
         defaultValue={defaultValue}
-        className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+        className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
       >
         <option value="">{allLabel}</option>
         {options.map((option) => (
@@ -87,7 +87,7 @@ export async function SkillFilters({
             type="search"
             defaultValue={values.q}
             placeholder={dict.filters.searchPlaceholder}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           />
         </div>
 
@@ -116,7 +116,7 @@ export async function SkillFilters({
             id="skill-tool"
             name="tool"
             defaultValue={values.tool}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           >
             <option value="">{allLabel}</option>
             {tools.map((tool) => (
@@ -135,7 +135,7 @@ export async function SkillFilters({
             id="skill-access"
             name="access"
             defaultValue={values.access}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           >
             <option value="">{allLabel}</option>
             <option value="FREE">{dict.filters.free}</option>

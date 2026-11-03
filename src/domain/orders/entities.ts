@@ -19,9 +19,16 @@ export interface Order {
    * sang PACKAGE/BUNDLE mà không phải đổi lại luồng thanh toán.
    */
   productType: ProductTypeValue;
-  skillId: string;
+  /** SKILL: id skill. APP_PLAN: null. */
+  skillId: string | null;
+  /** APP_PLAN: id kỳ hạn gói (apps.subscription_plan_prices). */
+  planPriceId: string | null;
+  /** Tên sản phẩm hiển thị (skill title hoặc "Gói · 6 tháng"). */
   skillTitle: string;
+  /** SKILL: slug skill; APP_PLAN: rỗng (dùng productPath). */
   skillSlug: string;
+  /** Đường dẫn trang sản phẩm để dựng link (VD "/skills/abc", "/apps/video-tool/pricing"). */
+  productPath: string;
   amount: number;
   currency: string;
   status: OrderStatus;
@@ -38,7 +45,11 @@ export interface CreateOrderCommand {
   /** Email nhận hàng, chụp lại tại thời điểm tạo đơn. */
   email: string | null;
   productType: ProductTypeValue;
-  skillId: string;
+  skillId?: string | null;
+  planPriceId?: string | null;
+  /** Snapshot tên/đường dẫn sản phẩm (bắt buộc với APP_PLAN). */
+  productTitle?: string | null;
+  productPath?: string | null;
   /** Snapshot giá tại thời điểm tạo đơn, lưu theo đơn vị nhỏ nhất của currency. */
   amount: number;
   currency: string;
@@ -66,6 +77,7 @@ export interface OrderRepository {
   findById(id: string): Promise<Order | null>;
   findByOrderCode(orderCode: string): Promise<Order | null>;
   findValidPending(userId: string, skillId: string): Promise<Order | null>;
+  findValidPendingPlan(userId: string, planPriceId: string): Promise<Order | null>;
   listByUser(userId: string): Promise<Order[]>;
   listPendingExpired(before: Date): Promise<Order[]>;
   updateStatus(id: string, status: OrderStatus, extra?: { paidAt?: Date; canceledAt?: Date; refundedAt?: Date }): Promise<Order | null>;

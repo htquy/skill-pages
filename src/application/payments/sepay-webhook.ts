@@ -21,6 +21,8 @@ export interface SePayWebhookDeps {
   orders: OrderRepository;
   audit: AuditLogRepository;
   notifier: PurchaseDeliveryNotifier;
+  /** Giao gói app cho đơn APP_PLAN đã PAID (idempotent theo orderId). */
+  fulfilPlan: (input: { orderId: string; userId: string; planPriceId: string }) => Promise<unknown>;
   /** Gốc URL công khai, dùng để dựng link trong email bàn giao sản phẩm. */
   siteUrl: string;
 }
@@ -155,7 +157,7 @@ async function fulfilOrder(
       recipientName: order.customerName,
       orderCode: order.orderCode,
       productTitle: order.skillTitle,
-      productUrl: `${deps.siteUrl}/skills/${order.skillSlug}`,
+      productUrl: `${deps.siteUrl}${order.productPath}`,
       amountLabel: formatMoney(order.amount, order.currency),
       paidAt: order.paidAt ?? new Date(),
     });
@@ -218,9 +220,13 @@ export function createSePayWebhookHandler(deps: SePayWebhookDeps) {
     const resolvedOrderCode = result.orderCode ?? orderCode;
     await markEvent(deps, eventId, outcome, result.orderId, resolvedOrderCode);
 
-    if (outcome === "matched" && result.orderId) {
+    if ((outcome === "matched" || outcome === "already_processed") && result.orderId) {
       const order = await deps.orders.findById(result.orderId);
-      if (order) {
+      // Gói app: giao sau transaction thanh toán. Chạy lại cả khi "already_processed" để bù lần trước lỗi giữa chừng.
+      if (order?.status === "PAID" && order.planPriceId) {
+        await deps.fulfilPlan({ orderId: order.id, userId: order.userId, planPriceId: order.planPriceId });
+      }
+      if (order && outcome === "matched") {
         await fulfilOrder(deps, order, input);
       }
     }

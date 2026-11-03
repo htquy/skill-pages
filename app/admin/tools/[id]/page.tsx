@@ -53,7 +53,7 @@ export default async function AdminToolDetailPage({ params }: { params: Promise<
           ) : null}
           <Link
             href={`/admin/tools/${tool.id}/edit`}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-500"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-500"
           >
             <Pencil className="size-4" aria-hidden="true" />
             {dict.common.edit}

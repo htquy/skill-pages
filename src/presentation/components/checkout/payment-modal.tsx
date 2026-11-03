@@ -19,6 +19,7 @@ export interface PaymentModalProps {
   stage: CheckoutStage;
   skillTitle: string;
   skillSlug: string;
+  productPath?: string;
   email: string | null;
   errorMessage?: string | null;
   details?: BankTransferDetails | null;
@@ -40,6 +41,7 @@ export function PaymentModal({
   stage,
   skillTitle,
   skillSlug,
+  productPath,
   email,
   errorMessage,
   details,
@@ -173,8 +175,8 @@ export function PaymentModal({
                   : trans(checkout.successBodyNoEmail, { title: skillTitle })}
               </p>
               <a
-                href={`/skills/${skillSlug}`}
-                className="mt-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
+                href={productPath ?? `/skills/${skillSlug}`}
+                className="btn-primary mt-2 text-sm"
               >
                 {checkout.successCta}
               </a>
@@ -190,7 +192,7 @@ export function PaymentModal({
                 <button
                   type="button"
                   onClick={onRetry}
-                  className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
+                  className="btn-primary text-sm"
                 >
                   {checkout.retry}
                 </button>
@@ -214,7 +216,7 @@ export function PaymentModal({
                 <button
                   type="button"
                   onClick={onRetry}
-                  className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
+                  className="btn-primary text-sm"
                 >
                   {checkout.retry}
                 </button>
@@ -237,7 +239,7 @@ export function PaymentModal({
                 <button
                   type="button"
                   onClick={onRetry}
-                  className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
+                  className="btn-primary text-sm"
                 >
                   {checkout.retry}
                 </button>
@@ -273,8 +275,8 @@ export function PaymentModal({
                   onClick={() => void checkNow()}
                   disabled={checking}
                   className={cn(
-                    "inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition-colors",
-                    "hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60",
+                    "btn-primary text-sm",
+                    "disabled:cursor-not-allowed",
                   )}
                 >
                   {checking ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}

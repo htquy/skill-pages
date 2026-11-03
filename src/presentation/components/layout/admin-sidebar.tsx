@@ -57,14 +57,14 @@ export function AdminSidebar({ dict }: { dict: Dict }) {
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-indigo-50 text-indigo-700"
+                      ? "bg-brand-50 text-brand-700"
                       : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900",
                   )}
                 >
                   <Icon
                     className={cn(
                       "size-4",
-                      isActive ? "text-indigo-600" : "text-zinc-400",
+                      isActive ? "text-brand-600" : "text-zinc-400",
                     )}
                     aria-hidden="true"
                   />

@@ -1,6 +1,11 @@
 import { PrismaClient } from "@prisma/client";
+import { seedDirectorCraft } from "../prisma/seed-directorcraft";
 
-const supabaseUrl = "postgresql://postgres.fpqrrbdzeqmlnsjvgfeb:Ra9WjSfeL0ihrJ7Z@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require&statement_cache_size=0";
+// Không hard-code chuỗi kết nối (có mật khẩu) trong mã nguồn: đặt SUPABASE_DATABASE_URL khi chạy script.
+const supabaseUrl = process.env.SUPABASE_DATABASE_URL;
+if (!supabaseUrl) {
+  throw new Error("Thiếu SUPABASE_DATABASE_URL (chuỗi kết nối Postgres của Supabase).");
+}
 
 const prisma = new PrismaClient({
   datasources: {
@@ -90,128 +95,8 @@ async function main() {
   // 2. Apps, Features, Subscription Plans
   console.log("\n2. Đang nạp Apps, Features & Subscription Plans...");
 
-  // VideoTool App
-  const videoApp = await prisma.app.upsert({
-    where: { slug: "video-tool" },
-    create: {
-      id: "app-video-tool",
-      slug: "video-tool",
-      name: "Video Tool",
-      description: "Công cụ xử lý video FFmpeg (NativeAOT + Avalonia)",
-      type: "DESKTOP_TOOL",
-      status: "ACTIVE",
-    },
-    update: {
-      name: "Video Tool",
-      description: "Công cụ xử lý video FFmpeg (NativeAOT + Avalonia)",
-      type: "DESKTOP_TOOL",
-      status: "ACTIVE",
-    },
-  });
-  console.log(`✅ [App] ${videoApp.slug} - ${videoApp.name}`);
-
-  // Features
-  const featBatch = await prisma.feature.upsert({
-    where: { key: "VIDEO_BATCH" },
-    create: {
-      id: "feat-video-batch",
-      key: "VIDEO_BATCH",
-      name: "Xử lý hàng loạt",
-      description: "Đưa nhiều file vào hàng đợi và xử lý cùng lúc",
-    },
-    update: { name: "Xử lý hàng loạt" },
-  });
-
-  const featGpu = await prisma.feature.upsert({
-    where: { key: "VIDEO_GPU" },
-    create: {
-      id: "feat-video-gpu",
-      key: "VIDEO_GPU",
-      name: "Tăng tốc GPU (NVENC)",
-      description: "Dùng card đồ họa để tăng tốc mã hóa video",
-    },
-    update: { name: "Tăng tốc GPU (NVENC)" },
-  });
-
-  const featNoWatermark = await prisma.feature.upsert({
-    where: { key: "VIDEO_NO_WATERMARK" },
-    create: {
-      id: "feat-video-no-watermark",
-      key: "VIDEO_NO_WATERMARK",
-      name: "Xuất không watermark",
-      description: "Bỏ logo/watermark trên video xuất ra",
-    },
-    update: { name: "Xuất không watermark" },
-  });
-
-  // Video Plans
-  const videoPlanMonth = await prisma.subscriptionPlan.upsert({
-    where: { id: "plan-video-month" },
-    create: {
-      id: "plan-video-month",
-      appId: videoApp.id,
-      name: "Video Tool 1 Tháng",
-      description: "Mở khóa xử lý hàng loạt",
-      currency: "VND",
-      price: 99000,
-      interval: "MONTH",
-      durationDays: 30,
-      isActive: true,
-    },
-    update: { price: 99000, durationDays: 30, isActive: true },
-  });
-
-  const videoPlanYear = await prisma.subscriptionPlan.upsert({
-    where: { id: "plan-video-year" },
-    create: {
-      id: "plan-video-year",
-      appId: videoApp.id,
-      name: "Video Tool 1 Năm",
-      description: "Toàn bộ tính năng: hàng loạt, GPU, không watermark",
-      currency: "VND",
-      price: 790000,
-      interval: "YEAR",
-      durationDays: 365,
-      isActive: true,
-    },
-    update: { price: 790000, durationDays: 365, isActive: true },
-  });
-
-  // Plan features
-  const videoMappings = [
-    { planId: videoPlanMonth.id, featureId: featBatch.id },
-    { planId: videoPlanYear.id, featureId: featBatch.id },
-    { planId: videoPlanYear.id, featureId: featGpu.id },
-    { planId: videoPlanYear.id, featureId: featNoWatermark.id },
-  ];
-  for (const m of videoMappings) {
-    await prisma.planFeature.upsert({
-      where: { planId_featureId: { planId: m.planId, featureId: m.featureId } },
-      create: m,
-      update: {},
-    });
-  }
-
-  // Menus
-  const videoMenus = [
-    { id: "menu-video-trim", label: "Cắt video", path: "/trim", icon: "\uE8C6", sortOrder: 1, access: "FREE" as const, requiredFeatureId: null },
-    { id: "menu-video-compress", label: "Nén video", path: "/compress", icon: "\uE721", sortOrder: 2, access: "FREE" as const, requiredFeatureId: null },
-    { id: "menu-video-convert", label: "Chuyển định dạng", path: "/convert", icon: "\uE8AB", sortOrder: 3, access: "FREE" as const, requiredFeatureId: null },
-    { id: "menu-video-audio", label: "Tách / xóa audio", path: "/audio", icon: "\uE8D6", sortOrder: 4, access: "FREE" as const, requiredFeatureId: null },
-    { id: "menu-video-merge", label: "Ghép video", path: "/merge", icon: "\uE723", sortOrder: 5, access: "FREE" as const, requiredFeatureId: null },
-    { id: "menu-video-queue", label: "Hàng đợi xử lý", path: "/queue", icon: "\uE8FD", sortOrder: 6, access: "FREE" as const, requiredFeatureId: null },
-    { id: "menu-video-batch", label: "Xử lý hàng loạt", path: "/batch", icon: "\uE8EF", sortOrder: 7, access: "PAID" as const, requiredFeatureId: featBatch.id },
-    { id: "menu-video-gpu", label: "Tăng tốc GPU (NVENC)", path: "/gpu", icon: "\uE9D9", sortOrder: 8, access: "PAID" as const, requiredFeatureId: featGpu.id },
-    { id: "menu-video-watermark", label: "Xuất không watermark", path: "/watermark", icon: "\uE790", sortOrder: 9, access: "PAID" as const, requiredFeatureId: featNoWatermark.id },
-  ];
-  for (const menu of videoMenus) {
-    await prisma.appMenuItem.upsert({
-      where: { id: menu.id },
-      create: { ...menu, appId: videoApp.id },
-      update: { ...menu, appId: videoApp.id },
-    });
-  }
-  console.log("✅ [App Details] Đã nạp đầy đủ Plans & Menus cho video-tool");
+  const videoApp = await seedDirectorCraft(prisma);
+  console.log(`✅ [App] ${videoApp.slug} - ${videoApp.name}: features, gói Pro 1/6/12 tháng, menus`);
 
   // 3. AI Gateway Client
   console.log("\n3. Đang nạp AI Gateway Client...");

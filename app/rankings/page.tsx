@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { Trophy } from "lucide-react";
 import { Container } from "@/src/presentation/components/layout/container";
+import { PageHeader } from "@/src/presentation/components/layout/page-header";
 import { RankingFilters } from "@/src/presentation/components/ranking/ranking-filters";
 import { RankingTable } from "@/src/presentation/components/ranking/ranking-table";
 import { EmptyState } from "@/src/presentation/components/shared/empty-state";
@@ -96,18 +97,12 @@ export default async function RankingsPage({ searchParams }: PageProps<"/ranking
 
   return (
     <Container className="py-12 md:py-16">
-      <div className="mb-8">
-        <p className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-indigo-600">
-          <Trophy className="size-4" aria-hidden="true" />
-          {dict.rankings.eyebrow}
-        </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-          {dict.rankings.title}
-        </h1>
-        <p className="mt-3 max-w-2xl text-lg text-zinc-600">
-          {dict.rankings.subtitle}
-        </p>
-      </div>
+      <PageHeader
+        eyebrow={dict.rankings.eyebrow}
+        icon={<Trophy className="size-3.5 text-spark-500" aria-hidden="true" />}
+        title={dict.rankings.title}
+        subtitle={dict.rankings.subtitle}
+      />
 
       <nav aria-label={dict.filters.period} className="mb-6 flex flex-wrap gap-2">
         {PERIOD_TABS.map((tab) => {
@@ -121,10 +116,10 @@ export default async function RankingsPage({ searchParams }: PageProps<"/ranking
                 period: tab.value,
               })}
               aria-current={active ? "page" : undefined}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+              className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ease-fluid ${
                 active
-                  ? "bg-zinc-900 text-white shadow-sm"
-                  : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
+                  ? "bg-gradient-to-r from-brand-600 to-violet-600 text-white shadow-glow"
+                  : "border border-zinc-200 bg-white text-zinc-700 hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-700"
               }`}
             >
               {tab.label}

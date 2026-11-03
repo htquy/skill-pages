@@ -8,7 +8,6 @@ import type {
   AppMenuItemRecord,
   AppRecord,
   FeatureRecord,
-  SubscriptionInterval,
   SubscriptionPlanRecord,
 } from "@/src/domain/apps/entities";
 
@@ -18,7 +17,8 @@ export interface AdminAppConfig {
   menus: AppMenuItemRecord[];
 }
 
-const INTERVALS: SubscriptionInterval[] = ["MONTH", "QUARTER", "YEAR", "CUSTOM"];
+/** Kỳ hạn bán thông dụng; 0 = vĩnh viễn. Admin vẫn nhập được số tháng khác. */
+const PERIODS = [1, 3, 6, 12, 0] as const;
 const APP_TYPES = ["WEB_APP", "DESKTOP_TOOL", "MOBILE_APP", "EMBED_WIDGET", "MCP_SERVER"] as const;
 
 function Field({
@@ -40,7 +40,7 @@ function Field({
 }
 
 const inputClass =
-  "rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
+  "rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100";
 
 export function AppsAdminPanel({
   dict,
@@ -62,12 +62,12 @@ export function AppsAdminPanel({
     [configs, selectedSlug],
   );
 
-  async function submit(key: string, url: string, body: unknown, reset?: () => void) {
+  async function submit(key: string, url: string, body: unknown, reset?: () => void, method: "POST" | "PATCH" = "POST") {
     setBusy(key);
     setStatus(null);
     try {
       const response = await fetch(url, {
-        method: "POST",
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
@@ -99,7 +99,7 @@ export function AppsAdminPanel({
               className={
                 "rounded-lg border px-3 py-2 text-left text-sm transition-colors " +
                 (selectedSlug === config.app.slug
-                  ? "border-indigo-300 bg-indigo-50 text-indigo-700"
+                  ? "border-brand-300 bg-brand-50 text-brand-700"
                   : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50")
               }
             >
@@ -141,35 +141,21 @@ export function AppsAdminPanel({
                 {selected.plans.length === 0 ? (
                   <p className="mt-2 text-sm text-zinc-500">{t.noPlans}</p>
                 ) : (
-                  <div className="mt-3 overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead className="text-xs uppercase text-zinc-400">
-                        <tr>
-                          <th className="py-1 pr-3">{t.name}</th>
-                          <th className="py-1 pr-3">{t.price}</th>
-                          <th className="py-1 pr-3">{t.interval}</th>
-                          <th className="py-1 pr-3">{t.durationDays}</th>
-                          <th className="py-1 pr-3">{t.featureKeys}</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-100">
-                        {selected.plans.map((plan) => (
-                          <tr key={plan.id}>
-                            <td className="py-2 pr-3 font-medium text-zinc-800">{plan.name}</td>
-                            <td className="py-2 pr-3 text-zinc-600">
-                              {plan.price.toLocaleString()} {plan.currency}
-                            </td>
-                            <td className="py-2 pr-3 text-zinc-600">{plan.interval}</td>
-                            <td className="py-2 pr-3 text-zinc-600">
-                              {plan.durationDays > 0 ? plan.durationDays : t.lifetime}
-                            </td>
-                            <td className="py-2 pr-3 text-xs text-zinc-500">
-                              {plan.featureKeys.join(", ") || t.none}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="mt-3 flex flex-col gap-3">
+                    {selected.plans.map((plan) => (
+                      <PlanCard
+                        key={plan.id}
+                        dict={dict}
+                        plan={plan}
+                        busy={busy}
+                        onToggle={() =>
+                          submit(`plan-${plan.id}`, `/api/admin/apps/${selected.app.slug}/plans/${plan.id}`, { isActive: !plan.isActive }, undefined, "PATCH")
+                        }
+                        onSavePrice={(body, reset) =>
+                          submit(`price-${plan.id}`, `/api/admin/apps/${selected.app.slug}/plans/${plan.id}/prices`, body, reset)
+                        }
+                      />
+                    ))}
                   </div>
                 )}
                 <CreatePlanForm
@@ -283,12 +269,121 @@ function CreateAppForm({
       <button
         type="submit"
         disabled={busy}
-        className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+        className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-60"
       >
         {busy ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
         {t.createApp}
       </button>
     </form>
+  );
+}
+
+function periodText(months: number, t: Dict["admin"]["apps"]) {
+  return months === 0 ? t.lifetime : `${months} ${t.monthsUnit}`;
+}
+
+function PlanCard({
+  dict,
+  plan,
+  busy,
+  onToggle,
+  onSavePrice,
+}: {
+  dict: Dict;
+  plan: SubscriptionPlanRecord;
+  busy: string | null;
+  onToggle: () => void;
+  onSavePrice: (body: Record<string, unknown>, reset: () => void) => void;
+}) {
+  const t = dict.admin.apps;
+  const [months, setMonths] = useState("1");
+  const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState(plan.prices[0]?.currency ?? "VND");
+
+  return (
+    <div className="rounded-lg border border-zinc-200 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <span className="font-medium text-zinc-800">{plan.name}</span>
+          <span
+            className={
+              "ml-2 rounded px-1.5 py-0.5 text-xs " +
+              (plan.isActive ? "bg-emerald-50 text-emerald-700" : "bg-zinc-100 text-zinc-500")
+            }
+          >
+            {plan.isActive ? t.active : t.inactive}
+          </span>
+          <p className="mt-0.5 text-xs text-zinc-500">{plan.featureKeys.join(", ") || t.none}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onToggle}
+          disabled={busy === `plan-${plan.id}`}
+          className="rounded-lg border border-zinc-300 px-2.5 py-1 text-xs text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+        >
+          {plan.isActive ? t.stopSelling : t.resumeSelling}
+        </button>
+      </div>
+
+      {plan.prices.length === 0 ? (
+        <p className="mt-2 text-xs text-amber-700">{t.noPrices}</p>
+      ) : (
+        <ul className="mt-2 flex flex-wrap gap-2">
+          {plan.prices.map((price) => (
+            <li key={price.id}>
+              <button
+                type="button"
+                title={price.isActive ? t.stopSelling : t.resumeSelling}
+                disabled={busy === `price-${plan.id}`}
+                onClick={() =>
+                  onSavePrice({ months: price.months, amount: price.amount, currency: price.currency, isActive: !price.isActive }, () => {})
+                }
+                className={
+                  "rounded-full border px-2.5 py-1 text-xs " +
+                  (price.isActive
+                    ? "border-brand-200 bg-brand-50 text-brand-700"
+                    : "border-zinc-200 bg-zinc-50 text-zinc-400 line-through")
+                }
+              >
+                {periodText(price.months, t)} · {price.amount.toLocaleString()} {price.currency}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <form
+        className="mt-3 flex flex-wrap items-end gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSavePrice({ months: Number(months), amount: Number(amount), currency, isActive: true }, () => setAmount(""));
+        }}
+      >
+        <Field label={t.months}>
+          <select className={inputClass} value={months} onChange={(e) => setMonths(e.target.value)}>
+            {PERIODS.map((value) => (
+              <option key={value} value={value}>
+                {periodText(value, t)}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label={t.price}>
+          <input className={inputClass} type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} required />
+        </Field>
+        <Field label={t.currency}>
+          <input className={inputClass + " w-20"} value={currency} onChange={(e) => setCurrency(e.target.value)} required />
+        </Field>
+        <button
+          type="submit"
+          disabled={busy === `price-${plan.id}`}
+          className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-60"
+        >
+          <Plus className="size-4" aria-hidden="true" />
+          {t.setPrice}
+        </button>
+      </form>
+    </div>
   );
 }
 
@@ -303,11 +398,10 @@ function CreatePlanForm({
 }) {
   const t = dict.admin.apps;
   const [name, setName] = useState("");
-  const [price, setPrice] = useState("0");
+  const [description, setDescription] = useState("");
   const [currency, setCurrency] = useState("VND");
-  const [interval, setInterval] = useState<SubscriptionInterval>("MONTH");
-  const [durationDays, setDurationDays] = useState("30");
   const [featureKeys, setFeatureKeys] = useState("");
+  const [amounts, setAmounts] = useState<Record<number, string>>({});
 
   return (
     <form
@@ -317,19 +411,22 @@ function CreatePlanForm({
         onSubmit(
           {
             name,
-            price: Number(price),
-            currency,
-            interval,
-            durationDays: Number(durationDays),
+            description: description || null,
             featureKeys: featureKeys
               .split(",")
               .map((key) => key.trim())
               .filter(Boolean),
+            prices: PERIODS.filter((months) => amounts[months]?.trim()).map((months) => ({
+              months,
+              amount: Number(amounts[months]),
+              currency,
+            })),
           },
           () => {
             setName("");
-            setPrice("0");
+            setDescription("");
             setFeatureKeys("");
+            setAmounts({});
           },
         );
       }}
@@ -338,32 +435,36 @@ function CreatePlanForm({
       <Field label={t.name}>
         <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} required />
       </Field>
-      <Field label={t.price}>
-        <input className={inputClass} type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} required />
-      </Field>
-      <Field label={t.currency}>
-        <input className={inputClass} value={currency} onChange={(e) => setCurrency(e.target.value)} required />
-      </Field>
-      <Field label={t.interval}>
-        <select className={inputClass} value={interval} onChange={(e) => setInterval(e.target.value as SubscriptionInterval)}>
-          {INTERVALS.map((value) => (
-            <option key={value} value={value}>
-              {value}
-            </option>
-          ))}
-        </select>
-      </Field>
-      <Field label={t.durationDays}>
-        <input className={inputClass} type="number" min={0} value={durationDays} onChange={(e) => setDurationDays(e.target.value)} />
+      <Field label={t.description}>
+        <input className={inputClass} value={description} onChange={(e) => setDescription(e.target.value)} />
       </Field>
       <Field label={t.featureKeys} hint={t.featureKeysHint}>
         <input className={inputClass} value={featureKeys} onChange={(e) => setFeatureKeys(e.target.value)} />
       </Field>
+      <Field label={t.currency}>
+        <input className={inputClass} value={currency} onChange={(e) => setCurrency(e.target.value)} required />
+      </Field>
+      <div className="sm:col-span-2">
+        <p className="mb-1 text-sm font-medium text-zinc-700">{t.initialPrices}</p>
+        <div className="grid gap-2 sm:grid-cols-5">
+          {PERIODS.map((months) => (
+            <Field key={months} label={periodText(months, t)}>
+              <input
+                className={inputClass}
+                type="number"
+                min={0}
+                value={amounts[months] ?? ""}
+                onChange={(e) => setAmounts((prev) => ({ ...prev, [months]: e.target.value }))}
+              />
+            </Field>
+          ))}
+        </div>
+      </div>
       <div className="sm:col-span-2">
         <button
           type="submit"
           disabled={busy}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-60"
         >
           {busy ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
           {t.createPlan}
@@ -458,7 +559,7 @@ function CreateMenuForm({
         <button
           type="submit"
           disabled={busy}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-60"
         >
           {busy ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
           {t.createMenu}
@@ -482,7 +583,7 @@ function GrantSubscriptionForm({
   const t = dict.admin.apps;
   const [userId, setUserId] = useState("");
   const [planId, setPlanId] = useState(plans[0]?.id ?? "");
-  const [durationDays, setDurationDays] = useState("");
+  const [months, setMonths] = useState("1");
 
   return (
     <form
@@ -493,7 +594,7 @@ function GrantSubscriptionForm({
           {
             userId,
             planId,
-            durationDays: durationDays ? Number(durationDays) : undefined,
+            months: Number(months),
           },
           () => setUserId(""),
         );
@@ -511,14 +612,20 @@ function GrantSubscriptionForm({
           ))}
         </select>
       </Field>
-      <Field label={t.optionalDays}>
-        <input className={inputClass} type="number" min={0} value={durationDays} onChange={(e) => setDurationDays(e.target.value)} />
+      <Field label={t.months} hint={t.grantHint}>
+        <select className={inputClass} value={months} onChange={(e) => setMonths(e.target.value)}>
+          {PERIODS.map((value) => (
+            <option key={value} value={value}>
+              {periodText(value, t)}
+            </option>
+          ))}
+        </select>
       </Field>
       <div className="sm:col-span-2">
         <button
           type="submit"
           disabled={busy || plans.length === 0}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-60"
         >
           {busy ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
           {t.grant}

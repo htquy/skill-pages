@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { distributionService } from "@/src/infrastructure/composition";
+import crypto from "crypto";
 import { requireAdmin } from "@/src/infrastructure/authentication/authorization";
-import { isAppError, ForbiddenError } from "@/src/domain/errors";
+import { isAppError, ForbiddenError, UnauthorizedError } from "@/src/domain/errors";
+import { getReleaseCiToken } from "@/src/lib/env";
 import { Prisma } from "@prisma/client";
 
 const version = z.string().regex(/^(0|[1-9]\d{0,5})\.(0|[1-9]\d{0,5})\.(0|[1-9]\d{0,5})$/);
@@ -20,7 +22,37 @@ const sourceSchema = z.object({
 const releaseSchema = z.object({ version, channel: z.enum(["stable", "beta"]), platform: z.enum(["win-x64"]),
   notes: z.string().max(20000).default(""), sourceIds: z.array(z.string().uuid()).min(1).max(100) });
 
+const ciReleaseSchema = z.object({
+  version, channel: z.enum(["stable", "beta"]).default("stable"), platform: z.enum(["win-x64"]).default("win-x64"),
+  notes: z.string().max(20000).default(""), publish: z.boolean().default(false),
+  application: z.object({
+    url: z.url().max(2000),
+    sha256: z.string().regex(/^[a-fA-F0-9]{64}$/).transform(s => s.toLowerCase()),
+    size: z.number().int().positive().max(20 * 1024 ** 3),
+    fileName: z.string().min(1).max(200),
+    entryPoint: z.string().min(1).max(240).default("DirectorCraftStudio.exe"),
+    requiredFiles: z.array(z.string().min(1).max(240)).max(100).default([]),
+  }),
+});
+
 export class DistributionController {
+  /** CI (GitHub Actions) xác thực bằng Bearer RELEASE_CI_TOKEN, so sánh thời gian hằng. */
+  private static requireCi(request: Request) {
+    const expected = getReleaseCiToken();
+    if (!expected) throw new ForbiddenError("CI release endpoint chưa bật (RELEASE_CI_TOKEN)");
+    const header = request.headers.get("authorization") ?? "";
+    const provided = Buffer.from(header.startsWith("Bearer ") ? header.slice(7).trim() : "");
+    const target = Buffer.from(expected);
+    if (provided.length !== target.length || !crypto.timingSafeEqual(provided, target)) throw new UnauthorizedError("Invalid CI token");
+  }
+  /** POST /api/ci/apps/:slug/releases */
+  static async ciRelease(request: Request, slug: string) {
+    try {
+      this.requireCi(request);
+      const result = await distributionService.registerCiRelease(slug, ciReleaseSchema.parse(await request.json()));
+      return NextResponse.json({ data: result }, { status: result.created ? 201 : 200 });
+    } catch (error) { return this.error(error); }
+  }
   private static error(error: unknown) {
     if (isAppError(error)) return NextResponse.json({ error: error.message }, { status: error.status });
     if (error instanceof z.ZodError) return NextResponse.json({ error: error.issues[0]?.message ?? "Dữ liệu không hợp lệ" }, { status: 400 });

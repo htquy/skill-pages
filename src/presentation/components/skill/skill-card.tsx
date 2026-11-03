@@ -38,10 +38,10 @@ export async function SkillCard({ skill }: { skill: SkillCardViewModel }) {
     // Cả thẻ là vùng bấm được (link phủ kín), nên nội dung bên trong đặt
     // `pointer-events-none` để click rơi xuống link; nút "Mua ngay" là ngoại lệ
     // vì tương tác của nó phải được giữ lại (không lồng <button> trong <a>).
-    <article className="group relative flex flex-col rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-zinc-300 hover:shadow-md">
+    <article className="group card-lift card-topline relative flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
       <Link
         href={`/skills/${skill.slug}`}
-        className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
         aria-label={skill.title}
       />
 
@@ -49,13 +49,13 @@ export async function SkillCard({ skill }: { skill: SkillCardViewModel }) {
         <div className="flex items-center justify-between gap-2">
           <SkillBadge accessType={skill.accessType} />
           {skill.categories[0] ? (
-            <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-700">
+            <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-700 ring-1 ring-violet-100">
               {skill.categories[0]}
             </span>
           ) : null}
         </div>
 
-        <h3 className="mt-4 text-lg font-semibold leading-snug text-zinc-900 group-hover:text-indigo-700">
+        <h3 className="mt-4 text-lg font-semibold leading-snug text-zinc-900 transition-colors duration-300 group-hover:text-brand-700">
           {skill.title}
         </h3>
         <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-zinc-600">

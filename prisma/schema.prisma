@@ -609,7 +609,14 @@ model Order {
   // Loại sản phẩm. Hiện chỉ có "SKILL"; giữ cột riêng để mở rộng bundle/pack
   // mà không phải đổi luồng thanh toán. Skill vẫn được ràng buộc bằng khóa ngoại.
   productType String      @default("SKILL") @db.VarChar(24)
-  skillId     String
+  /// SKILL: khóa ngoại tới catalog.skills. APP_PLAN: null.
+  skillId     String?
+  /// APP_PLAN: id của apps.subscription_plan_prices (không FK vì khác module; apps tự kiểm tra).
+  planPriceId String?     @db.VarChar(64)
+  /// Tên sản phẩm chụp lúc tạo đơn (VD "DirectorCraft Pro · 6 tháng") để email/đơn hàng không phải join chéo module.
+  productTitle String?    @db.VarChar(240)
+  /// Đường dẫn tương đối tới trang sản phẩm (VD "/apps/video-tool/pricing").
+  productPath  String?    @db.VarChar(240)
   amount      Decimal     @db.Decimal(12, 2)
   currency    String      @default("VND") @db.VarChar(8)
   status      OrderStatus @default(PENDING)
@@ -621,13 +628,14 @@ model Order {
   updatedAt   DateTime    @updatedAt @db.Timestamptz(3)
 
   user          User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
-  skill         Skill                @relation(fields: [skillId], references: [id], onDelete: Restrict)
+  skill         Skill?               @relation(fields: [skillId], references: [id], onDelete: Restrict)
   transactions  PaymentTransaction[]
   skillAccess   SkillAccess?
   webhookEvents WebhookEvent[]
 
   @@index([userId])
   @@index([skillId])
+  @@index([planPriceId])
   @@index([status])
   @@index([createdAt])
   @@index([status, expiresAt])
@@ -862,14 +870,6 @@ enum MenuAccess {
   @@schema("apps")
 }
 
-enum SubscriptionInterval {
-  MONTH
-  QUARTER
-  YEAR
-  CUSTOM
-  @@schema("apps")
-}
-
 enum SubscriptionStatus {
   ACTIVE
   EXPIRED
@@ -939,28 +939,46 @@ model Feature {
   @@schema("apps")
 }
 
-/// G�i tr? ph�: admin t? c?u h�nh gi� / chu k? (1 th�ng, v�i th�ng, 1 nam...).
+/// Gói = tầng tính năng (VD: Pro). Giá và thời hạn nằm ở SubscriptionPlanPrice
+/// để một gói bán được nhiều kỳ hạn (1 tháng, 6 tháng, 12 tháng, vĩnh viễn) mà không lặp danh sách tính năng.
 model SubscriptionPlan {
-  id           String               @id @default(uuid())
-  appId        String
-  name         String               @db.VarChar(160)
-  description  String?
-  currency     String               @default("VND") @db.Char(3)
-  /// �on v? nh? nh?t, v� d? 99000 = 99,000 VND.
-  price        Int
-  interval     SubscriptionInterval @default(MONTH)
-  /// S? ng�y hi?u l?c c?a g�i khi mua/gia h?n (30, 90, 365...). 0 = vinh vi?n.
-  durationDays Int                  @default(30)
-  isActive     Boolean              @default(true)
-  createdAt    DateTime             @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime             @updatedAt @db.Timestamptz(3)
+  id          String   @id @default(uuid())
+  appId       String
+  name        String   @db.VarChar(160)
+  description String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
 
-  app           App @relation(fields: [appId], references: [id], onDelete: Cascade)
+  app           App                     @relation(fields: [appId], references: [id], onDelete: Cascade)
   features      PlanFeature[]
+  prices        SubscriptionPlanPrice[]
   subscriptions UserSubscription[]
 
   @@index([appId, isActive])
   @@map("subscription_plans")
+  @@schema("apps")
+}
+
+/// Một kỳ hạn bán của gói. Thời hạn tính theo THÁNG LỊCH (không phải 30 ngày) để "6 tháng" luôn đúng 6 tháng.
+model SubscriptionPlanPrice {
+  id        String   @id @default(uuid())
+  planId    String
+  /// Số tháng hiệu lực (1, 6, 12...). 0 = vĩnh viễn.
+  months    Int
+  currency  String   @default("VND") @db.Char(3)
+  /// Đơn vị nhỏ nhất của tiền tệ, VD 99000 = 99.000 VND.
+  amount    Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  plan SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, months, currency])
+  @@index([planId, isActive])
+  @@map("subscription_plan_prices")
   @@schema("apps")
 }
 
@@ -984,10 +1002,10 @@ model UserSubscription {
   planId    String
   status    SubscriptionStatus @default(ACTIVE)
   startsAt  DateTime           @db.Timestamptz(3)
-  /// null = kh�ng h?t h?n (g�i vinh vi?n).
+  /// null = không hết hạn (gói vĩnh viễn).
   endsAt    DateTime?          @db.Timestamptz(3)
-  /// Tham chi?u don h�ng thanh to�n (payment.orders.id) khi c�.
-  orderId   String?            @db.VarChar(64)
+  /// Đơn hàng thanh toán (payment.orders.id) đã tạo ra kỳ này. Unique để webhook gửi lặp không cộng thời hạn 2 lần.
+  orderId   String?            @unique @db.VarChar(64)
   createdAt DateTime           @default(now()) @db.Timestamptz(3)
   updatedAt DateTime           @updatedAt @db.Timestamptz(3)
 

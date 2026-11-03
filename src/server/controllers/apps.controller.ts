@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { z } from "zod";
 import { appsService, oauthService } from "@/src/infrastructure/composition";
 import { auth } from "@/src/infrastructure/authentication/auth";
 import { requireAdmin } from "@/src/infrastructure/authentication/authorization";
@@ -15,6 +16,37 @@ function getErrorStatus(error: unknown, fallback: number = 400): number {
   if (isAppError(error)) return error.status;
   return fallback;
 }
+
+function errorResponse(error: unknown, headers?: Record<string, string>) {
+  if (error instanceof z.ZodError) {
+    return NextResponse.json({ error: error.issues[0]?.message ?? "Dữ liệu không hợp lệ" }, { status: 400, headers });
+  }
+  return NextResponse.json({ error: getErrorMessage(error) }, { status: getErrorStatus(error, 400), headers });
+}
+
+const months = z.number().int().min(0).max(120);
+const priceSchema = z.object({
+  months,
+  amount: z.number().int().min(0),
+  currency: z.string().trim().length(3).toUpperCase().optional(),
+  isActive: z.boolean().optional(),
+});
+const featureKeys = z.array(z.string().trim().regex(/^[A-Z0-9_]{2,120}$/, "Mã tính năng chỉ gồm A-Z, 0-9, _")).max(100);
+const createPlanSchema = z.object({
+  name: z.string().trim().min(1).max(160),
+  description: z.string().max(2000).nullish(),
+  sortOrder: z.number().int().optional(),
+  featureKeys: featureKeys.optional(),
+  prices: z.array(priceSchema).max(20).optional(),
+});
+const updatePlanSchema = z.object({
+  name: z.string().trim().min(1).max(160).optional(),
+  description: z.string().max(2000).nullish(),
+  sortOrder: z.number().int().optional(),
+  isActive: z.boolean().optional(),
+  featureKeys: featureKeys.optional(),
+});
+const grantSchema = z.object({ userId: z.string().trim().min(1), planId: z.string().trim().min(1), months });
 
 /**
  * Xác thực server-to-server: chỉ chấp nhận `userId` khi request kèm secret dùng chung
@@ -99,7 +131,7 @@ export class AppsController {
       const result = await appsService.getApp(slug);
       return NextResponse.json({ data: result }, { headers: appCorsHeaders });
     } catch (error: unknown) {
-      return NextResponse.json({ error: getErrorMessage(error) }, { status: 404, headers: appCorsHeaders });
+      return errorResponse(error, appCorsHeaders);
     }
   }
 
@@ -124,7 +156,7 @@ export class AppsController {
         { headers: appCorsHeaders },
       );
     } catch (error: unknown) {
-      return NextResponse.json({ error: getErrorMessage(error) }, { status: 404, headers: appCorsHeaders });
+      return errorResponse(error, appCorsHeaders);
     }
   }
 
@@ -172,7 +204,7 @@ export class AppsController {
         { headers: appCorsHeaders },
       );
     } catch (error: unknown) {
-      return NextResponse.json({ error: getErrorMessage(error) }, { status: 400, headers: appCorsHeaders });
+      return errorResponse(error, appCorsHeaders);
     }
   }
 
@@ -200,15 +232,41 @@ export class AppsController {
     try {
       await requireAdmin();
       const { app } = await appsService.getApp(slug);
-      const body = await request.json();
-      const plan = await appsService.adminCreatePlan({
-        ...body,
-        appId: app.id,
-      });
+      const body = createPlanSchema.parse(await request.json());
+      const plan = await appsService.adminCreatePlan({ ...body, appId: app.id });
       return NextResponse.json({ data: plan }, { status: 201 });
     } catch (error: unknown) {
-      const status = getErrorStatus(error, 400);
-      return NextResponse.json({ error: getErrorMessage(error) }, { status });
+      return errorResponse(error);
+    }
+  }
+
+  /**
+   * PATCH /api/admin/apps/[slug]/plans/[planId]
+   * Admin: đổi tên/mô tả/thứ tự, bật-tắt bán gói, thay danh sách tính năng.
+   */
+  static async adminUpdatePlan(request: Request, slug: string, planId: string): Promise<NextResponse> {
+    try {
+      await requireAdmin();
+      const body = updatePlanSchema.parse(await request.json());
+      const plan = await appsService.adminUpdatePlan(slug, planId, body);
+      return NextResponse.json({ data: plan });
+    } catch (error: unknown) {
+      return errorResponse(error);
+    }
+  }
+
+  /**
+   * POST /api/admin/apps/[slug]/plans/[planId]/prices
+   * Admin: thêm/sửa giá một kỳ hạn của gói (1, 6, 12 tháng; 0 = vĩnh viễn). isActive=false để ngừng bán.
+   */
+  static async adminUpsertPlanPrice(request: Request, slug: string, planId: string): Promise<NextResponse> {
+    try {
+      await requireAdmin();
+      const body = priceSchema.parse(await request.json());
+      const price = await appsService.adminUpsertPlanPrice(slug, planId, body);
+      return NextResponse.json({ data: price });
+    } catch (error: unknown) {
+      return errorResponse(error);
     }
   }
 
@@ -239,18 +297,11 @@ export class AppsController {
   static async adminGrantSubscription(request: Request, slug: string): Promise<NextResponse> {
     try {
       await requireAdmin();
-      const body = await request.json();
-      const { userId, planId, durationDays } = body;
-      const sub = await appsService.adminGrantSubscription({
-        userId,
-        appSlug: slug,
-        planId,
-        durationDays,
-      });
+      const body = grantSchema.parse(await request.json());
+      const sub = await appsService.adminGrantSubscription({ ...body, appSlug: slug });
       return NextResponse.json({ data: sub }, { status: 200 });
     } catch (error: unknown) {
-      const status = getErrorStatus(error, 400);
-      return NextResponse.json({ error: getErrorMessage(error) }, { status });
+      return errorResponse(error);
     }
   }
 }

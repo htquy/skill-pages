@@ -26,10 +26,10 @@ export default async function LoginPage(props: {
   };
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-gradient-to-b from-indigo-50/60 via-white to-white px-6 py-16">
+    <div className="flex flex-1 items-center justify-center bg-gradient-to-b from-brand-50/60 via-white to-white px-6 py-16">
       <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
         <div className="flex justify-center">
-          <span className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-xl font-bold text-white shadow-md">
+          <span className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-violet-600 text-xl font-bold text-white shadow-md">
             {siteConfig.name.slice(0, 2)}
           </span>
         </div>
@@ -60,7 +60,7 @@ export default async function LoginPage(props: {
           {dict.login.terms}
         </p>
 
-        <div className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-indigo-50/70 px-4 py-3 text-xs text-indigo-700">
+        <div className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-brand-50/70 px-4 py-3 text-xs text-brand-700">
           <Bookmark className="size-4" aria-hidden="true" />
           {dict.login.privacy}
         </div>

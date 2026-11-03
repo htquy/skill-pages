@@ -50,15 +50,15 @@ export default async function ToolDetailPage({ params }: Props) {
 
   return (
     <Container className="py-10 md:py-14">
-      <Link href="/tools" className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 hover:text-zinc-900">
-        <ArrowLeft className="size-4" aria-hidden="true" />
+      <Link href="/tools" className="group inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-brand-700">
+        <ArrowLeft className="size-4 transition-transform duration-500 ease-fluid group-hover:-translate-x-1" aria-hidden="true" />
         {dict.tools.backAll}
       </Link>
 
       <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 font-medium text-indigo-700">
+            <span className="rounded-full bg-brand-50 px-2.5 py-0.5 font-medium text-brand-700">
               {dict.tools.types[tool.type]}
             </span>
             <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 font-medium text-zinc-600">
@@ -71,7 +71,7 @@ export default async function ToolDetailPage({ params }: Props) {
             ) : null}
           </div>
 
-          <h1 className="mt-3 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
+          <h1 className="mt-3 animate-fade-up text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl [text-wrap:balance]">
             {tool.title}
           </h1>
           <p className="mt-3 max-w-2xl text-lg text-zinc-600">{tool.shortDescription}</p>
@@ -158,7 +158,7 @@ export default async function ToolDetailPage({ params }: Props) {
                 href={appUrl}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="mt-5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-500"
+                className="mt-5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-500"
               >
                 {dict.tools.openApp}
                 <ExternalLink className="size-4" aria-hidden="true" />

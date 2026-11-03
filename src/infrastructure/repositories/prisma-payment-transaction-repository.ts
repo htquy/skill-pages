@@ -70,7 +70,7 @@ export const prismaPaymentTransactionRepository: PaymentTransactionRepository = 
     const items: PaymentTransactionView[] = rows.map((row) => ({
       ...toTransaction(row),
       orderCode: row.order.orderCode,
-      skillTitle: row.order.skill.title,
+      skillTitle: row.order.skill?.title ?? row.order.productTitle ?? "",
     }));
     return toPaginated(items, total, pagination);
   },

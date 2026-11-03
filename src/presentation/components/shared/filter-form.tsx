@@ -53,7 +53,7 @@ export function FilterSubmitButton({
       disabled={pending}
       aria-busy={pending}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-700 disabled:opacity-70",
+        "btn-primary text-sm",
         className,
       )}
     >

@@ -46,9 +46,7 @@ export function FaqSection({ badge, title, items }: FaqSectionProps) {
 
       <Container>
         <div className="mx-auto max-w-[680px] text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-800">
-            <span>{badge}</span>
-          </div>
+          <div className="eyebrow">{badge}</div>
           <h2 className="mt-4 text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl [text-wrap:balance]">
             {title}
           </h2>
@@ -60,27 +58,32 @@ export function FaqSection({ badge, title, items }: FaqSectionProps) {
             return (
               <div
                 key={index}
-                className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                className={`overflow-hidden rounded-2xl border transition-all duration-500 ease-fluid ${
+                  isOpen
+                    ? "border-brand-200 bg-white shadow-lift"
+                    : "border-zinc-200 bg-zinc-50 hover:border-brand-200 hover:bg-white"
+                }`}
               >
                 <button
                   type="button"
                   onClick={() => toggle(index)}
-                  className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-zinc-100/70 focus-visible:outline-2 focus-visible:outline-zinc-950"
+                  className="flex w-full items-center justify-between gap-4 p-5 text-left focus-visible:outline-2 focus-visible:outline-brand-600"
                   aria-expanded={isOpen}
                 >
                   <span className="text-base font-semibold text-zinc-900 [text-wrap:pretty]">
                     {item.q}
                   </span>
-                  <ChevronDown
-                    className={`size-4 shrink-0 text-zinc-500 transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-                      isOpen ? "rotate-180 text-zinc-900" : ""
+                  <span
+                    className={`inline-grid size-7 shrink-0 place-items-center rounded-full transition-all duration-500 ease-fluid ${
+                      isOpen ? "rotate-180 bg-brand-600 text-white" : "bg-white text-zinc-500 ring-1 ring-zinc-200"
                     }`}
-                    aria-hidden="true"
-                  />
+                  >
+                    <ChevronDown className="size-4" aria-hidden="true" />
+                  </span>
                 </button>
 
                 {isOpen && (
-                  <div className="border-t border-zinc-200/60 bg-white p-5 text-sm leading-relaxed text-zinc-600 [text-wrap:pretty]">
+                  <div className="animate-fade-up border-t border-brand-100 px-5 pb-5 pt-4 text-sm leading-relaxed text-zinc-600 [text-wrap:pretty]">
                     {item.a}
                   </div>
                 )}

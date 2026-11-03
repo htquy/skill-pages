@@ -25,7 +25,7 @@ function statCards(metrics: Awaited<ReturnType<typeof statistics.getDashboardMet
       value: formatNumber(metrics.totalUsers),
       icon: Users,
       href: "/admin/users",
-      accent: "text-indigo-600 bg-indigo-50",
+      accent: "text-brand-600 bg-brand-50",
     },
     {
       label: dict.admin.dashboard.activeUsers,
@@ -97,7 +97,7 @@ export default async function AdminDashboardPage() {
           <Link
             key={card.label}
             href={card.href}
-            className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-colors hover:border-indigo-200"
+            className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-colors hover:border-brand-200"
           >
             <div className="flex items-center justify-between">
               <p className="text-sm text-zinc-500">{card.label}</p>
@@ -146,7 +146,7 @@ export default async function AdminDashboardPage() {
             </div>
             <Link
               href="/admin/statistics"
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+              className="text-sm font-medium text-brand-600 hover:text-brand-700"
             >
               {dict.admin.dashboard.viewSales}
             </Link>
@@ -172,7 +172,7 @@ export default async function AdminDashboardPage() {
             </div>
             <Link
               href="/admin/orders"
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+              className="text-sm font-medium text-brand-600 hover:text-brand-700"
             >
               {dict.admin.dashboard.allOrders}
             </Link>
@@ -184,7 +184,7 @@ export default async function AdminDashboardPage() {
                   <div className="min-w-0">
                     <Link
                       href={`/admin/orders/${order.id}`}
-                      className="block truncate font-medium text-zinc-800 hover:text-indigo-700"
+                      className="block truncate font-medium text-zinc-800 hover:text-brand-700"
                     >
                       {order.skillTitle}
                     </Link>

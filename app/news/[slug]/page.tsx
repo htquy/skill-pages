@@ -120,7 +120,7 @@ export default async function NewsArticlePage({ params }: Props) {
                 <Link
                   key={tool.slug}
                   href={`/search?${new URLSearchParams({ tool: tool.slug })}`}
-                  className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-sm font-medium text-zinc-700 transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                  className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-sm font-medium text-zinc-700 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
                 >
                   {tool.logoUrl ? (
                     <Image

@@ -28,7 +28,7 @@ export default function ErrorBoundary({
       <button
         type="button"
         onClick={reset}
-        className="mt-6 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
+        className="btn-primary mt-6 text-sm"
       >
         {dict.error.retry}
       </button>

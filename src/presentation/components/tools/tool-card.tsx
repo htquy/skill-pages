@@ -10,7 +10,7 @@ export async function ToolCard({ tool }: { tool: ToolCardViewModel }) {
   return (
     <Link
       href={`/tools/${tool.slug}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-zinc-300 hover:shadow-md"
+      className="group card-lift card-topline relative flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
     >
       {tool.coverImageUrl ? (
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-zinc-100">
@@ -19,12 +19,13 @@ export async function ToolCard({ tool }: { tool: ToolCardViewModel }) {
             alt=""
             fill
             sizes="(max-width: 768px) 100vw, 33vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            className="object-cover transition-transform duration-700 ease-fluid group-hover:scale-[1.06]"
           />
         </div>
       ) : (
-        <div className="flex aspect-[16/9] w-full items-center justify-center bg-gradient-to-br from-indigo-50 to-violet-50">
-          <p className="text-xs font-semibold uppercase tracking-wide text-indigo-400">
+        <div className="aurora relative flex aspect-[16/9] w-full items-center justify-center bg-gradient-to-br from-brand-50 via-white to-violet-50">
+          <div aria-hidden="true" className="bg-grid pointer-events-none absolute inset-0 -z-10" />
+          <p className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-600 shadow-sm ring-1 ring-brand-100 backdrop-blur">
             {dict.tools.eyebrow}
           </p>
         </div>
@@ -32,7 +33,7 @@ export async function ToolCard({ tool }: { tool: ToolCardViewModel }) {
 
       <div className="flex flex-1 flex-col p-5">
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 font-medium text-indigo-700">
+          <span className="rounded-full bg-brand-50 px-2.5 py-0.5 font-medium text-brand-700">
             {dict.tools.types[tool.type]}
           </span>
           <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 font-medium text-zinc-600">
@@ -43,7 +44,7 @@ export async function ToolCard({ tool }: { tool: ToolCardViewModel }) {
           ) : null}
         </div>
 
-        <h3 className="mt-3 text-base font-semibold leading-snug text-zinc-900 group-hover:text-indigo-700">
+        <h3 className="mt-3 text-base font-semibold leading-snug text-zinc-900 group-hover:text-brand-700">
           {tool.title}
         </h3>
         <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-zinc-600">{tool.description}</p>
@@ -54,7 +55,7 @@ export async function ToolCard({ tool }: { tool: ToolCardViewModel }) {
               ? dict.tools.freeToUse
               : (tool.priceLabel ?? dict.tools.noPrice)}
           </p>
-          <span className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600">
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-brand-600">
             {dict.tools.viewTool}
             <ArrowRight
               className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5"

@@ -85,7 +85,7 @@ export function RankingForm({
         </a>
         <button
           type="submit"
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-500"
+          className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-500"
         >
           {ranking ? dict.admin.forms.saveChanges : dict.admin.forms.createRanking}
         </button>

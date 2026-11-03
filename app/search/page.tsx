@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { Suspense } from "react";
 import { Container } from "@/src/presentation/components/layout/container";
+import { PageHeader } from "@/src/presentation/components/layout/page-header";
 import { SkillFilters } from "@/src/presentation/components/skill/skill-filters";
 import { SkillGrid } from "@/src/presentation/components/skill/skill-grid";
 import { SkillGridSkeleton } from "@/src/presentation/components/skill/skill-grid-skeleton";
@@ -94,12 +95,7 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
 
   return (
     <Container className="py-12 md:py-16">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-          {dict.search.title}
-        </h1>
-        <p className="mt-3 max-w-2xl text-lg text-zinc-600">{dict.search.subtitle}</p>
-      </div>
+      <PageHeader title={dict.search.title} subtitle={dict.search.subtitle} />
 
       <SkillFilters
         action="/search"

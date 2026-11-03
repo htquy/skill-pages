@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { Suspense } from "react";
 import { Container } from "@/src/presentation/components/layout/container";
+import { PageHeader } from "@/src/presentation/components/layout/page-header";
 import { ToolGrid } from "@/src/presentation/components/tools/tool-grid";
 import { ToolGridSkeleton } from "@/src/presentation/components/tools/tool-grid-skeleton";
 import { EmptyState } from "@/src/presentation/components/shared/empty-state";
@@ -35,7 +36,7 @@ function filterKey(filters: ToolListFilters) {
 }
 
 const selectClass =
-  "rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100";
+  "rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100";
 
 async function ToolFilters({ filters, resetKey }: { filters: ToolListFilters; resetKey: string }) {
   const dict = await getDictionary();
@@ -52,7 +53,7 @@ async function ToolFilters({ filters, resetKey }: { filters: ToolListFilters; re
           type="search"
           defaultValue={filters.q ?? ""}
           placeholder={dict.tools.searchPlaceholder}
-          className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+          className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
         />
       </label>
       <label>
@@ -136,15 +137,7 @@ export default async function ToolsPage({ searchParams }: Props) {
 
   return (
     <Container className="py-12 md:py-16">
-      <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600">
-          {dict.tools.eyebrow}
-        </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-          {dict.tools.title}
-        </h1>
-        <p className="mt-3 max-w-2xl text-lg text-zinc-600">{dict.tools.subtitle}</p>
-      </div>
+      <PageHeader eyebrow={dict.tools.eyebrow} title={dict.tools.title} subtitle={dict.tools.subtitle} />
 
       <ToolFilters filters={filters} resetKey={filterKey(filters)} />
 

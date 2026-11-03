@@ -1,5 +1,6 @@
 
 
+import { seedDirectorCraft } from "./seed-directorcraft";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -403,18 +404,17 @@ async function main() {
       appId: desktopApp.id,
       name: "Gói Tiêu Chuẩn 1 Tháng",
       description: "Thích hợp cho cá nhân và người mới bắt đầu",
-      currency: "VND",
-      price: 99000,
-      interval: "MONTH",
-      durationDays: 30,
       isActive: true,
     },
     update: {
       name: "Gói Tiêu Chuẩn 1 Tháng",
-      price: 99000,
-      durationDays: 30,
       isActive: true,
     },
+  });
+  await prisma.subscriptionPlanPrice.upsert({
+    where: { planId_months_currency: { planId: planMonth.id, months: 1, currency: "VND" } },
+    create: { planId: planMonth.id, months: 1, currency: "VND", amount: 99000 },
+    update: { amount: 99000 },
   });
 
   const planQuarter = await prisma.subscriptionPlan.upsert({
@@ -424,18 +424,17 @@ async function main() {
       appId: desktopApp.id,
       name: "Gói Nâng Cao 3 Tháng",
       description: "Tiết kiệm 15%, mở khóa đầy đủ tính năng",
-      currency: "VND",
-      price: 249000,
-      interval: "QUARTER",
-      durationDays: 90,
       isActive: true,
     },
     update: {
       name: "Gói Nâng Cao 3 Tháng",
-      price: 249000,
-      durationDays: 90,
       isActive: true,
     },
+  });
+  await prisma.subscriptionPlanPrice.upsert({
+    where: { planId_months_currency: { planId: planQuarter.id, months: 3, currency: "VND" } },
+    create: { planId: planQuarter.id, months: 3, currency: "VND", amount: 249000 },
+    update: { amount: 249000 },
   });
 
   const planYear = await prisma.subscriptionPlan.upsert({
@@ -445,18 +444,17 @@ async function main() {
       appId: desktopApp.id,
       name: "Gói VIP Doanh Nghiệp 1 Năm",
       description: "Đầy đủ tính năng, hỗ trợ kỹ thuật ưu tiên 24/7",
-      currency: "VND",
-      price: 890000,
-      interval: "YEAR",
-      durationDays: 365,
       isActive: true,
     },
     update: {
       name: "Gói VIP Doanh Nghiệp 1 Năm",
-      price: 890000,
-      durationDays: 365,
       isActive: true,
     },
+  });
+  await prisma.subscriptionPlanPrice.upsert({
+    where: { planId_months_currency: { planId: planYear.id, months: 12, currency: "VND" } },
+    create: { planId: planYear.id, months: 12, currency: "VND", amount: 890000 },
+    update: { amount: 890000 },
   });
 
   // Plan features mapping
@@ -554,141 +552,10 @@ async function main() {
   console.log("✔ Apps, Plans & Dynamic Menus upserted");
 
   // ---------------------------------------------------------------------------
-  // 5b. VideoTool Desktop — sản phẩm native dùng entitlement hub (schema: apps)
+  // 5b. DirectorCraft Studio (slug video-tool) — gói Pro 1/6/12 tháng (schema: apps)
   // ---------------------------------------------------------------------------
-  const videoApp = await prisma.app.upsert({
-    where: { slug: "video-tool" },
-    create: {
-      id: "app-video-tool",
-      slug: "video-tool",
-      name: "Video Tool",
-      description: "Công cụ xử lý video FFmpeg (NativeAOT + Avalonia)",
-      type: "DESKTOP_TOOL",
-      status: "ACTIVE",
-    },
-    update: {
-      name: "Video Tool",
-      description: "Công cụ xử lý video FFmpeg (NativeAOT + Avalonia)",
-      type: "DESKTOP_TOOL",
-      status: "ACTIVE",
-    },
-  });
-
-  const featBatch = await prisma.feature.upsert({
-    where: { key: "VIDEO_BATCH" },
-    create: {
-      id: "feat-video-batch",
-      key: "VIDEO_BATCH",
-      name: "Xử lý hàng loạt",
-      description: "Đưa nhiều file vào hàng đợi và xử lý cùng lúc",
-    },
-    update: { name: "Xử lý hàng loạt" },
-  });
-
-  const featGpu = await prisma.feature.upsert({
-    where: { key: "VIDEO_GPU" },
-    create: {
-      id: "feat-video-gpu",
-      key: "VIDEO_GPU",
-      name: "Tăng tốc GPU (NVENC)",
-      description: "Dùng card đồ họa để tăng tốc mã hóa video",
-    },
-    update: { name: "Tăng tốc GPU (NVENC)" },
-  });
-
-  const featNoWatermark = await prisma.feature.upsert({
-    where: { key: "VIDEO_NO_WATERMARK" },
-    create: {
-      id: "feat-video-no-watermark",
-      key: "VIDEO_NO_WATERMARK",
-      name: "Xuất không watermark",
-      description: "Bỏ logo/watermark trên video xuất ra",
-    },
-    update: { name: "Xuất không watermark" },
-  });
-
-  const videoPlanMonth = await prisma.subscriptionPlan.upsert({
-    where: { id: "plan-video-month" },
-    create: {
-      id: "plan-video-month",
-      appId: videoApp.id,
-      name: "Video Tool 1 Tháng",
-      description: "Mở khóa xử lý hàng loạt",
-      currency: "VND",
-      price: 99000,
-      interval: "MONTH",
-      durationDays: 30,
-      isActive: true,
-    },
-    update: { price: 99000, durationDays: 30, isActive: true },
-  });
-
-  const videoPlanYear = await prisma.subscriptionPlan.upsert({
-    where: { id: "plan-video-year" },
-    create: {
-      id: "plan-video-year",
-      appId: videoApp.id,
-      name: "Video Tool 1 Năm",
-      description: "Toàn bộ tính năng: hàng loạt, GPU, không watermark",
-      currency: "VND",
-      price: 790000,
-      interval: "YEAR",
-      durationDays: 365,
-      isActive: true,
-    },
-    update: { price: 790000, durationDays: 365, isActive: true },
-  });
-
-  const videoMappings = [
-    { planId: videoPlanMonth.id, featureId: featBatch.id },
-    { planId: videoPlanYear.id, featureId: featBatch.id },
-    { planId: videoPlanYear.id, featureId: featGpu.id },
-    { planId: videoPlanYear.id, featureId: featNoWatermark.id },
-  ];
-  for (const m of videoMappings) {
-    await prisma.planFeature.upsert({
-      where: { planId_featureId: { planId: m.planId, featureId: m.featureId } },
-      create: m,
-      update: {},
-    });
-  }
-
-  const videoMenus = [
-    { id: "menu-video-trim", label: "Cắt video", path: "/trim", icon: "\uE8C6", sortOrder: 1, access: "FREE" as const, requiredFeatureId: null },
-    { id: "menu-video-compress", label: "Nén video", path: "/compress", icon: "\uE721", sortOrder: 2, access: "FREE" as const, requiredFeatureId: null },
-    { id: "menu-video-convert", label: "Chuyển định dạng", path: "/convert", icon: "\uE8AB", sortOrder: 3, access: "FREE" as const, requiredFeatureId: null },
-    { id: "menu-video-audio", label: "Tách / xóa audio", path: "/audio", icon: "\uE8D6", sortOrder: 4, access: "FREE" as const, requiredFeatureId: null },
-    { id: "menu-video-merge", label: "Ghép video", path: "/merge", icon: "\uE723", sortOrder: 5, access: "FREE" as const, requiredFeatureId: null },
-    { id: "menu-video-queue", label: "Hàng đợi xử lý", path: "/queue", icon: "\uE8FD", sortOrder: 6, access: "FREE" as const, requiredFeatureId: null },
-    { id: "menu-video-batch", label: "Xử lý hàng loạt", path: "/batch", icon: "\uE8EF", sortOrder: 7, access: "PAID" as const, requiredFeatureId: featBatch.id },
-    { id: "menu-video-gpu", label: "Tăng tốc GPU (NVENC)", path: "/gpu", icon: "\uE9D9", sortOrder: 8, access: "PAID" as const, requiredFeatureId: featGpu.id },
-    { id: "menu-video-watermark", label: "Xuất không watermark", path: "/watermark", icon: "\uE790", sortOrder: 9, access: "PAID" as const, requiredFeatureId: featNoWatermark.id },
-  ];
-  for (const menu of videoMenus) {
-    await prisma.appMenuItem.upsert({
-      where: { id: menu.id },
-      create: { ...menu, appId: videoApp.id },
-      update: { ...menu, appId: videoApp.id },
-    });
-  }
-
-  await prisma.userSubscription.upsert({
-    where: { id: "sub-video-demo-year" },
-    create: {
-      id: "sub-video-demo-year",
-      userId: demoId,
-      appId: videoApp.id,
-      planId: videoPlanYear.id,
-      status: "ACTIVE",
-      startsAt: new Date(),
-      endsAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-    },
-    update: {
-      status: "ACTIVE",
-      endsAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-    },
-  });
-  console.log("✔ VideoTool app, features, plans, menus & demo subscription upserted");
+  await seedDirectorCraft(prisma, demoId);
+  console.log("✔ DirectorCraft app, features, Pro plan (1/6/12 tháng), menus & demo subscription upserted");
 
   // ---------------------------------------------------------------------------
   // 6. User Subscription (Demo user có gói 1 năm)

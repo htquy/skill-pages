@@ -61,7 +61,7 @@ function Chips({
         <Link
           key={item.slug}
           href={`/search?${new URLSearchParams({ [queryKey]: item.slug })}`}
-          className="rounded-full border border-zinc-200 bg-white px-2.5 py-0.5 text-xs font-medium text-zinc-700 transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+          className="rounded-full border border-zinc-200 bg-white px-2.5 py-0.5 text-xs font-medium text-zinc-700 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
         >
           {item.name}
         </Link>
@@ -107,9 +107,9 @@ export default async function SkillDetailPage({ params }: Props) {
     <Container className="py-10 md:py-14">
       <Link
         href="/#catalog"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900"
+        className="group inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-brand-700"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" />
+        <ArrowLeft className="size-4 transition-transform duration-500 ease-fluid group-hover:-translate-x-1" aria-hidden="true" />
         {dict.skillDetail.back}
       </Link>
 
@@ -121,7 +121,7 @@ export default async function SkillDetailPage({ params }: Props) {
             <StarRating rating={skill.ratingAverage ?? 0} count={skill.ratingCount} />
           </div>
 
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
+          <h1 className="mt-4 animate-fade-up text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl [text-wrap:balance]">
             {skill.title}
           </h1>
           <p className="mt-3 text-lg leading-relaxed text-zinc-600">
@@ -236,7 +236,7 @@ export default async function SkillDetailPage({ params }: Props) {
                 href={skill.videoDemoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 inline-flex text-xs font-medium text-indigo-600 underline-offset-2 hover:underline"
+                className="mt-2 inline-flex text-xs font-medium text-brand-600 underline-offset-2 hover:underline"
               >
                 {dict.skillDetail.videoDemoOpen}
               </a>
@@ -328,11 +328,11 @@ export default async function SkillDetailPage({ params }: Props) {
                         className="size-7 rounded-md border border-zinc-100 object-contain"
                       />
                     ) : (
-                      <span className="flex size-7 items-center justify-center rounded-md bg-indigo-50 text-xs font-bold text-indigo-600">
+                      <span className="flex size-7 items-center justify-center rounded-md bg-brand-50 text-xs font-bold text-brand-600">
                         {tool.name.slice(0, 2).toUpperCase()}
                       </span>
                     )}
-                    <span className="truncate text-sm font-medium text-zinc-700 group-hover:text-indigo-700">
+                    <span className="truncate text-sm font-medium text-zinc-700 group-hover:text-brand-700">
                       {tool.name}
                     </span>
                   </Link>

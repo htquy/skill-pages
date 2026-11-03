@@ -11,7 +11,7 @@ export async function FeaturedNewsCard({ article }: { article: NewsCardViewModel
   return (
     <Link
       href={`/news/${article.slug}`}
-      className="group relative flex flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:shadow-md md:flex-row"
+      className="group card-lift card-topline relative flex flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm md:flex-row"
     >
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-zinc-100 md:aspect-auto md:w-1/2">
         {article.coverImageUrl ? (
@@ -20,10 +20,11 @@ export async function FeaturedNewsCard({ article }: { article: NewsCardViewModel
             alt=""
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            className="object-cover transition-transform duration-700 ease-fluid group-hover:scale-[1.05]"
           />
         ) : (
-          <div className="flex h-full items-center justify-center bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-500">
+          <div className="aurora-dark flex h-full min-h-48 items-center justify-center bg-gradient-to-br from-brand-700 via-violet-700 to-zinc-950">
+            <div aria-hidden="true" className="bg-grid-dark pointer-events-none absolute inset-0 -z-10" />
             <p className="text-sm font-semibold uppercase tracking-widest text-white/80">
               {featuredLabel}
             </p>
@@ -33,7 +34,7 @@ export async function FeaturedNewsCard({ article }: { article: NewsCardViewModel
 
       <div className="flex flex-1 flex-col justify-center p-6 md:p-10">
         <div className="flex items-center gap-2 text-xs">
-          <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 font-semibold uppercase tracking-wide text-indigo-700">
+          <span className="rounded-full bg-brand-50 px-2.5 py-0.5 font-semibold uppercase tracking-wide text-brand-700">
             {featuredLabel}
           </span>
           {article.categoryName ? (
@@ -43,7 +44,7 @@ export async function FeaturedNewsCard({ article }: { article: NewsCardViewModel
           ) : null}
         </div>
 
-        <h2 className="mt-4 text-2xl font-bold leading-tight tracking-tight text-zinc-900 group-hover:text-indigo-700 md:text-3xl">
+        <h2 className="mt-4 text-2xl font-bold leading-tight tracking-tight text-zinc-900 group-hover:text-brand-700 md:text-3xl">
           {article.title}
         </h2>
         {article.excerpt ? (
@@ -61,7 +62,7 @@ export async function FeaturedNewsCard({ article }: { article: NewsCardViewModel
           </span>
         </div>
 
-        <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 group-hover:gap-2.5 transition-all">
+        <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 group-hover:gap-2.5 transition-all">
           {dict.news.readArticle}
           <ArrowRight className="size-4" aria-hidden="true" />
         </span>

@@ -4,7 +4,11 @@ import { orderCommands, orderRepository, paymentCommands } from "@/src/infrastru
 import { requireUser } from "@/src/infrastructure/authentication/authorization";
 import { ForbiddenError, NotFoundError, isAppError } from "@/src/domain/errors";
 
-const createOrderSchema = z.object({ skillId: z.string().trim().min(1).max(100) });
+/** Mua skill (`skillId`) hoặc một kỳ hạn gói app (`planPriceId`); đúng một trong hai. */
+const createOrderSchema = z.union([
+  z.object({ skillId: z.string().trim().min(1).max(100), planPriceId: z.undefined().optional() }),
+  z.object({ planPriceId: z.string().trim().min(1).max(100), skillId: z.undefined().optional() }),
+]);
 
 /**
  * OrderController: xử lý toàn bộ giao thức HTTP cho module mua kỹ năng
@@ -16,7 +20,9 @@ export class OrderController {
     try {
       const user = await requireUser();
       const input = createOrderSchema.parse(await request.json());
-      const result = await orderCommands.createOrder(user, input.skillId);
+      const result = input.planPriceId
+        ? await orderCommands.createPlanOrder(user, input.planPriceId)
+        : await orderCommands.createOrder(user, input.skillId!);
       return NextResponse.json(result, { status: result.existing ? 200 : 201 });
     } catch (error) {
       if (isAppError(error)) {
