@@ -26,8 +26,10 @@ function toOrder(row: OrderRow): Order {
     customerName: row.user.name,
     productType: toProductType(row.productType),
     skillId: row.skillId,
-    skillTitle: row.skill.title,
-    skillSlug: row.skill.slug,
+    planPriceId: row.planPriceId,
+    skillTitle: row.skill?.title ?? row.productTitle ?? "",
+    skillSlug: row.skill?.slug ?? "",
+    productPath: row.productPath ?? (row.skill ? `/skills/${row.skill.slug}` : "/"),
     amount: Number(row.amount),
     currency: row.currency,
     status: row.status as OrderStatus,
@@ -82,11 +84,14 @@ export const prismaOrderRepository: OrderRepository = {
       try {
         const row = await prisma.order.create({
           data: {
-            orderCode: createOrderCode(data.productType, data.skillId, data.userId),
+            orderCode: createOrderCode(data.productType, data.skillId ?? data.planPriceId ?? "", data.userId),
             userId: data.userId,
             email: data.email,
             productType: data.productType,
-            skillId: data.skillId,
+            skillId: data.skillId ?? null,
+            planPriceId: data.planPriceId ?? null,
+            productTitle: data.productTitle ?? null,
+            productPath: data.productPath ?? null,
             amount: data.amount,
             currency: data.currency,
             status: "PENDING",
@@ -131,6 +136,15 @@ export const prismaOrderRepository: OrderRepository = {
     return row ? toOrder(row) : null;
   },
 
+  async findValidPendingPlan(userId, planPriceId) {
+    const row = await prisma.order.findFirst({
+      where: { userId, planPriceId, status: "PENDING" },
+      include: selectInclude,
+      orderBy: { createdAt: "desc" },
+    });
+    return row ? toOrder(row) : null;
+  },
+
   async listByUser(userId) {
     const rows = await prisma.order.findMany({
       where: { userId },
@@ -164,6 +178,7 @@ export const prismaOrderRepository: OrderRepository = {
         { orderCode: { contains: filter.q, mode: "insensitive" } },
         { user: { email: { contains: filter.q, mode: "insensitive" } } },
         { skill: { title: { contains: filter.q, mode: "insensitive" } } },
+        { productTitle: { contains: filter.q, mode: "insensitive" } },
       ];
     }
     if (filter.status) where.status = filter.status as PrismaOrderStatus;
@@ -228,23 +243,23 @@ export const prismaOrderRepository: OrderRepository = {
   async listSalesBySkill(limit) {
     const groups = await prisma.order.groupBy({
       by: ["skillId"],
-      where: { status: "PAID" },
+      where: { status: "PAID", skillId: { not: null } },
       _count: true,
       _sum: { amount: true },
       orderBy: { _count: { skillId: "desc" } },
       take: limit,
     });
     const skills = await prisma.skill.findMany({
-      where: { id: { in: groups.map((g) => g.skillId) } },
+      where: { id: { in: groups.flatMap((g) => (g.skillId ? [g.skillId] : [])) } },
       select: { id: true, title: true, slug: true },
     });
     const byId = new Map(skills.map((s) => [s.id, s]));
     return groups.flatMap((g) => {
-      const skill = byId.get(g.skillId);
+      const skill = g.skillId ? byId.get(g.skillId) : undefined;
       return skill
         ? [
             {
-              skillId: g.skillId,
+              skillId: skill.id,
               title: skill.title,
               slug: skill.slug,
               orders: g._count,

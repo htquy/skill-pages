@@ -89,7 +89,7 @@ async function CatalogResults({ filters, pagination, searchParams }: CatalogResu
           action={
             <Link
               href={hasActiveFilters ? "/" : "/#catalog"}
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
+              className="btn-secondary text-sm"
             >
               {dict.common.clear}
             </Link>
@@ -125,6 +125,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
       <Container id="catalog" className="scroll-mt-20 py-16 sm:py-24">
         <div className="mb-8">
+          <div aria-hidden="true" className="mb-4 h-1 w-14 rounded-full bg-gradient-to-r from-brand-500 via-violet-500 to-spark-400" />
           <h2 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl [text-wrap:balance]">
             {dict.results.libraryTitle}
           </h2>

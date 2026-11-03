@@ -24,7 +24,7 @@ export function NavLink({
         "rounded-md px-3 py-2 text-sm font-medium transition-colors",
         isActive
           ? "text-zinc-900"
-          : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100",
+          : "text-zinc-600 hover:bg-brand-50/70 hover:text-brand-700",
         className,
       )}
     >
@@ -34,8 +34,8 @@ export function NavLink({
         <span
           aria-hidden="true"
           className={cn(
-            "absolute inset-x-0 -bottom-[3px] h-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-opacity duration-200",
-            isActive ? "opacity-100" : "opacity-0",
+            "absolute inset-x-0 -bottom-[3px] h-0.5 origin-left rounded-full bg-gradient-to-r from-brand-500 via-violet-500 to-spark-400 transition-transform duration-500 ease-fluid",
+            isActive ? "scale-x-100" : "scale-x-0",
           )}
         />
       </span>

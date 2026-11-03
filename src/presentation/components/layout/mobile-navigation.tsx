@@ -33,7 +33,7 @@ export function MobileNavigation({ dict }: { dict: Dict }) {
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-label={open ? dict.siteHeader.closeMenu : dict.siteHeader.openMenu}
-        className="inline-flex items-center justify-center rounded-lg p-2 text-zinc-700 hover:bg-zinc-100"
+        className="inline-flex items-center justify-center rounded-lg p-1.5 text-zinc-700 transition-colors hover:bg-brand-50 hover:text-brand-700 sm:p-2"
       >
         {open ? <X className="size-5" aria-hidden="true" /> : <Menu className="size-5" aria-hidden="true" />}
       </button>

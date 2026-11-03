@@ -49,7 +49,7 @@ function ToolbarButton({
       aria-pressed={active}
       className={cn(
         "inline-flex size-7 items-center justify-center rounded-md transition-colors",
-        active ? "bg-indigo-50 text-indigo-700" : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900",
+        active ? "bg-brand-50 text-brand-700" : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900",
       )}
     >
       {children}
@@ -91,7 +91,7 @@ export function RichTextEditor({ name, defaultValue, placeholder, dict }: Props)
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white transition-colors focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100">
+    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white transition-colors focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-100">
       <input type="hidden" name={name} value={html} />
       <div className="flex flex-wrap items-center gap-1 border-b border-zinc-100 bg-zinc-50/80 px-2 py-1.5">
         <ToolbarButton

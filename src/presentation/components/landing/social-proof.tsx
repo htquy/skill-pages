@@ -1,4 +1,4 @@
-import { Star } from "lucide-react";
+import { Quote, Star } from "lucide-react";
 import { Container } from "@/src/presentation/components/layout/container";
 import { getDictionary } from "@/src/lib/i18n";
 
@@ -17,43 +17,56 @@ export async function SocialProof() {
   return (
     <section className="border-b border-zinc-200 bg-white py-16 sm:py-24">
       <Container>
-        {/* Organic Stats Strip */}
-        <div className="grid grid-cols-2 gap-4 rounded-3xl border border-zinc-200 bg-zinc-50 p-6 md:grid-cols-4 md:p-8">
+        {/* Dải số liệu trên nền tối */}
+        <div className="aurora-dark reveal grid grid-cols-2 gap-6 rounded-3xl bg-gradient-to-br from-brand-950 via-zinc-950 to-zinc-950 p-6 md:grid-cols-4 md:p-10">
+          <div aria-hidden="true" className="bg-grid-dark pointer-events-none absolute inset-0 -z-10" />
           {stats.map((stat, index) => (
             <div key={index} className="text-center">
-              <p className="text-3xl font-bold tracking-tight text-zinc-950 font-mono sm:text-4xl">
+              <p className="bg-gradient-to-b from-white to-brand-200 bg-clip-text font-mono text-3xl font-bold tracking-tight text-transparent tabular-nums sm:text-4xl">
                 {stat.value}
               </p>
-              <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
-                {stat.label}
-              </p>
+              <p className="mt-1 text-xs text-zinc-400 sm:text-sm">{stat.label}</p>
             </div>
           ))}
         </div>
 
-        {/* Real Testimonials Grid */}
         <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:gap-8">
           {testimonials.map((t, index) => (
-            <div
+            <figure
               key={index}
-              className="flex flex-col justify-between rounded-3xl border border-zinc-200 bg-zinc-50 p-6 sm:p-8"
+              className="group card-lift reveal relative flex flex-col justify-between overflow-hidden rounded-3xl border border-zinc-200 bg-white p-6 sm:p-8"
             >
-              <div>
-                <div className="flex gap-1 text-amber-500">
+              <Quote
+                className="absolute right-6 top-6 size-10 text-brand-100 transition-colors duration-500 group-hover:text-brand-200"
+                aria-hidden="true"
+              />
+              <div className="relative">
+                <div className="flex gap-1 text-spark-400">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="size-4 fill-current" aria-hidden="true" />
                   ))}
                 </div>
-                <p className="mt-4 text-base leading-relaxed text-zinc-800 [text-wrap:pretty]">
+                <blockquote className="mt-4 text-base leading-relaxed text-zinc-800 [text-wrap:pretty]">
                   &ldquo;{t.quote}&rdquo;
-                </p>
+                </blockquote>
               </div>
 
-              <div className="mt-6 border-t border-zinc-200/80 pt-4">
-                <p className="text-sm font-bold text-zinc-950">{t.name}</p>
-                <p className="text-xs text-zinc-500">{t.role}</p>
-              </div>
-            </div>
+              <figcaption className="relative mt-6 flex items-center gap-3 border-t border-zinc-100 pt-4">
+                <span className="inline-grid size-9 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-violet-600 text-xs font-semibold text-white">
+                  {t.name
+                    .split(" ")
+                    .filter(Boolean)
+                    .slice(-2)
+                    .map((part) => part[0])
+                    .join("")
+                    .toUpperCase()}
+                </span>
+                <span>
+                  <span className="block text-sm font-bold text-zinc-950">{t.name}</span>
+                  <span className="block text-xs text-zinc-500">{t.role}</span>
+                </span>
+              </figcaption>
+            </figure>
           ))}
         </div>
       </Container>

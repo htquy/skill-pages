@@ -61,7 +61,7 @@ async function ArticlesTable({ filters, page }: { filters: AdminArticleFilters; 
               {result.items.map((article) => (
                 <tr key={article.id} className="border-b last:border-0 hover:bg-zinc-50/60">
                   <td className="px-5 py-3">
-                    <Link href={`/admin/articles/${article.id}`} className="font-medium text-zinc-900 hover:text-indigo-700">
+                    <Link href={`/admin/articles/${article.id}`} className="font-medium text-zinc-900 hover:text-brand-700">
                       {article.title}
                     </Link>
                     <p className="text-xs text-zinc-400">{article.slug}</p>
@@ -113,7 +113,7 @@ export default async function AdminArticlesPage({
         </div>
         <Link
           href="/admin/articles/new"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-500"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-500"
         >
           <Plus className="size-4" aria-hidden="true" />
           {dict.admin.articles.new}
@@ -132,7 +132,7 @@ export default async function AdminArticlesPage({
             type="search"
             defaultValue={filters.q}
             placeholder={dict.admin.articles.searchPlaceholder}
-            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           />
         </label>
         <label>
@@ -140,7 +140,7 @@ export default async function AdminArticlesPage({
           <select
             name="status"
             defaultValue={filters.status}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           >
             {STATUS_OPTIONS.map((option) => (
               <option key={option} value={option}>

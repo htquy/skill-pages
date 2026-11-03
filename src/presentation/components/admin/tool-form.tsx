@@ -167,7 +167,7 @@ export function ToolForm({ tool, dict }: { tool?: ToolAdminDetail; dict: Dict })
         </a>
         <button
           type="submit"
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-500"
+          className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-500"
         >
           {tool ? dict.admin.forms.saveChanges : dict.admin.forms.createTool}
         </button>

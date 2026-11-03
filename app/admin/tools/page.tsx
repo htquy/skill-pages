@@ -27,7 +27,7 @@ function firstValue(value: string | string[] | undefined): string {
 }
 
 const selectClass =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100";
+  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100";
 
 interface AdminToolFilters {
   q: string;
@@ -79,7 +79,7 @@ async function ToolsTable({ filters, page }: { filters: AdminToolFilters; page: 
                   <td className="px-5 py-3">
                     <Link
                       href={`/admin/tools/${tool.id}`}
-                      className="font-medium text-zinc-900 hover:text-indigo-700"
+                      className="font-medium text-zinc-900 hover:text-brand-700"
                     >
                       {tool.title}
                     </Link>
@@ -143,7 +143,7 @@ export default async function AdminToolsPage({
         </div>
         <Link
           href="/admin/tools/new"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-500"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-500"
         >
           <Plus className="size-4" aria-hidden="true" />
           {dict.admin.tools.new}
@@ -164,7 +164,7 @@ export default async function AdminToolsPage({
             type="search"
             defaultValue={filters.q}
             placeholder={dict.admin.tools.searchPlaceholder}
-            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           />
         </label>
         <label>

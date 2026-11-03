@@ -3,8 +3,8 @@ import { getDictionary } from "@/src/lib/i18n";
 import type { SkillAccessType } from "@/src/domain/skill";
 
 const CLASSES: Record<SkillAccessType, string> = {
-  FREE: "bg-zinc-100 text-zinc-700 border border-zinc-200",
-  PAID: "bg-indigo-50 text-indigo-700 border border-indigo-200",
+  FREE: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  PAID: "bg-gradient-to-r from-spark-50 to-brand-50 text-spark-700 border border-spark-200",
 };
 
 export async function SkillBadge({ accessType }: { accessType: SkillAccessType }) {

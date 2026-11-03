@@ -40,7 +40,7 @@ export function AccountMenu({ user, dict }: { user: AccountMenuUser | null; dict
     return (
       <Link
         href="/login"
-        className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium text-zinc-900 shadow-sm transition-colors hover:bg-zinc-50"
+        className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-sm transition-colors hover:border-brand-300 hover:text-brand-700 sm:px-3.5"
       >
         {dict.account.signIn}
       </Link>
@@ -65,7 +65,7 @@ export function AccountMenu({ user, dict }: { user: AccountMenuUser | null; dict
             className="size-7 rounded-full"
           />
         ) : (
-          <span className="flex size-7 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+          <span className="flex size-7 items-center justify-center rounded-full bg-brand-100 text-brand-600">
             <User className="size-4" aria-hidden="true" />
           </span>
         )}

@@ -82,17 +82,17 @@ export function ToolFileField({
           if (dropped) void handleFile(dropped);
         }}
         className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors ${
-          dragging ? "border-indigo-400 bg-indigo-50/60" : "border-zinc-200 bg-zinc-50/60"
+          dragging ? "border-brand-400 bg-brand-50/60" : "border-zinc-200 bg-zinc-50/60"
         }`}
       >
         {busy ? (
           <>
-            <Loader2 className="size-5 animate-spin text-indigo-600" aria-hidden="true" />
+            <Loader2 className="size-5 animate-spin text-brand-600" aria-hidden="true" />
             <p className="text-sm text-zinc-600">{message}</p>
             {state.status === "uploading" ? (
               <div className="h-1.5 w-full max-w-64 overflow-hidden rounded-full bg-zinc-200">
                 <div
-                  className="h-full rounded-full bg-indigo-500 transition-[width] duration-200"
+                  className="h-full rounded-full bg-brand-500 transition-[width] duration-200"
                   style={{ width: `${state.progress}%` }}
                 />
               </div>

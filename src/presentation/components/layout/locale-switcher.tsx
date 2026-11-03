@@ -17,7 +17,7 @@ export function LocaleSwitcher({ locale, dict }: { locale: Locale; dict: Dict })
       className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-0.5"
       title={trans(dict.locale.switchLanguage)}
     >
-      <Languages className="ml-1 size-3.5 text-zinc-400" aria-hidden="true" />
+      <Languages className="ml-1 hidden size-3.5 text-zinc-400 sm:block" aria-hidden="true" />
       {locales.map((option) => {
         const isActive = option === locale;
         return (
@@ -35,7 +35,7 @@ export function LocaleSwitcher({ locale, dict }: { locale: Locale; dict: Dict })
             className={cn(
               "rounded-md px-1.5 py-0.5 text-xs font-semibold uppercase transition-colors disabled:opacity-60",
               isActive
-                ? "bg-zinc-900 text-white"
+                ? "bg-gradient-to-r from-brand-600 to-violet-600 text-white shadow-sm"
                 : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900",
             )}
           >

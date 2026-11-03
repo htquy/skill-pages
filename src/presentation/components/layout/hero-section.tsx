@@ -6,12 +6,12 @@ import { getDictionary } from "@/src/lib/i18n";
 function HeroVisual({ dict }: { dict: Awaited<ReturnType<typeof getDictionary>> }) {
   return (
     <div className="relative hidden lg:block" aria-hidden="true">
-      <div className="absolute -top-10 right-0 size-64 rounded-full bg-gradient-to-br from-indigo-200/70 to-violet-200/70 blur-2xl" />
-      <div className="absolute bottom-0 left-8 size-48 rounded-full bg-gradient-to-tr from-fuchsia-200/60 to-indigo-200/60 blur-2xl" />
+      <div className="absolute -top-10 right-0 size-64 rounded-full bg-gradient-to-br from-brand-200/70 to-violet-200/70 blur-2xl" />
+      <div className="absolute bottom-0 left-8 size-48 rounded-full bg-gradient-to-tr from-fuchsia-200/60 to-brand-200/60 blur-2xl" />
 
       <div className="relative space-y-4">
         <div className="w-80 rounded-2xl border border-zinc-200 bg-white/90 p-5 shadow-lg backdrop-blur">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">
             <Sparkles className="size-3" aria-hidden="true" /> {dict.hero.cardTag1}
           </span>
           <p className="mt-3 text-sm font-semibold text-zinc-900">&quot;{dict.hero.cardTitle1}&quot;</p>
@@ -45,16 +45,16 @@ export async function HeroSection() {
 
   return (
     <section className="relative overflow-hidden border-b border-zinc-100">
-      <div className="absolute inset-0 bg-gradient-to-b from-indigo-50/80 via-white to-transparent" aria-hidden="true" />
+      <div className="absolute inset-0 bg-gradient-to-b from-brand-50/80 via-white to-transparent" aria-hidden="true" />
       <Container className="relative grid grid-cols-1 items-center gap-12 py-16 md:py-20 lg:grid-cols-2">
         <div>
-          <p className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-white px-3 py-1 text-xs font-medium text-indigo-700 shadow-sm">
+          <p className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-white px-3 py-1 text-xs font-medium text-brand-700 shadow-sm">
             <Sparkles className="size-3.5" aria-hidden="true" />
             {dict.hero.badge}
           </p>
           <h1 className="mt-6 max-w-xl text-4xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-5xl">
             {dict.hero.titleLead}{" "}
-            <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-brand-600 to-violet-600 bg-clip-text text-transparent">
               {dict.hero.titleAccent}
             </span>
           </h1>

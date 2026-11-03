@@ -9,6 +9,19 @@
 
 ---
 
+> **Cập nhật 2026-11-03 — gói nhiều kỳ hạn & tự mua gói**
+>
+> - `SubscriptionPlan` giờ là **tầng tính năng** (VD "Pro"). Giá và thời hạn nằm ở `prices[]`
+>   (`apps.subscription_plan_prices`: `months` 1/6/12…, `0` = vĩnh viễn). Bỏ `price`, `interval`, `durationDays`.
+> - Thời hạn tính theo **tháng lịch**. Mua/gia hạn cùng gói khi còn hạn: kỳ mới bắt đầu khi kỳ cũ kết thúc (cộng dồn).
+> - Khách tự mua tại `/apps/:slug/pricing` → `POST /api/orders { planPriceId }` → QR SePay → webhook giao gói
+>   (idempotent theo `orderId`; trang trạng thái đơn tự giao lại nếu bước giao bị lỗi). Hoàn tiền huỷ kỳ của đơn đó.
+> - `check-access` trả thêm `serverTime`; `subscription.endsAt` là ngày hết hạn cuối của chuỗi kỳ đã mua;
+>   `unlockedFeatures` = hợp tính năng của mọi gói đang hiệu lực. Không còn `subscription.interval`.
+> - Admin: `PATCH /api/admin/apps/:slug/plans/:planId` (tên, bật/tắt bán, tính năng),
+>   `POST /api/admin/apps/:slug/plans/:planId/prices` (`{ months, amount, currency?, isActive? }`),
+>   `POST /api/admin/apps/:slug/grant` nhận `{ userId, planId, months }`.
+
 ## 1. TỔNG QUAN KIẾN TRÚC HUB & SATELLITE (MODULAR MONOLITH)
 
 ```
@@ -77,10 +90,10 @@ Accept: application/json
           "appId": "e93ad712-4f32-45a8-9d5f-1498c8c4c798",
           "name": "Gói Tiêu Chuẩn 1 Tháng",
           "description": "Dành cho nhà sáng tạo nội dung cá nhân",
-          "currency": "VND",
-          "price": 199000,
-          "interval": "MONTH",
-          "durationDays": 30,
+          "sortOrder": 0,
+          "prices": [
+            { "id": "price_1m", "months": 1, "currency": "VND", "amount": 199000, "isActive": true }
+          ],
           "isActive": true,
           "featureKeys": [
             "VIDEO_GEN_720P",
@@ -105,10 +118,10 @@ Accept: application/json
           "appId": "e93ad712-4f32-45a8-9d5f-1498c8c4c798",
           "name": "Gói Pro 1 Năm",
           "description": "Mở khóa toàn bộ tính năng cao cấp + Render GPU ưu tiên",
-          "currency": "VND",
-          "price": 1790000,
-          "interval": "YEAR",
-          "durationDays": 365,
+          "sortOrder": 0,
+          "prices": [
+            { "id": "price_12m", "months": 12, "currency": "VND", "amount": 1790000, "isActive": true }
+          ],
           "isActive": true,
           "featureKeys": [
             "VIDEO_GEN_720P",
@@ -163,10 +176,10 @@ Accept: application/json
       {
         "id": "plan_monthly_01",
         "name": "Gói Tiêu Chuẩn 1 Tháng",
-        "currency": "VND",
-        "price": 199000,
-        "interval": "MONTH",
-        "durationDays": 30,
+        "sortOrder": 0,
+        "prices": [
+          { "id": "price_1m", "months": 1, "currency": "VND", "amount": 199000, "isActive": true }
+        ],
         "featureKeys": ["VIDEO_GEN_720P", "VOICE_BASIC"],
         "features": [ ... ]
       }
@@ -223,7 +236,6 @@ Authorization: Bearer def50200...
       "id": "sub_48892110",
       "planId": "plan_annual_02",
       "planName": "Gói Pro 1 Năm",
-      "interval": "YEAR",
       "startsAt": "2026-10-01T00:00:00.000Z",
       "endsAt": "2027-10-01T00:00:00.000Z",
       "daysRemaining": 354,
@@ -411,11 +423,16 @@ public record AppInfo(
 public record SubscriptionPlan(
     [property: JsonPropertyName("id")] string Id,
     [property: JsonPropertyName("name")] string Name,
-    [property: JsonPropertyName("price")] int Price,
-    [property: JsonPropertyName("currency")] string Currency,
-    [property: JsonPropertyName("interval")] string Interval,
-    [property: JsonPropertyName("durationDays")] int DurationDays,
+    [property: JsonPropertyName("prices")] List<PlanPrice> Prices,
     [property: JsonPropertyName("featureKeys")] List<string> FeatureKeys
+);
+
+/// <summary>Một kỳ hạn bán: số tháng lịch (0 = vĩnh viễn) và giá ở đơn vị nhỏ nhất.</summary>
+public record PlanPrice(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("months")] int Months,
+    [property: JsonPropertyName("currency")] string Currency,
+    [property: JsonPropertyName("amount")] int Amount
 );
 
 public record EntitlementResponse(
@@ -549,13 +566,21 @@ export interface PlanFeature {
   description: string | null;
 }
 
+export interface PlanPrice {
+  id: string;
+  /** Số tháng lịch (1, 6, 12...). 0 = vĩnh viễn. */
+  months: number;
+  currency: string;
+  /** Đơn vị nhỏ nhất, VD 199000 = 199.000 VND. */
+  amount: number;
+  isActive: boolean;
+}
+
 export interface SubscriptionPlan {
   id: string;
   name: string;
-  price: number;
-  currency: string;
-  interval: "MONTH" | "QUARTER" | "YEAR" | "CUSTOM";
-  durationDays: number;
+  sortOrder: number;
+  prices: PlanPrice[];
   featureKeys: string[];
   features?: PlanFeature[];
 }

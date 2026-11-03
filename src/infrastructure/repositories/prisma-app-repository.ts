@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/src/infrastructure/database/prisma";
 import type {
   AppRepository,
@@ -9,7 +10,7 @@ import type {
   AppType,
   AppStatus,
   MenuAccess,
-  SubscriptionInterval,
+  PlanPriceRecord,
   SubscriptionStatus,
 } from "@/src/domain/apps/entities";
 
@@ -19,13 +20,55 @@ import type {
   AppMenuItem as PrismaMenuItem,
   Feature as PrismaFeature,
   UserSubscription as PrismaUserSub,
+  SubscriptionPlanPrice as PrismaPlanPrice,
 } from "@prisma/client";
 
 type PlanWithFeatures = PrismaPlan & {
   features?: Array<{
     feature?: PrismaFeature | null;
   }>;
+  prices?: PrismaPlanPrice[];
 };
+
+const planInclude = {
+  features: { include: { feature: true } },
+  prices: { orderBy: [{ months: "asc" as const }, { amount: "asc" as const }] },
+};
+
+function mapPrice(row: PrismaPlanPrice): PlanPriceRecord {
+  return {
+    id: row.id,
+    planId: row.planId,
+    months: row.months,
+    currency: row.currency,
+    amount: row.amount,
+    isActive: row.isActive,
+  };
+}
+
+function mapSubscription(sub: PrismaUserSub & { plan: PrismaPlan }): UserSubscriptionRecord {
+  return {
+    id: sub.id,
+    userId: sub.userId,
+    appId: sub.appId,
+    planId: sub.planId,
+    planName: sub.plan.name,
+    status: sub.status as SubscriptionStatus,
+    startsAt: sub.startsAt,
+    endsAt: sub.endsAt,
+    orderId: sub.orderId,
+    createdAt: sub.createdAt,
+    updatedAt: sub.updatedAt,
+  };
+}
+
+async function setPlanFeatures(planId: string, featureKeys: string[]) {
+  await prisma.planFeature.deleteMany({ where: { planId } });
+  for (const key of [...new Set(featureKeys)]) {
+    const feat = await prisma.feature.upsert({ where: { key }, create: { key, name: key }, update: {} });
+    await prisma.planFeature.create({ data: { planId, featureId: feat.id } });
+  }
+}
 
 type MenuItemWithFeature = PrismaMenuItem & {
   requiredFeature?: PrismaFeature | null;
@@ -57,13 +100,11 @@ function mapPlan(row: PlanWithFeatures): SubscriptionPlanRecord {
     appId: row.appId,
     name: row.name,
     description: row.description,
-    currency: row.currency,
-    price: row.price,
-    interval: row.interval as SubscriptionInterval,
-    durationDays: row.durationDays,
+    sortOrder: row.sortOrder,
     isActive: row.isActive,
     featureKeys,
     features: featureList,
+    prices: (row.prices ?? []).map(mapPrice),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -124,29 +165,18 @@ export const prismaAppRepository: AppRepository = {
 
   async listPlansForApp(appId: string, onlyActive: boolean = true): Promise<SubscriptionPlanRecord[]> {
     const plans = await prisma.subscriptionPlan.findMany({
-      where: {
-        appId,
-        ...(onlyActive ? { isActive: true } : {}),
-      },
-      include: {
-        features: {
-          include: { feature: true },
-        },
-      },
-      orderBy: { price: "asc" },
+      where: { appId, ...(onlyActive ? { isActive: true } : {}) },
+      include: planInclude,
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
-    return plans.map(mapPlan);
+    return plans.map((plan) => {
+      const mapped = mapPlan(plan);
+      return onlyActive ? { ...mapped, prices: mapped.prices.filter((p) => p.isActive) } : mapped;
+    });
   },
 
   async findPlanById(id: string): Promise<SubscriptionPlanRecord | null> {
-    const plan = await prisma.subscriptionPlan.findUnique({
-      where: { id },
-      include: {
-        features: {
-          include: { feature: true },
-        },
-      },
-    });
+    const plan = await prisma.subscriptionPlan.findUnique({ where: { id }, include: planInclude });
     return plan ? mapPlan(plan) : null;
   },
 
@@ -156,31 +186,47 @@ export const prismaAppRepository: AppRepository = {
         appId: data.appId,
         name: data.name,
         description: data.description ?? null,
-        currency: data.currency ?? "VND",
-        price: data.price,
-        interval: data.interval ?? "MONTH",
-        durationDays: data.durationDays ?? 30,
+        sortOrder: data.sortOrder ?? 0,
         isActive: true,
+        prices: data.prices?.length
+          ? { create: data.prices.map((p) => ({ months: p.months, amount: p.amount, currency: p.currency ?? "VND" })) }
+          : undefined,
       },
     });
-
-    if (data.featureKeys && data.featureKeys.length > 0) {
-      for (const key of data.featureKeys) {
-        const feat = await prisma.feature.upsert({
-          where: { key },
-          create: { key, name: key },
-          update: {},
-        });
-        await prisma.planFeature.create({
-          data: {
-            planId: plan.id,
-            featureId: feat.id,
-          },
-        });
-      }
-    }
-
+    if (data.featureKeys?.length) await setPlanFeatures(plan.id, data.featureKeys);
     return (await this.findPlanById(plan.id))!;
+  },
+
+  async updatePlan(id, data): Promise<SubscriptionPlanRecord> {
+    await prisma.subscriptionPlan.update({
+      where: { id },
+      data: {
+        name: data.name,
+        description: data.description,
+        sortOrder: data.sortOrder,
+        isActive: data.isActive,
+      },
+    });
+    if (data.featureKeys) await setPlanFeatures(id, data.featureKeys);
+    return (await this.findPlanById(id))!;
+  },
+
+  async upsertPlanPrice(planId, data): Promise<PlanPriceRecord> {
+    const currency = data.currency ?? "VND";
+    const row = await prisma.subscriptionPlanPrice.upsert({
+      where: { planId_months_currency: { planId, months: data.months, currency } },
+      create: { planId, months: data.months, currency, amount: data.amount, isActive: data.isActive ?? true },
+      update: { amount: data.amount, isActive: data.isActive ?? true },
+    });
+    return mapPrice(row);
+  },
+
+  async findPlanPriceById(id) {
+    const row = await prisma.subscriptionPlanPrice.findUnique({
+      where: { id },
+      include: { plan: { include: planInclude } },
+    });
+    return row ? { ...mapPrice(row), plan: mapPlan(row.plan) } : null;
   },
 
   async listMenuItemsForApp(appId: string): Promise<AppMenuItemRecord[]> {
@@ -223,36 +269,37 @@ export const prismaAppRepository: AppRepository = {
     return mapMenuItem(item);
   },
 
-  async findActiveUserSubscription(userId: string, appId: string): Promise<UserSubscriptionRecord | null> {
-    const now = new Date();
-    const sub = await prisma.userSubscription.findFirst({
+  async listCurrentUserSubscriptions(userId, appId, now): Promise<UserSubscriptionRecord[]> {
+    const list = await prisma.userSubscription.findMany({
       where: {
         userId,
         appId,
         status: "ACTIVE",
+        startsAt: { lte: now },
         OR: [{ endsAt: null }, { endsAt: { gt: now } }],
       },
-      include: {
-        plan: true,
-      },
-      orderBy: { endsAt: "desc" },
+      include: { plan: true },
+      orderBy: { startsAt: "asc" },
     });
+    return list.map(mapSubscription);
+  },
 
-    if (!sub) return null;
+  async listUnexpiredUserSubscriptions(userId, appId, now): Promise<UserSubscriptionRecord[]> {
+    const list = await prisma.userSubscription.findMany({
+      where: { userId, appId, status: "ACTIVE", OR: [{ endsAt: null }, { endsAt: { gt: now } }] },
+      include: { plan: true },
+      orderBy: { startsAt: "asc" },
+    });
+    return list.map(mapSubscription);
+  },
 
-    return {
-      id: sub.id,
-      userId: sub.userId,
-      appId: sub.appId,
-      planId: sub.planId,
-      planName: sub.plan.name,
-      status: sub.status as SubscriptionStatus,
-      startsAt: sub.startsAt,
-      endsAt: sub.endsAt,
-      orderId: sub.orderId,
-      createdAt: sub.createdAt,
-      updatedAt: sub.updatedAt,
-    };
+  async findSubscriptionByOrderId(orderId: string): Promise<UserSubscriptionRecord | null> {
+    const sub = await prisma.userSubscription.findUnique({ where: { orderId }, include: { plan: true } });
+    return sub ? mapSubscription(sub) : null;
+  },
+
+  async cancelSubscriptionByOrderId(orderId: string): Promise<void> {
+    await prisma.userSubscription.updateMany({ where: { orderId }, data: { status: "CANCELED" } });
   },
 
   async listUserSubscriptions(userId: string): Promise<UserSubscriptionRecord[]> {
@@ -261,47 +308,32 @@ export const prismaAppRepository: AppRepository = {
       include: { plan: true },
       orderBy: { createdAt: "desc" },
     });
-    return list.map((sub: PrismaUserSub & { plan: PrismaPlan }) => ({
-      id: sub.id,
-      userId: sub.userId,
-      appId: sub.appId,
-      planId: sub.planId,
-      planName: sub.plan.name,
-      status: sub.status as SubscriptionStatus,
-      startsAt: sub.startsAt,
-      endsAt: sub.endsAt,
-      orderId: sub.orderId,
-      createdAt: sub.createdAt,
-      updatedAt: sub.updatedAt,
-    }));
+    return list.map(mapSubscription);
   },
 
   async grantSubscription(data): Promise<UserSubscriptionRecord> {
-    const sub = await prisma.userSubscription.create({
-      data: {
-        userId: data.userId,
-        appId: data.appId,
-        planId: data.planId,
-        status: "ACTIVE",
-        startsAt: data.startsAt,
-        endsAt: data.endsAt,
-        orderId: data.orderId ?? null,
-      },
-      include: { plan: true },
-    });
-    return {
-      id: sub.id,
-      userId: sub.userId,
-      appId: sub.appId,
-      planId: sub.planId,
-      planName: sub.plan.name,
-      status: sub.status as SubscriptionStatus,
-      startsAt: sub.startsAt,
-      endsAt: sub.endsAt,
-      orderId: sub.orderId,
-      createdAt: sub.createdAt,
-      updatedAt: sub.updatedAt,
-    };
+    try {
+      const sub = await prisma.userSubscription.create({
+        data: {
+          userId: data.userId,
+          appId: data.appId,
+          planId: data.planId,
+          status: "ACTIVE",
+          startsAt: data.startsAt,
+          endsAt: data.endsAt,
+          orderId: data.orderId ?? null,
+        },
+        include: { plan: true },
+      });
+      return mapSubscription(sub);
+    } catch (error) {
+      // Cùng đơn hàng được xử lý hai lần (webhook gửi lặp, hai request song song): trả kỳ đã tạo.
+      if (data.orderId && error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        const existing = await prisma.userSubscription.findUnique({ where: { orderId: data.orderId }, include: { plan: true } });
+        if (existing) return mapSubscription(existing);
+      }
+      throw error;
+    }
   },
 
   async listFeatures(): Promise<FeatureRecord[]> {

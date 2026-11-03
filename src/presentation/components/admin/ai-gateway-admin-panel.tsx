@@ -223,7 +223,7 @@ export function AiGatewayAdminPanel({
         <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-zinc-500">Tổng API Keys</span>
-            <Key className="size-5 text-indigo-600" />
+            <Key className="size-5 text-brand-600" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-bold text-zinc-900">{totalKeys}</span>
@@ -271,7 +271,7 @@ export function AiGatewayAdminPanel({
           onClick={() => setActiveTab("keys")}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-medium transition-colors ${
             activeTab === "keys"
-              ? "border-indigo-600 text-indigo-600"
+              ? "border-brand-600 text-brand-600"
               : "border-transparent text-zinc-600 hover:text-zinc-900"
           }`}
         >
@@ -283,7 +283,7 @@ export function AiGatewayAdminPanel({
           onClick={() => setActiveTab("logs")}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-medium transition-colors ${
             activeTab === "logs"
-              ? "border-indigo-600 text-indigo-600"
+              ? "border-brand-600 text-brand-600"
               : "border-transparent text-zinc-600 hover:text-zinc-900"
           }`}
         >
@@ -295,7 +295,7 @@ export function AiGatewayAdminPanel({
           onClick={() => setActiveTab("tester")}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-medium transition-colors ${
             activeTab === "tester"
-              ? "border-indigo-600 text-indigo-600"
+              ? "border-brand-600 text-brand-600"
               : "border-transparent text-zinc-600 hover:text-zinc-900"
           }`}
         >
@@ -311,7 +311,7 @@ export function AiGatewayAdminPanel({
             <h2 className="text-base font-semibold text-zinc-900">Danh sách API Keys điều phối</h2>
             <button
               onClick={() => setIsAddingKey(!isAddingKey)}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
             >
               <Plus className="size-4" />
               Thêm Key / Model Mới
@@ -322,7 +322,7 @@ export function AiGatewayAdminPanel({
           {isAddingKey && (
             <form
               onSubmit={handleCreateKey}
-              className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-5 shadow-xs"
+              className="rounded-xl border border-brand-200 bg-brand-50/50 p-5 shadow-xs"
             >
               <h3 className="text-sm font-semibold text-zinc-900">Khai báo API Key mới</h3>
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -331,7 +331,7 @@ export function AiGatewayAdminPanel({
                   <select
                     value={newKeyProvider}
                     onChange={(e) => setNewKeyProvider(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-indigo-500"
+                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
                   >
                     {SUPPORTED_PROVIDERS.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -349,7 +349,7 @@ export function AiGatewayAdminPanel({
                     required
                     value={newKeySecret}
                     onChange={(e) => setNewKeySecret(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-indigo-500"
+                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
                   />
                 </div>
 
@@ -360,7 +360,7 @@ export function AiGatewayAdminPanel({
                     placeholder="VD: OpenAI Tier 4 Primary"
                     value={newKeyAlias}
                     onChange={(e) => setNewKeyAlias(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-indigo-500"
+                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
                   />
                 </div>
 
@@ -372,7 +372,7 @@ export function AiGatewayAdminPanel({
                     max="10"
                     value={newKeyWeight}
                     onChange={(e) => setNewKeyWeight(Number(e.target.value))}
-                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-indigo-500"
+                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
                   />
                 </div>
               </div>
@@ -388,7 +388,7 @@ export function AiGatewayAdminPanel({
                 <button
                   type="submit"
                   disabled={keySubmitting}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
                 >
                   {keySubmitting ? <RefreshCw className="size-4 animate-spin" /> : null}
                   Lưu Key
@@ -414,7 +414,7 @@ export function AiGatewayAdminPanel({
                 {keys.map((k) => (
                   <tr key={k.id} className="hover:bg-zinc-50/50">
                     <td className="px-4 py-3">
-                      <span className="font-semibold uppercase tracking-wider text-indigo-700">
+                      <span className="font-semibold uppercase tracking-wider text-brand-700">
                         {k.provider}
                       </span>
                     </td>
@@ -585,7 +585,7 @@ export function AiGatewayAdminPanel({
           {/* Cột Trái: Input Controls */}
           <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs space-y-4">
             <div className="flex items-center gap-2 text-zinc-900 font-semibold">
-              <Sliders className="size-4 text-indigo-600" />
+              <Sliders className="size-4 text-brand-600" />
               <span>Cấu hình Thử nghiệm API</span>
             </div>
 
@@ -616,7 +616,7 @@ export function AiGatewayAdminPanel({
                     }}
                     className={`flex items-center justify-center gap-2 rounded-lg border py-2 text-xs font-medium transition-colors ${
                       testTaskType === item.id
-                        ? "border-indigo-600 bg-indigo-50 text-indigo-700"
+                        ? "border-brand-600 bg-brand-50 text-brand-700"
                         : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
                     }`}
                   >
@@ -633,7 +633,7 @@ export function AiGatewayAdminPanel({
                 <select
                   value={testProvider}
                   onChange={(e) => setTestProvider(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-indigo-500"
+                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
                 >
                   {testTaskType === "TEXT" && (
                     <>
@@ -652,7 +652,7 @@ export function AiGatewayAdminPanel({
                   type="text"
                   value={testModel}
                   onChange={(e) => setTestModel(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-indigo-500"
+                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
                 />
               </div>
             </div>
@@ -666,7 +666,7 @@ export function AiGatewayAdminPanel({
                 placeholder="Để trống nếu muốn dùng key có sẵn trong hệ thống"
                 value={testCustomKey}
                 onChange={(e) => setTestCustomKey(e.target.value)}
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-indigo-500"
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
               />
             </div>
 
@@ -678,7 +678,7 @@ export function AiGatewayAdminPanel({
                 rows={4}
                 value={testPrompt}
                 onChange={(e) => setTestPrompt(e.target.value)}
-                className="w-full rounded-lg border border-zinc-300 bg-white p-3 text-sm text-zinc-900 outline-none focus:border-indigo-500"
+                className="w-full rounded-lg border border-zinc-300 bg-white p-3 text-sm text-zinc-900 outline-none focus:border-brand-500"
                 placeholder="Nhập nội dung cần AI xử lý..."
               />
             </div>
@@ -687,7 +687,7 @@ export function AiGatewayAdminPanel({
               type="button"
               onClick={handleRunTest}
               disabled={testLoading || !testPrompt.trim()}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
             >
               {testLoading ? (
                 <RefreshCw className="size-4 animate-spin" />
@@ -715,7 +715,7 @@ export function AiGatewayAdminPanel({
             <div className="mt-4 flex-1 overflow-auto rounded-lg bg-zinc-900 p-4 font-mono text-xs text-zinc-100">
               {testLoading && (
                 <div className="flex h-full items-center justify-center text-zinc-400 gap-2">
-                  <RefreshCw className="size-4 animate-spin text-indigo-400" />
+                  <RefreshCw className="size-4 animate-spin text-brand-400" />
                   Đang gửi request qua Gateway và chờ phản hồi...
                 </div>
               )}
@@ -763,7 +763,7 @@ export function AiGatewayAdminPanel({
                   {testResult.kind === "IMAGE" && (
                     <div className="space-y-2">
                       <div className="text-zinc-400 text-xs">[IMAGE TASK QUEUE ACCEPTED]</div>
-                      <pre className="text-indigo-300">
+                      <pre className="text-brand-300">
                         {JSON.stringify(testResult.result, null, 2)}
                       </pre>
                     </div>

@@ -28,9 +28,16 @@ interface PaymentQrResponse {
 }
 
 export interface BuyNowButtonProps {
-  skillId: string;
+  /** Mua skill: id skill. Mua gói app: bỏ trống và truyền `planPriceId`. */
+  skillId?: string;
+  /** Mua một kỳ hạn gói app (1/6/12 tháng...). */
+  planPriceId?: string;
   skillSlug: string;
   skillTitle: string;
+  /** Trang sản phẩm để quay lại sau đăng nhập/thanh toán; mặc định /skills/<slug>. */
+  productPath?: string;
+  /** Nhãn nút thay cho "Mua ngay". */
+  label?: string;
   dict: Dict;
   variant?: "card" | "detail";
   disabled?: boolean;
@@ -45,8 +52,11 @@ export interface BuyNowButtonProps {
  */
 export function BuyNowButton({
   skillId,
+  planPriceId,
   skillSlug,
   skillTitle,
+  productPath,
+  label: customLabel,
   dict,
   variant = "card",
   disabled,
@@ -82,7 +92,7 @@ export function BuyNowButton({
       const orderResponse = await fetch("/api/orders", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ skillId }),
+        body: JSON.stringify(planPriceId ? { planPriceId } : { skillId }),
         signal: controller.signal,
       });
 
@@ -90,7 +100,7 @@ export function BuyNowButton({
         if (orderResponse.status === 401) {
           // Chưa đăng nhập: đưa sang trang login rồi quay lại đúng skill này.
           setOpen(false);
-          router.push(`/login?callbackUrl=${encodeURIComponent(`/skills/${skillSlug}`)}`);
+          router.push(`/login?callbackUrl=${encodeURIComponent(productPath ?? `/skills/${skillSlug}`)}`);
           return;
         }
         const body = (await orderResponse.json().catch(() => null)) as { error?: string } | null;
@@ -134,7 +144,7 @@ export function BuyNowButton({
     } finally {
       setLoading(false);
     }
-  }, [dict, loading, router, skillId, skillSlug, stage]);
+  }, [dict, loading, planPriceId, productPath, router, skillId, skillSlug, stage]);
 
   const close = useCallback(() => {
     if (abortControllerRef.current) {
@@ -153,12 +163,12 @@ export function BuyNowButton({
   }, [router]);
 
   const isDisabled = disabled || loading || stage === "creating";
-  const label = dict.checkout.buyNow;
+  const label = customLabel ?? dict.checkout.buyNow;
   const buttonClass = cn(
-    "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+    "disabled:cursor-not-allowed",
     variant === "card"
-      ? "border border-zinc-300 px-3 py-1.5 text-xs text-zinc-700 hover:bg-zinc-50 active:scale-95"
-      : "w-full bg-zinc-900 px-5 py-3 text-sm text-white hover:bg-zinc-800 active:scale-[0.99]",
+      ? "inline-flex items-center justify-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 transition-all duration-300 ease-fluid hover:border-brand-600 hover:bg-brand-600 hover:text-white hover:shadow-glow active:scale-95 disabled:opacity-60"
+      : "btn-primary w-full px-5 py-3 text-sm",
   );
 
   return (
@@ -182,6 +192,7 @@ export function BuyNowButton({
         stage={stage}
         skillTitle={skillTitle}
         skillSlug={skillSlug}
+        productPath={productPath}
         email={order?.email ?? null}
         errorMessage={errorMessage}
         details={details}

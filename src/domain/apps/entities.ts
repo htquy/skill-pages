@@ -7,7 +7,6 @@ export type AppType =
 
 export type AppStatus = "ACTIVE" | "INACTIVE";
 export type MenuAccess = "FREE" | "PAID";
-export type SubscriptionInterval = "MONTH" | "QUARTER" | "YEAR" | "CUSTOM";
 export type SubscriptionStatus = "ACTIVE" | "EXPIRED" | "CANCELED" | "PENDING";
 
 export interface AppRecord {
@@ -29,15 +28,23 @@ export interface FeatureRecord {
   createdAt: Date;
 }
 
+/** Một kỳ hạn bán của gói: số tháng lịch (0 = vĩnh viễn) và giá ở đơn vị nhỏ nhất. */
+export interface PlanPriceRecord {
+  id: string;
+  planId: string;
+  months: number;
+  currency: string;
+  amount: number;
+  isActive: boolean;
+}
+
+/** Gói = tầng tính năng; bán theo nhiều kỳ hạn qua `prices`. */
 export interface SubscriptionPlanRecord {
   id: string;
   appId: string;
   name: string;
   description: string | null;
-  currency: string;
-  price: number;
-  interval: SubscriptionInterval;
-  durationDays: number;
+  sortOrder: number;
   isActive: boolean;
   featureKeys: string[];
   features?: Array<{
@@ -45,8 +52,22 @@ export interface SubscriptionPlanRecord {
     name: string;
     description: string | null;
   }>;
+  prices: PlanPriceRecord[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+/** Thông tin đủ để tạo đơn mua một kỳ hạn (facade cho module orders, không join chéo). */
+export interface PurchasablePlanPrice {
+  priceId: string;
+  months: number;
+  amount: number;
+  currency: string;
+  planId: string;
+  planName: string;
+  appId: string;
+  appSlug: string;
+  appName: string;
 }
 
 export interface AppMenuItemRecord {
@@ -110,12 +131,14 @@ export interface UserAppEntitlement {
     id: string;
     planId: string;
     planName: string;
-    interval: SubscriptionInterval;
     startsAt: Date;
+    /** Ngày hết hạn cuối cùng tính cả các kỳ đã mua nối tiếp; null = vĩnh viễn. */
     endsAt: Date | null;
     daysRemaining: number;
     isLifetime: boolean;
   } | null;
+  /** Giờ máy chủ, để client phát hiện đồng hồ máy bị chỉnh khi dùng kết quả cache offline. */
+  serverTime: Date;
   unlockedFeatures: string[];
   hasFeature?: boolean;
   checkedFeature?: string | null;
@@ -139,12 +162,20 @@ export interface AppRepository {
     appId: string;
     name: string;
     description?: string | null;
-    currency?: string;
-    price: number;
-    interval?: SubscriptionInterval;
-    durationDays?: number;
+    sortOrder?: number;
+    featureKeys?: string[];
+    prices?: Array<{ months: number; amount: number; currency?: string }>;
+  }): Promise<SubscriptionPlanRecord>;
+  updatePlan(id: string, data: {
+    name?: string;
+    description?: string | null;
+    sortOrder?: number;
+    isActive?: boolean;
     featureKeys?: string[];
   }): Promise<SubscriptionPlanRecord>;
+  /** Thêm hoặc sửa giá của một kỳ hạn (khóa: plan + months + currency). */
+  upsertPlanPrice(planId: string, data: { months: number; amount: number; currency?: string; isActive?: boolean }): Promise<PlanPriceRecord>;
+  findPlanPriceById(id: string): Promise<(PlanPriceRecord & { plan: SubscriptionPlanRecord }) | null>;
 
   listMenuItemsForApp(appId: string): Promise<AppMenuItemRecord[]>;
   createMenuItem(data: {
@@ -158,8 +189,15 @@ export interface AppRepository {
     requiredFeatureKey?: string | null;
   }): Promise<AppMenuItemRecord>;
 
-  findActiveUserSubscription(userId: string, appId: string): Promise<UserSubscriptionRecord | null>;
+  /** Các kỳ đang có hiệu lực tại `now` (startsAt <= now < endsAt hoặc vĩnh viễn). */
+  listCurrentUserSubscriptions(userId: string, appId: string, now: Date): Promise<UserSubscriptionRecord[]>;
+  /** Mọi kỳ ACTIVE chưa hết hạn (gồm cả kỳ mua nối tiếp chưa bắt đầu). */
+  listUnexpiredUserSubscriptions(userId: string, appId: string, now: Date): Promise<UserSubscriptionRecord[]>;
+  findSubscriptionByOrderId(orderId: string): Promise<UserSubscriptionRecord | null>;
+  /** Đặt CANCELED cho kỳ do đơn này tạo ra (hoàn tiền). */
+  cancelSubscriptionByOrderId(orderId: string): Promise<void>;
   listUserSubscriptions(userId: string): Promise<UserSubscriptionRecord[]>;
+  /** Tạo một kỳ đăng ký. Trùng `orderId` => trả kỳ đã có (idempotent). */
   grantSubscription(data: {
     userId: string;
     appId: string;

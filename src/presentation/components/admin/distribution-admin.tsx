@@ -5,7 +5,7 @@ import { useR2Upload } from "@/src/presentation/components/upload/use-r2-upload"
 
 const initial: SourceInput = { key: "app", name: "VideoTool", version: "1.0.1", kind: "APPLICATION", format: "ZIP",
   platform: "win-x64", url: "", sha256: "", size: 0, fileName: "VideoTool-win-x64.zip", installDirectory: "",
-  entryPoint: "VideoTool.exe", requiredFiles: ["VideoTool.Updater.exe", "libSkiaSharp.dll", "libHarfBuzzSharp.dll", "av_libglesv2.dll"], description: "", metadata: {} };
+  entryPoint: "DirectorCraftStudio.exe", requiredFiles: ["VideoTool.Updater.exe", "libSkiaSharp.dll", "libHarfBuzzSharp.dll", "av_libglesv2.dll"], description: "", metadata: {} };
 const fieldClass = "mt-1 w-full rounded-lg border border-zinc-300 bg-white p-2 text-sm";
 const buttonClass = "rounded-lg border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-100 disabled:opacity-40";
 type Config = { sources: AppSourceRecord[]; releases: AppReleaseRecord[] };
@@ -53,7 +53,7 @@ export function DistributionAdmin({ apps }: { apps: { slug: string; name: string
   return <div className="space-y-6">
     <label className="block max-w-md text-sm">Ứng dụng<select disabled={busy || uploading} className={fieldClass} value={slug} onChange={e => setSlug(e.target.value)}>
       {apps.map(a => <option key={a.slug} value={a.slug}>{a.name} ({a.slug})</option>)}</select></label>
-    <p role="status" aria-live="polite" className="text-sm text-indigo-700">{message || state.error}</p>
+    <p role="status" aria-live="polite" className="text-sm text-brand-700">{message || state.error}</p>
     {!slug ? <p>Hãy tạo ứng dụng tại Quản lý apps trước.</p> : <>
     <form className="rounded-xl border border-zinc-200 bg-white p-5" onSubmit={e => { e.preventDefault(); void action(async () => {
       const extra: unknown = JSON.parse(metadata);
@@ -110,7 +110,7 @@ export function DistributionAdmin({ apps }: { apps: { slug: string; name: string
       </form>
     </section>
     <section className="rounded-xl border border-zinc-200 bg-white p-5"><h2 className="text-lg font-semibold">3. Phát hành</h2>
-      <a className="my-2 block text-sm text-indigo-600 underline" href={`/api/apps/${encodeURIComponent(slug)}/updates?channel=stable&platform=win-x64`} target="_blank" rel="noreferrer">Xem manifest stable</a>
+      <a className="my-2 block text-sm text-brand-600 underline" href={`/api/apps/${encodeURIComponent(slug)}/updates?channel=stable&platform=win-x64`} target="_blank" rel="noreferrer">Xem manifest stable</a>
       {config.releases.map(r => <div key={r.id} className="border-t py-4"><div className="flex flex-wrap items-center gap-3"><strong>{r.version}</strong><span className="text-sm">{r.channel} · {r.status}</span>
         {r.status === "DRAFT" && <><button disabled={busy} className={buttonClass} onClick={() => { if (confirm(`Phát hành ${r.version} tới người dùng?`)) void action(() => api(base + "/releases/" + r.id, "PATCH", { status: "PUBLISHED" })); }}>Phát hành</button><button disabled={busy} className={buttonClass} onClick={() => void action(() => api(base + "/releases/" + r.id, "DELETE"))}>Xóa nháp</button></>}
         {r.status === "PUBLISHED" && <button disabled={busy} className={buttonClass} onClick={() => { if (confirm("Thu hồi khỏi manifest? Máy đã cập nhật sẽ không bị hạ phiên bản.")) void action(() => api(base + "/releases/" + r.id, "PATCH", { status: "WITHDRAWN" })); }}>Thu hồi</button>}

@@ -14,6 +14,8 @@ export function TaglineReveal({ lead, accent }: TaglineRevealProps) {
 
   const fullText = `${lead} ${accent}`;
   const words = fullText.split(" ").filter(Boolean);
+  // Các từ thuộc phần `accent` được tô màu iris khi sáng lên.
+  const accentStart = lead.split(" ").filter(Boolean).length;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -62,7 +64,7 @@ export function TaglineReveal({ lead, accent }: TaglineRevealProps) {
   }, [words.length]);
 
   return (
-    <section className="border-y border-zinc-200 bg-zinc-50/50 py-24 sm:py-32">
+    <section className="relative overflow-hidden border-y border-zinc-200 bg-gradient-to-b from-zinc-50 via-white to-brand-50/40 py-24 sm:py-32">
       <Container>
         <div ref={containerRef} className="mx-auto max-w-[680px] text-center">
           <p className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-5xl [text-wrap:balance]">
@@ -73,7 +75,11 @@ export function TaglineReveal({ lead, accent }: TaglineRevealProps) {
                   key={`${word}-${index}`}
                   className="inline-block transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]"
                   style={{
-                    color: isActive ? "#09090b" : "#a1a1aa",
+                    color: isActive
+                      ? index >= accentStart
+                        ? "var(--color-brand-600)"
+                        : "var(--color-zinc-950)"
+                      : "var(--color-zinc-400)",
                     opacity: isActive ? 1 : 0.35,
                     transform: isActive ? "translateY(0)" : "translateY(3px)",
                     marginRight: "0.28em",

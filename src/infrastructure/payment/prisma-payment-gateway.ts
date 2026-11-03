@@ -119,20 +119,24 @@ export const prismaPaymentGateway: PaymentGatewayService = {
         data: { status: "PAID", paidAt: input.paidAt ?? new Date() },
       });
 
-      await tx.skillAccess.upsert({
-        where: {
-          userId_skillId: { userId: order.userId, skillId: order.skillId },
-        },
-        create: {
-          userId: order.userId,
-          skillId: order.skillId,
-          orderId: order.id,
-          source: "ORDER",
-        },
-        update: {
-          revokedAt: null,
-        },
-      });
+      // Skill: mở quyền trong cùng transaction. Gói app (APP_PLAN) do module apps giao sau
+      // transaction (idempotent theo orderId), xem sepay-webhook `fulfilPlan`.
+      if (order.skillId) {
+        await tx.skillAccess.upsert({
+          where: {
+            userId_skillId: { userId: order.userId, skillId: order.skillId },
+          },
+          create: {
+            userId: order.userId,
+            skillId: order.skillId,
+            orderId: order.id,
+            source: "ORDER",
+          },
+          update: {
+            revokedAt: null,
+          },
+        });
+      }
 
       return { handled: true, reason: "ok", orderId: order.id, orderCode: order.orderCode };
     }, {

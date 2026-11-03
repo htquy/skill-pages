@@ -29,7 +29,7 @@ export default async function AdminRankingsPage({
         </div>
         <Link
           href="/admin/rankings/new"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-500"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-500"
         >
           <Plus className="size-4" aria-hidden="true" />
           New ranking
@@ -53,7 +53,7 @@ export default async function AdminRankingsPage({
               {result.items.map((ranking) => (
                 <tr key={ranking.id} className="border-b last:border-0 hover:bg-zinc-50/60">
                   <td className="px-5 py-3">
-                    <Link href={`/admin/rankings/${ranking.id}`} className="font-medium text-zinc-900 hover:text-indigo-700">
+                    <Link href={`/admin/rankings/${ranking.id}`} className="font-medium text-zinc-900 hover:text-brand-700">
                       {ranking.name}
                     </Link>
                     <p className="text-xs text-zinc-400">{ranking.slug}</p>

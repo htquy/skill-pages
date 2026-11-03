@@ -63,13 +63,13 @@ async function OrdersTable({ filters, page }: { filters: AdminOrderFilters; page
               {result.items.map((order) => (
                 <tr key={order.id} className="border-b last:border-0 hover:bg-zinc-50/60">
                   <td className="px-5 py-3">
-                    <Link href={`/admin/orders/${order.id}`} className="font-medium text-zinc-900 hover:text-indigo-700">
+                    <Link href={`/admin/orders/${order.id}`} className="font-medium text-zinc-900 hover:text-brand-700">
                       {order.orderCode}
                     </Link>
                     <p className="text-xs text-zinc-400">{order.email ?? order.userId}</p>
                   </td>
                   <td className="px-5 py-3">
-                    <Link href={`/admin/skills/${order.skillId}`} className="text-zinc-700 hover:text-indigo-700">
+                    <Link href={order.skillId ? `/admin/skills/${order.skillId}` : "/admin/apps"} className="text-zinc-700 hover:text-brand-700">
                       {order.skillTitle}
                     </Link>
                   </td>
@@ -130,7 +130,7 @@ export default async function AdminOrdersPage({
             type="search"
             defaultValue={filters.q}
             placeholder={dict.admin.orders.searchPlaceholder}
-            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           />
         </label>
         <label>
@@ -138,7 +138,7 @@ export default async function AdminOrdersPage({
           <select
             name="status"
             defaultValue={filters.status}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           >
             {STATUS_OPTIONS.map((option) => (
               <option key={option} value={option}>

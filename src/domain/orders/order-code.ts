@@ -15,12 +15,15 @@
  */
 export const ProductType = {
   SKILL: "SKILL",
+  /** Gói đăng ký của một app (một kỳ hạn của SubscriptionPlan). */
+  APP_PLAN: "APP_PLAN",
 } as const;
 
 export type ProductTypeValue = (typeof ProductType)[keyof typeof ProductType];
 
 const PRODUCT_LABELS: Readonly<Record<ProductTypeValue, string>> = {
   [ProductType.SKILL]: "SKILL",
+  [ProductType.APP_PLAN]: "PLAN",
 };
 
 /** Số ký tự tối đa mà nội dung chuyển khoản ngân hàng chấp nhận an toàn. */

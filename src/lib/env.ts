@@ -29,6 +29,12 @@ export function getServerApiSecret(): string | undefined {
   return process.env.SERVER_API_SECRET || undefined;
 }
 
+/** Token cho GitHub Actions đăng ký bản phát hành (POST /api/ci/apps/:slug/releases). Rỗng = tắt endpoint. */
+export function getReleaseCiToken(): string | undefined {
+  const token = process.env.RELEASE_CI_TOKEN;
+  return token && token.length >= 32 ? token : undefined;
+}
+
 /**
  * Cấu hình tích hợp SePay (BankHub) + VietQR.
  *
