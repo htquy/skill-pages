@@ -71,6 +71,8 @@ export interface AppsService {
   }): Promise<SubscriptionPlanRecord>;
 
   adminUpsertPlanPrice(slug: string, planId: string, data: PlanPriceInput): Promise<PlanPriceRecord>;
+  adminDeletePlan(slug: string, planId: string): Promise<void>;
+  adminDeletePlanPrice(slug: string, planId: string, priceId: string): Promise<void>;
 
   adminCreateMenuItem(data: {
     appId: string;
@@ -342,6 +344,16 @@ export function createAppsService(deps: {
       await requirePlanOfApp(slug, planId);
       validatePrice(data);
       return apps.upsertPlanPrice(planId, data);
+    },
+
+    async adminDeletePlan(slug, planId) {
+      await requirePlanOfApp(slug, planId);
+      await apps.deletePlan(planId);
+    },
+
+    async adminDeletePlanPrice(slug, planId, priceId) {
+      await requirePlanOfApp(slug, planId);
+      await apps.deletePlanPrice(planId, priceId);
     },
 
     async adminCreateMenuItem(data) {

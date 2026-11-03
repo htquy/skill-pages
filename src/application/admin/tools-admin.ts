@@ -1,6 +1,7 @@
 import { AuditAction } from "@/src/domain/audit";
 import type { AuditLogRepository } from "@/src/domain/audit";
 import type { CurrentUser } from "@/src/domain/identity/entities";
+import { ValidationError } from "@/src/domain/errors";
 import type {
   PaginatedResult,
   Pagination,
@@ -13,9 +14,17 @@ import type {
 export interface ToolAdminDeps {
   tools: ToolAdminRepository;
   audit: AuditLogRepository;
+  /** Facade sang module apps: chỉ hỏi slug có tồn tại, không join bảng apps. */
+  apps: { exists(slug: string): Promise<boolean> };
 }
 
 export function createToolAdminCommands(deps: ToolAdminDeps) {
+  async function assertLinkedApp(data: SaveToolData) {
+    if (data.appSlug && !(await deps.apps.exists(data.appSlug))) {
+      throw new ValidationError(`Ứng dụng '${data.appSlug}' không tồn tại`);
+    }
+  }
+
   return {
     list(
       filters: { q?: string; status?: string; type?: string; billingType?: string },
@@ -39,7 +48,12 @@ export function createToolAdminCommands(deps: ToolAdminDeps) {
       return deps.tools.findById(id);
     },
 
+    listByAppSlugs(appSlugs: string[]) {
+      return deps.tools.listByAppSlugs(appSlugs);
+    },
+
     async create(admin: CurrentUser, data: SaveToolData): Promise<string> {
+      await assertLinkedApp(data);
       const id = await deps.tools.create(data);
       await deps.audit.record({
         actorUserId: admin.id,
@@ -51,6 +65,7 @@ export function createToolAdminCommands(deps: ToolAdminDeps) {
     },
 
     async update(admin: CurrentUser, id: string, data: SaveToolData): Promise<void> {
+      await assertLinkedApp(data);
       await deps.tools.update(id, data);
       await deps.audit.record({
         actorUserId: admin.id,

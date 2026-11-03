@@ -226,11 +226,16 @@ function parseToolForm(fd: FormData, dict: Dict): SaveToolData {
   }
 
   const appUrl = optionalString(fd, "appUrl") ?? null;
+  const appSlug = optionalString(fd, "appSlug") ?? null;
   const fileUrl = optionalString(fd, "fileUrl") ?? null;
   const scriptUrl = optionalString(fd, "scriptUrl") ?? null;
+  // Mọi tool phải có đường dẫn sản phẩm trên landing page: Web app → URL truy cập; app/tool/MCP/widget → link tải về.
   if (type === "WEB_APP" && !appUrl) throw new ValidationError(dict.actions.toolAppUrlRequired);
-  if (type === "DOWNLOADABLE" && !fileUrl && !scriptUrl) {
+  if (type !== "WEB_APP" && !fileUrl && !scriptUrl) {
     throw new ValidationError(dict.actions.toolFileRequired);
+  }
+  for (const link of [appUrl, scriptUrl]) {
+    if (link && !/^https?:\/\/\S+$/i.test(link)) throw new ValidationError(dict.actions.toolLinkInvalid);
   }
 
   const fileSizeRaw = optionalString(fd, "fileSize");
@@ -247,6 +252,7 @@ function parseToolForm(fd: FormData, dict: Dict): SaveToolData {
     coverImageUrl: optionalString(fd, "coverImageUrl") ?? null,
     videoDemoUrl: optionalString(fd, "videoDemoUrl") ?? null,
     appUrl,
+    appSlug,
     config: mergeAppUrl(config, appUrl),
     prices: billingType === "FREE" ? [] : parsePricePlans(fd, dict),
     versionCode,

@@ -2,10 +2,11 @@ export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Check, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Check, Sparkles } from "lucide-react";
 import { Container } from "@/src/presentation/components/layout/container";
 import { BuyNowButton } from "@/src/presentation/components/checkout/buy-now-button";
-import { appsService } from "@/src/infrastructure/composition";
+import { appsService, toolQueries } from "@/src/infrastructure/composition";
 import { auth } from "@/src/infrastructure/authentication/auth";
 import { isAppError } from "@/src/domain/errors";
 import { formatMoney } from "@/src/domain/shared";
@@ -54,7 +55,12 @@ function priceInsights(prices: Price[]) {
  */
 export default async function AppPricingPage({ params }: Props) {
   const { slug } = await params;
-  const [dict, result, session] = await Promise.all([getDictionary(), loadApp(slug), auth()]);
+  const [dict, result, session, tool] = await Promise.all([
+    getDictionary(),
+    loadApp(slug),
+    auth(),
+    toolQueries.findByAppSlug(slug),
+  ]);
   if (!result) notFound();
   const { app, plans } = result;
   const t = dict.pricing;
@@ -68,6 +74,15 @@ export default async function AppPricingPage({ params }: Props) {
       <div aria-hidden="true" className="bg-grid pointer-events-none absolute inset-0 -z-10" />
       <Container className="py-12 sm:py-16">
         <header className="mb-10 max-w-2xl animate-fade-up">
+          {tool ? (
+            <Link
+              href={`/tools/${tool.slug}`}
+              className="group mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-brand-700"
+            >
+              <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-1" aria-hidden="true" />
+              {trans(t.aboutProduct, { app: app.name })}
+            </Link>
+          ) : null}
           <div className="eyebrow">
             <Sparkles className="size-3.5" aria-hidden="true" />
             {t.eyebrow}

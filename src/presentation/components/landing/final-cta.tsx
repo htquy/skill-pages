@@ -18,22 +18,28 @@ export async function FinalCta() {
             </h2>
             <p className="mt-4 text-base text-zinc-300 sm:text-lg [text-wrap:pretty]">{cta.subtitle}</p>
 
-            <div className="mt-8 flex justify-center">
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
-                href="/#catalog"
+                href="/tools"
                 className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-white px-5 py-3 text-base font-semibold text-zinc-950 shadow-[0_0_0_1px_rgb(255_255_255/0.2),0_18px_50px_-12px_rgb(138_127_248/0.7)] transition-all duration-500 ease-fluid hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgb(255_255_255/0.3),0_24px_60px_-10px_rgb(138_127_248/0.9)] active:scale-[0.98]"
               >
-                {cta.button}
+                {cta.buttonPrimary}
                 <ArrowRight
                   className="size-4 text-brand-600 transition-transform duration-500 ease-fluid group-hover:translate-x-1"
                   aria-hidden="true"
                 />
               </Link>
+              <Link
+                href="/skills"
+                className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-base font-semibold text-white ring-1 ring-white/20 transition-colors duration-500 ease-fluid hover:bg-white/10"
+              >
+                {cta.buttonSecondary}
+              </Link>
             </div>
 
             <div className="mt-8 inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-xs text-zinc-300 ring-1 ring-white/10">
               <ShieldCheck className="size-4 text-emerald-400" aria-hidden="true" />
-              <span>{cta.guarantee}</span>
+              <span>{cta.note}</span>
             </div>
           </div>
         </div>

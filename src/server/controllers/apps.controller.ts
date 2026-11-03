@@ -270,6 +270,28 @@ export class AppsController {
     }
   }
 
+  /** DELETE /api/admin/apps/[slug]/plans/[planId] — chỉ xóa được gói chưa có người đăng ký. */
+  static async adminDeletePlan(slug: string, planId: string): Promise<NextResponse> {
+    try {
+      await requireAdmin();
+      await appsService.adminDeletePlan(slug, planId);
+      return NextResponse.json({ deleted: true });
+    } catch (error: unknown) {
+      return errorResponse(error);
+    }
+  }
+
+  /** DELETE /api/admin/apps/[slug]/plans/[planId]/prices/[priceId] */
+  static async adminDeletePlanPrice(slug: string, planId: string, priceId: string): Promise<NextResponse> {
+    try {
+      await requireAdmin();
+      await appsService.adminDeletePlanPrice(slug, planId, priceId);
+      return NextResponse.json({ deleted: true });
+    } catch (error: unknown) {
+      return errorResponse(error);
+    }
+  }
+
   /**
    * POST /api/admin/apps/[slug]/menus
    * Admin: Add menu item

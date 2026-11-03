@@ -30,6 +30,10 @@ export interface ToolSummary {
   billingType: ToolBillingType;
   coverImageUrl: string | null;
   appUrl: string | null;
+  /** Slug app (module apps) bán gói cho tool này; null = tool chưa bán được qua gói đăng ký. */
+  appSlug: string | null;
+  /** Link tải của phiên bản mới nhất (tệp đã upload, hoặc link tải về nhập tay). */
+  downloadUrl: string | null;
   lowestPrice: ToolPriceInfo | null;
   latestVersion: string | null;
 }
@@ -52,4 +56,6 @@ export interface ToolListFilters {
 export interface ToolRepository {
   list(filters: ToolListFilters, pagination: Pagination): Promise<PaginatedResult<ToolSummary>>;
   findBySlug(slug: string): Promise<ToolDetail | null>;
+  /** Trang giới thiệu đã xuất bản của một app, để trang bảng giá dẫn ngược về. */
+  findByAppSlug(appSlug: string): Promise<ToolSummary | null>;
 }

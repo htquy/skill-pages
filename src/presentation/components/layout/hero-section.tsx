@@ -61,7 +61,7 @@ export async function HeroSection() {
           <p className="mt-5 max-w-lg text-lg leading-relaxed text-zinc-600">{dict.hero.subtitle}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/#catalog"
+              href="/skills"
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-900 px-5 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-700"
             >
               {dict.hero.explore}

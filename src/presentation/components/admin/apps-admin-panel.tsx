@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus } from "lucide-react";
+import { ExternalLink, Loader2, Plus } from "lucide-react";
 import type { Dict } from "@/src/lib/i18n/config";
 import type {
   AppMenuItemRecord,
@@ -15,6 +16,8 @@ export interface AdminAppConfig {
   app: AppRecord;
   plans: SubscriptionPlanRecord[];
   menus: AppMenuItemRecord[];
+  /** Trang giới thiệu (catalog.tools) trỏ tới app này qua appSlug — lối vào duy nhất của khách. */
+  catalogPages: Array<{ id: string; slug: string; title: string; status: string }>;
 }
 
 /** Kỳ hạn bán thông dụng; 0 = vĩnh viễn. Admin vẫn nhập được số tháng khác. */
@@ -62,14 +65,14 @@ export function AppsAdminPanel({
     [configs, selectedSlug],
   );
 
-  async function submit(key: string, url: string, body: unknown, reset?: () => void, method: "POST" | "PATCH" = "POST") {
+  async function submit(key: string, url: string, body: unknown, reset?: () => void, method: "POST" | "PATCH" | "DELETE" = "POST") {
     setBusy(key);
     setStatus(null);
     try {
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: body === undefined ? undefined : JSON.stringify(body),
       });
       const payload = (await response.json().catch(() => null)) as { error?: string } | null;
       if (!response.ok) {
@@ -134,6 +137,7 @@ export function AppsAdminPanel({
                 {selected.app.description ? (
                   <p className="mt-1 text-sm text-zinc-500">{selected.app.description}</p>
                 ) : null}
+                <CatalogLinks config={selected} t={t} />
               </section>
 
               <section className="rounded-xl border border-zinc-200 bg-white p-5">
@@ -147,12 +151,22 @@ export function AppsAdminPanel({
                         key={plan.id}
                         dict={dict}
                         plan={plan}
+                        menuFeatureKeys={paidFeatureKeys(selected.menus)}
                         busy={busy}
                         onToggle={() =>
                           submit(`plan-${plan.id}`, `/api/admin/apps/${selected.app.slug}/plans/${plan.id}`, { isActive: !plan.isActive }, undefined, "PATCH")
                         }
                         onSavePrice={(body, reset) =>
                           submit(`price-${plan.id}`, `/api/admin/apps/${selected.app.slug}/plans/${plan.id}/prices`, body, reset)
+                        }
+                        onEdit={(body, done) =>
+                          submit(`edit-${plan.id}`, `/api/admin/apps/${selected.app.slug}/plans/${plan.id}`, body, done, "PATCH")
+                        }
+                        onDelete={() =>
+                          submit(`delete-${plan.id}`, `/api/admin/apps/${selected.app.slug}/plans/${plan.id}`, undefined, undefined, "DELETE")
+                        }
+                        onDeletePrice={(priceId) =>
+                          submit(`price-${plan.id}`, `/api/admin/apps/${selected.app.slug}/plans/${plan.id}/prices/${priceId}`, undefined, undefined, "DELETE")
                         }
                       />
                     ))}
@@ -278,24 +292,85 @@ function CreateAppForm({
   );
 }
 
+/** Nối app với trang giới thiệu công khai và bảng giá, để admin thấy ngay app đã "lên kệ" chưa. */
+function CatalogLinks({ config, t }: { config: AdminAppConfig; t: Dict["admin"]["apps"] }) {
+  const published = config.catalogPages.filter((page) => page.status === "PUBLISHED");
+  const linkClass =
+    "inline-flex items-center gap-1 rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50";
+  return (
+    <div className="mt-4 space-y-3 border-t border-zinc-100 pt-4">
+      <div className="text-sm">
+        <span className="font-medium text-zinc-700">{t.catalogPage}: </span>
+        {config.catalogPages.length > 0 ? (
+          config.catalogPages.map((page, index) => (
+            <span key={page.id}>
+              {index > 0 ? ", " : null}
+              <Link href={`/admin/tools/${page.id}`} className="text-brand-700 hover:underline">
+                {page.title}
+              </Link>
+              <span className="ml-1 text-xs text-zinc-400">({page.status})</span>
+            </span>
+          ))
+        ) : null}
+        {published.length === 0 ? (
+          <p className="mt-1 text-xs text-amber-600">{t.noCatalogPage}</p>
+        ) : null}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {config.catalogPages.length === 0 ? (
+          <Link href={`/admin/tools/new?app=${encodeURIComponent(config.app.slug)}`} className={linkClass}>
+            <Plus className="size-3.5" aria-hidden="true" />
+            {t.createCatalogPage}
+          </Link>
+        ) : null}
+        <a href={`/apps/${config.app.slug}/pricing`} target="_blank" rel="noreferrer" className={linkClass}>
+          <ExternalLink className="size-3.5" aria-hidden="true" />
+          {t.viewPricing}
+        </a>
+        <Link href="/admin/app-releases" className={linkClass}>
+          {t.releases}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function periodText(months: number, t: Dict["admin"]["apps"]) {
   return months === 0 ? t.lifetime : `${months} ${t.monthsUnit}`;
+}
+
+/** Mã tính năng mà các menu trả phí của app yêu cầu; gói không chứa mã nào trong đó thì mua xong vẫn bị khóa. */
+function paidFeatureKeys(menus: AppMenuItemRecord[]): string[] {
+  return [...new Set(menus.flatMap((menu) => (menu.access === "PAID" && menu.requiredFeatureKey ? [menu.requiredFeatureKey] : [])))];
 }
 
 function PlanCard({
   dict,
   plan,
+  menuFeatureKeys,
   busy,
   onToggle,
   onSavePrice,
+  onEdit,
+  onDelete,
+  onDeletePrice,
 }: {
   dict: Dict;
   plan: SubscriptionPlanRecord;
+  menuFeatureKeys: string[];
   busy: string | null;
   onToggle: () => void;
   onSavePrice: (body: Record<string, unknown>, reset: () => void) => void;
+  onEdit: (body: Record<string, unknown>, done: () => void) => void;
+  onDelete: () => void;
+  onDeletePrice: (priceId: string) => void;
 }) {
   const t = dict.admin.apps;
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(plan.name);
+  const [description, setDescription] = useState(plan.description ?? "");
+  const [featureKeys, setFeatureKeys] = useState(plan.featureKeys.join(", "));
+  const [sortOrder, setSortOrder] = useState(String(plan.sortOrder));
   const [months, setMonths] = useState("1");
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState(plan.prices[0]?.currency ?? "VND");
@@ -314,23 +389,85 @@ function PlanCard({
             {plan.isActive ? t.active : t.inactive}
           </span>
           <p className="mt-0.5 text-xs text-zinc-500">{plan.featureKeys.join(", ") || t.none}</p>
+          {menuFeatureKeys.length > 0 && !plan.featureKeys.some((key) => menuFeatureKeys.includes(key)) ? (
+            <p className="mt-1 text-xs text-red-600">
+              {t.unlocksNothing.replace("{keys}", menuFeatureKeys.join(", "))}
+            </p>
+          ) : null}
         </div>
-        <button
-          type="button"
-          onClick={onToggle}
-          disabled={busy === `plan-${plan.id}`}
-          className="rounded-lg border border-zinc-300 px-2.5 py-1 text-xs text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
-        >
-          {plan.isActive ? t.stopSelling : t.resumeSelling}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setEditing((value) => !value)}
+            className="rounded-lg border border-zinc-300 px-2.5 py-1 text-xs text-zinc-700 hover:bg-zinc-50"
+          >
+            {editing ? t.cancel : t.editPlan}
+          </button>
+          <button
+            type="button"
+            onClick={onToggle}
+            disabled={busy === `plan-${plan.id}`}
+            className="rounded-lg border border-zinc-300 px-2.5 py-1 text-xs text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+          >
+            {plan.isActive ? t.stopSelling : t.resumeSelling}
+          </button>
+          <button
+            type="button"
+            disabled={busy === `delete-${plan.id}`}
+            onClick={() => {
+              if (confirm(t.deletePlanConfirm.replace("{name}", plan.name))) onDelete();
+            }}
+            className="rounded-lg border border-red-200 px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-60"
+          >
+            {t.deletePlan}
+          </button>
+        </div>
       </div>
+
+      {editing ? (
+        <form
+          className="mt-3 grid gap-3 rounded-lg bg-zinc-50 p-3 sm:grid-cols-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onEdit(
+              {
+                name,
+                description: description || null,
+                sortOrder: Number(sortOrder) || 0,
+                featureKeys: featureKeys.split(",").map((key) => key.trim()).filter(Boolean),
+              },
+              () => setEditing(false),
+            );
+          }}
+        >
+          <Field label={t.name}>
+            <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} required />
+          </Field>
+          <Field label={t.description}>
+            <input className={inputClass} value={description} onChange={(e) => setDescription(e.target.value)} />
+          </Field>
+          <Field label={t.featureKeys} hint={t.featureKeysHint}>
+            <input className={inputClass} value={featureKeys} onChange={(e) => setFeatureKeys(e.target.value)} />
+          </Field>
+          <Field label={t.sortOrder}>
+            <input className={inputClass} type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} />
+          </Field>
+          <button
+            type="submit"
+            disabled={busy === `edit-${plan.id}`}
+            className="inline-flex items-center justify-center gap-1 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-60 sm:col-span-2"
+          >
+            {t.savePlan}
+          </button>
+        </form>
+      ) : null}
 
       {plan.prices.length === 0 ? (
         <p className="mt-2 text-xs text-amber-700">{t.noPrices}</p>
       ) : (
         <ul className="mt-2 flex flex-wrap gap-2">
           {plan.prices.map((price) => (
-            <li key={price.id}>
+            <li key={price.id} className="flex items-center gap-1">
               <button
                 type="button"
                 title={price.isActive ? t.stopSelling : t.resumeSelling}
@@ -346,6 +483,18 @@ function PlanCard({
                 }
               >
                 {periodText(price.months, t)} · {price.amount.toLocaleString()} {price.currency}
+              </button>
+              <button
+                type="button"
+                title={t.deletePrice}
+                aria-label={t.deletePrice}
+                disabled={busy === `price-${plan.id}`}
+                onClick={() => {
+                  if (confirm(t.deletePriceConfirm)) onDeletePrice(price.id);
+                }}
+                className="rounded-full px-1.5 text-xs text-red-500 hover:bg-red-50 disabled:opacity-60"
+              >
+                ×
               </button>
             </li>
           ))}

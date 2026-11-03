@@ -13,6 +13,7 @@ import type {
   PlanPriceRecord,
   SubscriptionStatus,
 } from "@/src/domain/apps/entities";
+import { ConflictError, NotFoundError } from "@/src/domain/errors";
 
 import type {
   App as PrismaApp,
@@ -219,6 +220,16 @@ export const prismaAppRepository: AppRepository = {
       update: { amount: data.amount, isActive: data.isActive ?? true },
     });
     return mapPrice(row);
+  },
+
+  async deletePlan(id) {
+    const result = await prisma.subscriptionPlan.deleteMany({ where: { id, subscriptions: { none: {} } } });
+    if (!result.count) throw new ConflictError("Gói đã có người đăng ký nên không xóa được; hãy chọn 'Ngừng bán'");
+  },
+
+  async deletePlanPrice(planId, priceId) {
+    const result = await prisma.subscriptionPlanPrice.deleteMany({ where: { id: priceId, planId } });
+    if (!result.count) throw new NotFoundError("Kỳ hạn không thuộc gói này");
   },
 
   async findPlanPriceById(id) {

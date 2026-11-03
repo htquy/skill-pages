@@ -541,6 +541,9 @@ model Tool {
   /// - EMBED_WIDGET: { "defaultTheme": "dark", "allowedDomains": ["*"] }
   /// - MCP_SERVER: { "command": "npx", "args": ["-y", "@modelcontextprotocol/..."] }
   config           Json?
+  /// Slug của apps.apps bán gói đăng ký cho tool này (tham chiếu mềm, không FK vì khác module).
+  /// Khi có giá trị, giá và nút mua lấy từ gói của app qua AppsService; ToolPrice chỉ còn là giá tham khảo.
+  appSlug          String?         @db.VarChar(160)
   publishedAt      DateTime?       @db.Timestamptz(3)
   createdAt        DateTime        @default(now()) @db.Timestamptz(3)
   updatedAt        DateTime        @updatedAt @db.Timestamptz(3)
@@ -551,6 +554,7 @@ model Tool {
   @@index([status, publishedAt])
   @@index([type, status])
   @@index([billingType])
+  @@index([appSlug])
   @@map("tools")
   @@schema("catalog")
 }

@@ -1,11 +1,22 @@
 import type { OrderRepository } from "@/src/domain/orders";
 import type { UserRepository } from "@/src/domain/identity/entities";
+import type { ToolType } from "@/src/domain/tool";
 
 export interface StatisticsDeps {
   orders: OrderRepository;
   users: UserRepository;
   skills: { countAll(): Promise<number>; countPublished(): Promise<number> };
   articles: { countPublished(): Promise<number> };
+  tools: { countPublished(): Promise<number>; countPublishedByType(): Promise<Record<ToolType, number>> };
+}
+
+/** Số liệu công khai cho trang chủ — luôn đếm thật từ DB, không dùng con số marketing. */
+export interface PublicMetrics {
+  publishedSkills: number;
+  publishedTools: number;
+  toolsByType: Record<ToolType, number>;
+  activeAccounts: number;
+  publishedArticles: number;
 }
 
 export interface DashboardMetrics {
@@ -44,6 +55,17 @@ export interface UserStatistics {
 
 export function createStatistics(deps: StatisticsDeps) {
   return {
+    async getPublicMetrics(): Promise<PublicMetrics> {
+      const [publishedSkills, publishedTools, toolsByType, activeAccounts, publishedArticles] = await Promise.all([
+        deps.skills.countPublished(),
+        deps.tools.countPublished(),
+        deps.tools.countPublishedByType(),
+        deps.users.countActive(),
+        deps.articles.countPublished(),
+      ]);
+      return { publishedSkills, publishedTools, toolsByType, activeAccounts, publishedArticles };
+    },
+
     async getDashboardMetrics(): Promise<DashboardMetrics> {
       const [totalUsers, activeUsers, totalSkills, publishedSkills, totalArticles, byStatus, revenue, engagement, topSkills, recentOrders] =
         await Promise.all([

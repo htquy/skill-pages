@@ -19,9 +19,26 @@ const CURRENCIES = ["USD", "VND", "EUR"] as const;
 /** Dòng giá mẫu khi tạo mới: 1 tháng, USD — admin sửa trực tiếp trên form. */
 const DRAFT_PRICE: ToolPriceInfo = { currency: "USD", amount: 0, durationDays: 30 };
 
-export function ToolForm({ tool, dict }: { tool?: ToolAdminDetail; dict: Dict }) {
+export interface LinkableApp {
+  slug: string;
+  name: string;
+}
+
+export function ToolForm({
+  tool,
+  apps,
+  defaultAppSlug,
+  dict,
+}: {
+  tool?: ToolAdminDetail;
+  /** Ứng dụng (module apps) có thể gắn vào trang này để bán gói. */
+  apps: LinkableApp[];
+  defaultAppSlug?: string;
+  dict: Dict;
+}) {
   const action = tool ? updateToolAction.bind(null, tool.id) : createToolAction;
   const prices = tool?.prices.length ? tool.prices : [DRAFT_PRICE];
+  const appSlug = tool?.appSlug ?? defaultAppSlug ?? "";
 
   return (
     <form action={action} className="space-y-6">
@@ -73,19 +90,25 @@ export function ToolForm({ tool, dict }: { tool?: ToolAdminDetail; dict: Dict })
         </Field>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field label={dict.admin.forms.coverImageUrl} hint={dict.admin.forms.coverImageHint}>
-          <TextInput
-            name="coverImageUrl"
-            type="url"
-            defaultValue={tool?.coverImageUrl ?? ""}
-            maxLength={2000}
-          />
-        </Field>
-        <Field label={dict.admin.forms.appUrl} hint={dict.admin.forms.appUrlHint}>
-          <TextInput name="appUrl" type="url" defaultValue={tool?.appUrl ?? ""} maxLength={2000} />
-        </Field>
-      </div>
+      <Field label={dict.admin.forms.linkedApp} hint={dict.admin.forms.linkedAppHint}>
+        <Select name="appSlug" defaultValue={appSlug}>
+          <option value="">{dict.admin.forms.linkedAppNone}</option>
+          {apps.map((app) => (
+            <option key={app.slug} value={app.slug}>
+              {app.name} ({app.slug})
+            </option>
+          ))}
+        </Select>
+      </Field>
+
+      <Field label={dict.admin.forms.coverImageUrl} hint={dict.admin.forms.coverImageHint}>
+        <TextInput
+          name="coverImageUrl"
+          type="url"
+          defaultValue={tool?.coverImageUrl ?? ""}
+          maxLength={2000}
+        />
+      </Field>
 
       <VideoDemoField
         defaultValue={tool?.videoDemoUrl ?? ""}
@@ -113,18 +136,6 @@ export function ToolForm({ tool, dict }: { tool?: ToolAdminDetail; dict: Dict })
           </Field>
         </div>
 
-        <Field
-          label={dict.admin.forms.toolScriptUrl}
-          hint={dict.admin.forms.toolScriptUrlHint}
-        >
-          <TextInput
-            name="scriptUrl"
-            type="url"
-            defaultValue={tool?.version?.scriptUrl ?? ""}
-            maxLength={2000}
-          />
-        </Field>
-
         <ToolFileField
           defaultValue={{
             url: tool?.version?.fileUrl ?? "",
@@ -137,11 +148,39 @@ export function ToolForm({ tool, dict }: { tool?: ToolAdminDetail; dict: Dict })
         />
       </fieldset>
 
+      <fieldset className="space-y-5 rounded-2xl border border-brand-200 bg-brand-50/30 p-5">
+        <legend className="px-1 text-sm font-semibold text-brand-700">
+          {dict.admin.forms.productLinkTitle}
+        </legend>
+        <p className="text-xs text-zinc-500">{dict.admin.forms.productLinkHint}</p>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label={dict.admin.forms.appUrl} hint={dict.admin.forms.appUrlHint}>
+            <TextInput
+              name="appUrl"
+              type="url"
+              defaultValue={tool?.appUrl ?? ""}
+              placeholder="https://app.example.com"
+              maxLength={2000}
+            />
+          </Field>
+          <Field label={dict.admin.forms.toolScriptUrl} hint={dict.admin.forms.toolScriptUrlHint}>
+            <TextInput
+              name="scriptUrl"
+              type="url"
+              defaultValue={tool?.version?.scriptUrl ?? ""}
+              placeholder="https://github.com/org/repo/releases/latest"
+              maxLength={2000}
+            />
+          </Field>
+        </div>
+      </fieldset>
+
       <fieldset className="rounded-2xl border border-zinc-200 p-5">
         <legend className="px-1 text-sm font-medium text-zinc-700">
           {dict.admin.forms.pricePlans}
         </legend>
-        <p className="mb-4 text-xs text-zinc-400">{dict.admin.forms.pricePlansHint}</p>
+        <p className="mb-1 text-xs text-zinc-400">{dict.admin.forms.pricePlansHint}</p>
+        <p className="mb-4 text-xs text-amber-600">{dict.admin.forms.pricePlansLinkedHint}</p>
         <div className="space-y-4">
           {prices.map((price, index) => (
             <PriceRow key={index} price={price} dict={dict} />

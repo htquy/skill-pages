@@ -26,6 +26,18 @@ export function compareVersions(a: string, b: string): number {
   for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] > y[i] ? 1 : -1;
   return 0;
 }
+/** https://github.com/{owner}/{repo}/releases/download/{tag}/{asset} → các phần; null nếu không phải asset release GitHub. */
+export function parseGitHubReleaseUrl(url: string): { owner: string; repo: string; tag: string; asset: string } | null {
+  let value: URL;
+  try { value = new URL(url); } catch { return null; }
+  if (value.protocol !== "https:" || value.hostname !== "github.com" || value.search || value.hash) return null;
+  const parts = value.pathname.split("/");
+  if (parts.length !== 7 || parts[3] !== "releases" || parts[4] !== "download") return null;
+  try {
+    const [owner, repo, , , tag, asset] = parts.slice(1).map(decodeURIComponent);
+    return owner && repo && tag && asset ? { owner, repo, tag, asset } : null;
+  } catch { return null; }
+}
 export function relativePath(value: string, allowEmpty = false): boolean {
   return (allowEmpty && value === "") || (value.length > 0 && value.length <= 240 &&
     !/[\\:*?"<>|\x00-\x1f]/.test(value) && !value.startsWith("/") &&

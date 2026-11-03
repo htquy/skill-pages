@@ -4,7 +4,7 @@ import { NotFoundError, ValidationError } from "@/src/domain/errors";
 
 export class DistributionService {
   constructor(private apps: AppRepository, private repository: DistributionRepository,
-    private storage: { verify(url: string, size: number): Promise<void> }) {}
+    private storage: { verify(url: string, size: number, sha256: string): Promise<void> }) {}
   private async app(slug: string) {
     const app = await this.apps.findAppBySlug(slug);
     if (!app) throw new NotFoundError("App không tồn tại");
@@ -26,7 +26,7 @@ export class DistributionService {
     if (input.format === "FILE" && (input.installDirectory !== "" || input.entryPoint !== input.fileName))
       throw new ValidationError("FILE dùng thư mục Binaries và entryPoint bằng fileName");
     if ((input.format === "ZIP") !== input.fileName.toLowerCase().endsWith(".zip")) throw new ValidationError("Định dạng và đuôi file không khớp");
-    await this.storage.verify(input.url, input.size);
+    await this.storage.verify(input.url, input.size, input.sha256);
     return this.repository.saveSource(app.id, input, id);
   }
   async deleteSource(slug: string, id: string) { return this.repository.deleteSource((await this.app(slug)).id, id); }

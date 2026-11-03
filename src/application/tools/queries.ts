@@ -23,5 +23,9 @@ export function createToolQueries(deps: ToolsDeps) {
     findBySlug(slug: string): Promise<ToolDetail | null> {
       return deps.tools.findBySlug(slug);
     },
+
+    findByAppSlug(appSlug: string): Promise<ToolSummary | null> {
+      return deps.tools.findByAppSlug(appSlug);
+    },
   };
 }

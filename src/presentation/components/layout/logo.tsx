@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { Store } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { siteConfig } from "@/src/lib/site";
 
-// "PromptWorks" → "Prompt" + "Works": tô màu từ cuối của tên ghép kiểu PascalCase.
+// "StoreWorks" → "Store" + "Works": tô màu từ cuối của tên ghép kiểu PascalCase.
 const nameMatch = /^(.+?)([A-Z][a-z]+)$/.exec(siteConfig.name);
 const nameHead = nameMatch ? nameMatch[1] : siteConfig.name;
 const nameTail = nameMatch ? nameMatch[2] : "";
@@ -16,7 +16,7 @@ export function Logo({ className }: { className?: string }) {
       className={cn("group flex items-center gap-2 font-semibold tracking-tight", className)}
     >
       <span className="relative flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 via-violet-600 to-brand-700 text-white shadow-glow transition-transform duration-500 ease-spring group-hover:-rotate-6 group-hover:scale-105">
-        <Sparkles className="size-4" aria-hidden="true" />
+        <Store className="size-4" aria-hidden="true" />
         {/* Đốm hổ phách: điểm nhấn ấm duy nhất của logo. */}
         <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-spark-400 ring-2 ring-white" aria-hidden="true" />
       </span>

@@ -175,6 +175,9 @@ export interface AppRepository {
   }): Promise<SubscriptionPlanRecord>;
   /** Thêm hoặc sửa giá của một kỳ hạn (khóa: plan + months + currency). */
   upsertPlanPrice(planId: string, data: { months: number; amount: number; currency?: string; isActive?: boolean }): Promise<PlanPriceRecord>;
+  /** Xóa gói; throw ConflictError nếu đã có người đăng ký (hãy "Ngừng bán" thay vì xóa). */
+  deletePlan(id: string): Promise<void>;
+  deletePlanPrice(planId: string, priceId: string): Promise<void>;
   findPlanPriceById(id: string): Promise<(PlanPriceRecord & { plan: SubscriptionPlanRecord }) | null>;
 
   listMenuItemsForApp(appId: string): Promise<AppMenuItemRecord[]>;

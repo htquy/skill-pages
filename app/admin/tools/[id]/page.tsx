@@ -110,7 +110,30 @@ export default async function AdminToolDetailPage({ params }: { params: Promise<
                 label={dict.admin.tools.billing}
                 value={dict.tools.billingTypes[tool.billingType]}
               />
-              <Row label={dict.admin.forms.appUrl} value={tool.appUrl ?? "—"} />
+              <div className="flex items-start justify-between gap-4">
+                <dt className="shrink-0 text-zinc-500">{dict.admin.tools.productLink}</dt>
+                <dd className="break-all text-right font-medium">
+                  {tool.productUrl ? (
+                    <a href={tool.productUrl} target="_blank" rel="noreferrer" className="text-brand-700 hover:underline">
+                      {tool.productUrl}
+                    </a>
+                  ) : (
+                    <span className="text-red-600">{dict.admin.tools.missingLink}</span>
+                  )}
+                </dd>
+              </div>
+              <div className="flex items-start justify-between gap-4">
+                <dt className="shrink-0 text-zinc-500">{dict.admin.tools.linkedApp}</dt>
+                <dd className="text-right font-medium">
+                  {tool.appSlug ? (
+                    <Link href="/admin/apps" className="text-brand-700 hover:underline">
+                      {tool.appSlug} · {dict.admin.tools.managePlans}
+                    </Link>
+                  ) : (
+                    <span className="text-amber-600">{dict.admin.tools.notLinked}</span>
+                  )}
+                </dd>
+              </div>
               <Row
                 label={dict.admin.skills.published}
                 value={tool.publishedAt ? formatDate(tool.publishedAt) : "—"}

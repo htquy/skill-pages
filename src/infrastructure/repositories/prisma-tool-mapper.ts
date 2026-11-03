@@ -17,6 +17,19 @@ export function readAppUrl(config: Prisma.JsonValue | null): string | null {
   return typeof value === "string" && value ? value : null;
 }
 
+/**
+ * Đường dẫn tới sản phẩm theo loại: Web app mở bằng URL truy cập, các loại còn lại (app/tool/MCP/widget)
+ * tải về từ tệp đã upload hoặc link tải nhập tay của phiên bản mới nhất.
+ */
+export function productUrlOf(
+  type: string,
+  config: Prisma.JsonValue | null,
+  version: { fileUrl: string | null; scriptUrl: string | null } | undefined,
+): string | null {
+  if (type === "WEB_APP") return readAppUrl(config);
+  return version?.fileUrl || version?.scriptUrl || null;
+}
+
 export function toPriceInfo(price: {
   currency: string;
   amount: number;

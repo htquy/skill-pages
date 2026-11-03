@@ -7,10 +7,11 @@ import { getDictionary } from "@/src/lib/i18n";
 export async function SiteFooter() {
   const dict = await getDictionary();
   const footerLinks = [
-    { href: "/", label: dict.nav.discover },
+    { href: "/", label: dict.nav.home },
+    { href: "/tools", label: dict.nav.tools },
+    { href: "/skills", label: dict.nav.skills },
     { href: "/news", label: dict.nav.aiNews },
     { href: "/rankings", label: dict.nav.rankings },
-    { href: "/tools", label: dict.nav.tools },
     { href: "/search", label: dict.nav.search },
   ] as const;
 

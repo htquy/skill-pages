@@ -112,6 +112,7 @@ export const statistics = createStatistics({
   users: prismaUserRepository,
   skills: prismaSkillAdminRepository,
   articles: prismaNewsAdminRepository,
+  tools: prismaToolAdminRepository,
 });
 
 export const skillAdminCommands = createSkillAdminCommands({
@@ -122,6 +123,7 @@ export const skillAdminCommands = createSkillAdminCommands({
 export const toolAdminCommands = createToolAdminCommands({
   tools: prismaToolAdminRepository,
   audit: prismaAuditLogRepository,
+  apps: { exists: async (slug) => (await prismaAppRepository.findAppBySlug(slug)) !== null },
 });
 
 export const articleAdminCommands = createArticleAdminCommands({

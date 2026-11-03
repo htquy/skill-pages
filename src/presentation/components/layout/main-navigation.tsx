@@ -5,10 +5,11 @@ import { NavLink } from "@/src/presentation/components/layout/nav-link";
 export async function MainNavigation({ className }: { className?: string }) {
   const dict = await getDictionary();
   const labels: Record<string, string> = {
-    "/": dict.nav.discover,
+    "/": dict.nav.home,
+    "/tools": dict.nav.tools,
+    "/skills": dict.nav.skills,
     "/news": dict.nav.aiNews,
     "/rankings": dict.nav.rankings,
-    "/tools": dict.nav.tools,
   };
 
   return (

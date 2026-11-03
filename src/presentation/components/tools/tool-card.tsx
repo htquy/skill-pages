@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Download, ExternalLink } from "lucide-react";
 import type { ToolCardViewModel } from "@/src/presentation/view-models/tool";
 import { getDictionary, trans } from "@/src/lib/i18n";
 
@@ -8,10 +8,7 @@ export async function ToolCard({ tool }: { tool: ToolCardViewModel }) {
   const dict = await getDictionary();
 
   return (
-    <Link
-      href={`/tools/${tool.slug}`}
-      className="group card-lift card-topline relative flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
-    >
+    <article className="group card-lift card-topline relative flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
       {tool.coverImageUrl ? (
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-zinc-100">
           <Image
@@ -36,16 +33,25 @@ export async function ToolCard({ tool }: { tool: ToolCardViewModel }) {
           <span className="rounded-full bg-brand-50 px-2.5 py-0.5 font-medium text-brand-700">
             {dict.tools.types[tool.type]}
           </span>
-          <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 font-medium text-zinc-600">
-            {dict.tools.billingTypes[tool.billingType]}
-          </span>
+          {tool.hasPlans ? (
+            <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 font-medium text-emerald-700">
+              {dict.tools.hasPlans}
+            </span>
+          ) : (
+            <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 font-medium text-zinc-600">
+              {dict.tools.billingTypes[tool.billingType]}
+            </span>
+          )}
           {tool.latestVersion ? (
             <span className="text-zinc-400">{trans(dict.tools.latestVersion, { version: tool.latestVersion })}</span>
           ) : null}
         </div>
 
         <h3 className="mt-3 text-base font-semibold leading-snug text-zinc-900 group-hover:text-brand-700">
-          {tool.title}
+          {/* Link phủ toàn thẻ (after:inset-0); nút sản phẩm bên dưới nằm trên lớp này nên vẫn bấm riêng được. */}
+          <Link href={`/tools/${tool.slug}`} className="after:absolute after:inset-0 after:content-['']">
+            {tool.title}
+          </Link>
         </h3>
         <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-zinc-600">{tool.description}</p>
 
@@ -63,7 +69,23 @@ export async function ToolCard({ tool }: { tool: ToolCardViewModel }) {
             />
           </span>
         </div>
+
+        {tool.productLink ? (
+          <a
+            href={tool.productLink.href}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="relative z-10 mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-100"
+          >
+            {tool.productLink.kind === "access" ? (
+              <ExternalLink className="size-4" aria-hidden="true" />
+            ) : (
+              <Download className="size-4" aria-hidden="true" />
+            )}
+            {tool.productLink.kind === "access" ? dict.tools.access : dict.tools.download}
+          </a>
+        ) : null}
       </div>
-    </Link>
+    </article>
   );
 }

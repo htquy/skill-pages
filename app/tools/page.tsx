@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { Suspense } from "react";
 import { Container } from "@/src/presentation/components/layout/container";
 import { PageHeader } from "@/src/presentation/components/layout/page-header";
+import { FaqSection } from "@/src/presentation/components/landing/faq-section";
 import { ToolGrid } from "@/src/presentation/components/tools/tool-grid";
 import { ToolGridSkeleton } from "@/src/presentation/components/tools/tool-grid-skeleton";
 import { EmptyState } from "@/src/presentation/components/shared/empty-state";
@@ -12,8 +13,8 @@ import {
   FilterSubmitButton,
   FilterClearLink,
 } from "@/src/presentation/components/shared/filter-form";
-import { toToolCardViewModel } from "@/src/presentation/view-models/tool";
-import { toolQueries } from "@/src/infrastructure/composition";
+import { lowestPlanPrice, toToolCardViewModel } from "@/src/presentation/view-models/tool";
+import { appsService, toolQueries } from "@/src/infrastructure/composition";
 import type { ToolBillingType, ToolListFilters, ToolType } from "@/src/domain/tool";
 import { paginationSchema, toolFiltersSchema } from "@/src/lib/validation";
 import { getDictionary, trans } from "@/src/lib/i18n";
@@ -93,8 +94,14 @@ interface ToolListingProps {
 }
 
 async function ToolListing({ filters, pagination, searchParams }: ToolListingProps) {
-  const [dict, result] = await Promise.all([getDictionary(), toolQueries.list(filters, pagination)]);
-  const tools = result.items.map(toToolCardViewModel);
+  const [dict, result, apps] = await Promise.all([
+    getDictionary(),
+    toolQueries.list(filters, pagination),
+    appsService.listActiveApps(),
+  ]);
+  // Tool liên kết app hiển thị giá gói thật (mua được), không phải giá tham khảo của catalog.
+  const appPrices = new Map(apps.map((app) => [app.slug, lowestPlanPrice(app.plans)]));
+  const tools = result.items.map((tool) => toToolCardViewModel(tool, appPrices, dict));
 
   if (tools.length === 0) {
     return <EmptyState title={dict.tools.emptyTitle} description={dict.tools.emptyDescription} />;
@@ -136,17 +143,21 @@ export default async function ToolsPage({ searchParams }: Props) {
   const dict = await getDictionary();
 
   return (
-    <Container className="py-12 md:py-16">
-      <PageHeader eyebrow={dict.tools.eyebrow} title={dict.tools.title} subtitle={dict.tools.subtitle} />
+    <>
+      <Container className="py-12 md:py-16">
+        <PageHeader eyebrow={dict.tools.eyebrow} title={dict.tools.title} subtitle={dict.tools.subtitle} />
 
-      <ToolFilters filters={filters} resetKey={filterKey(filters)} />
+        <ToolFilters filters={filters} resetKey={filterKey(filters)} />
 
-      <Suspense
-        key={filterKey(filters)}
-        fallback={<ToolGridSkeleton count={6} label={dict.common.loading} />}
-      >
-        <ToolListing filters={filters} pagination={pagination} searchParams={sp} />
-      </Suspense>
-    </Container>
+        <Suspense
+          key={filterKey(filters)}
+          fallback={<ToolGridSkeleton count={6} label={dict.common.loading} />}
+        >
+          <ToolListing filters={filters} pagination={pagination} searchParams={sp} />
+        </Suspense>
+      </Container>
+
+      <FaqSection badge={dict.tools.faq.badge} title={dict.tools.faq.title} items={dict.tools.faq.items} />
+    </>
   );
 }

@@ -1,4 +1,4 @@
-# PromptWorks — Curated AI skills, news and rankings
+# StoreWorks — AI tool store (web apps, MCP servers, widgets) and skill library
 
 A marketing-and-commerce platform for curated AI **skills** (prompts, workflows and templates),
 **AI news**, and **tool rankings**, built with Next.js (App Router), Prisma + PostgreSQL and Auth.js.

@@ -67,7 +67,7 @@ async function ToolsTable({ filters, page }: { filters: AdminToolFilters; page: 
                 <th className="px-5 py-3 font-medium text-zinc-500">{dict.admin.tools.toolHeader}</th>
                 <th className="px-5 py-3 font-medium text-zinc-500">{dict.common.status}</th>
                 <th className="px-5 py-3 font-medium text-zinc-500">{dict.admin.tools.type}</th>
-                <th className="px-5 py-3 font-medium text-zinc-500">{dict.admin.tools.billing}</th>
+                <th className="px-5 py-3 font-medium text-zinc-500">{dict.admin.tools.linkedApp}</th>
                 <th className="px-5 py-3 font-medium text-zinc-500">{dict.admin.tools.price}</th>
                 <th className="px-5 py-3 font-medium text-zinc-500">{dict.admin.tools.version}</th>
                 <th className="px-5 py-3 font-medium text-zinc-500">{dict.common.updated}</th>
@@ -84,13 +84,22 @@ async function ToolsTable({ filters, page }: { filters: AdminToolFilters; page: 
                       {tool.title}
                     </Link>
                     <p className="text-xs text-zinc-400">{tool.slug}</p>
+                    {tool.productUrl ? null : (
+                      <p className="mt-0.5 text-xs font-medium text-red-600">{dict.admin.tools.missingLink}</p>
+                    )}
                   </td>
                   <td className="px-5 py-3">
                     <StatusBadge status={tool.status} />
                   </td>
                   <td className="px-5 py-3 text-zinc-600">{dict.tools.types[tool.type]}</td>
-                  <td className="px-5 py-3 text-zinc-600">
-                    {dict.tools.billingTypes[tool.billingType]}
+                  <td className="px-5 py-3">
+                    {tool.appSlug ? (
+                      <Link href="/admin/apps" className="text-brand-700 hover:underline">
+                        {tool.appSlug}
+                      </Link>
+                    ) : (
+                      <span className="text-xs text-amber-600">{dict.admin.tools.notLinked}</span>
+                    )}
                   </td>
                   <td className="px-5 py-3 text-zinc-600">
                     {tool.billingType === "FREE"
@@ -140,6 +149,7 @@ export default async function AdminToolsPage({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900">{dict.admin.tools.title}</h1>
+          <p className="mt-1 max-w-2xl text-sm text-zinc-500">{dict.admin.tools.explainer}</p>
         </div>
         <Link
           href="/admin/tools/new"

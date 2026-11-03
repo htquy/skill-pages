@@ -26,6 +26,8 @@ function toSummary(tool: ToolWithList): ToolSummary {
     billingType: tool.billingType,
     coverImageUrl: tool.coverImageUrl,
     appUrl: readAppUrl(tool.config),
+    appSlug: tool.appSlug,
+    downloadUrl: tool.versions[0]?.fileUrl || tool.versions[0]?.scriptUrl || null,
     lowestPrice: tool.prices[0] ? toPriceInfo(tool.prices[0]) : null,
     latestVersion: tool.versions[0]?.versionCode ?? null,
   };
@@ -88,5 +90,14 @@ export const prismaToolRepository: ToolRepository = {
       publishedAt: tool.publishedAt,
     };
     return detail;
+  },
+
+  async findByAppSlug(appSlug) {
+    const tool = await prisma.tool.findFirst({
+      where: { appSlug, status: "PUBLISHED" },
+      include: listInclude,
+      orderBy: { publishedAt: "desc" },
+    });
+    return tool ? toSummary(tool) : null;
   },
 };

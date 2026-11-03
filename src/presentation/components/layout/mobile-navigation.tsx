@@ -8,10 +8,11 @@ import { publicNav } from "@/src/lib/site";
 import { NavLink } from "@/src/presentation/components/layout/nav-link";
 
 const labels: Record<string, keyof Dict["nav"]> = {
-  "/": "discover",
+  "/": "home",
+  "/tools": "tools",
+  "/skills": "skills",
   "/news": "aiNews",
   "/rankings": "rankings",
-  "/tools": "tools",
 };
 
 export function MobileNavigation({ dict }: { dict: Dict }) {
@@ -48,7 +49,7 @@ export function MobileNavigation({ dict }: { dict: Dict }) {
               <NavLink
                 key={item.href}
                 href={item.href}
-                label={dict.nav[labels[item.href] ?? "discover"]}
+                label={dict.nav[labels[item.href] ?? "home"]}
                 className="px-2 py-2.5 text-base"
               />
             ))}

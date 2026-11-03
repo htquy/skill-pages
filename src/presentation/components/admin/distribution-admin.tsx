@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import type { AppSourceRecord, AppReleaseRecord, SourceInput } from "@/src/domain/apps/distribution";
+import { parseGitHubReleaseUrl, type AppSourceRecord, type AppReleaseRecord, type SourceInput } from "@/src/domain/apps/distribution";
 import { useR2Upload } from "@/src/presentation/components/upload/use-r2-upload";
 
 const initial: SourceInput = { key: "app", name: "VideoTool", version: "1.0.1", kind: "APPLICATION", format: "ZIP",
@@ -46,6 +46,23 @@ export function DistributionAdmin({ apps }: { apps: { slug: string; name: string
     setEditId(pinned ? undefined : row.id); setSource(row); setRequiredFiles(row.requiredFiles.join("\n")); setMetadata(JSON.stringify(row.metadata, null, 2));
     if (pinned) setMessage("File đã ghim được mở làm mẫu. Đổi version và upload file mới để tạo phiên bản mới.");
   }
+  async function fillFromGitHub() {
+    const release = parseGitHubReleaseUrl(source.url); if (!release) return;
+    setBusy(true); setMessage("");
+    try {
+      const response = await fetch(`https://api.github.com/repos/${encodeURIComponent(release.owner)}/${encodeURIComponent(release.repo)}/releases/tags/${encodeURIComponent(release.tag)}`,
+        { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" });
+      if (!response.ok) throw new Error(response.status === 404 ? "Không tìm thấy GitHub Release public cho tag này" : `GitHub API HTTP ${response.status}`);
+      const data = await response.json() as { assets?: { name: string; size: number; digest?: string | null }[] };
+      const asset = data.assets?.find(a => a.name === release.asset);
+      if (!asset) throw new Error(`Release ${release.tag} không có file ${release.asset}`);
+      const sha256 = asset.digest?.startsWith("sha256:") ? asset.digest.slice(7) : "";
+      const tagVersion = /^v?(\d+\.\d+\.\d+)$/.exec(release.tag)?.[1];
+      setSource(s => ({ ...s, fileName: asset.name, size: asset.size, sha256: sha256 || s.sha256, version: tagVersion ?? s.version }));
+      setMessage(sha256 ? "Đã lấy thông tin từ GitHub." : "Đã lấy dung lượng; GitHub chưa có digest, hãy nạp file .sha256.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : String(error)); }
+    finally { setBusy(false); }
+  }
   function input(name: keyof SourceInput, label: string, type = "text") {
     return <label className="text-sm">{label}<input className={fieldClass} type={type} required
       value={String(source[name])} onChange={e => setSource({ ...source, [name]: type === "number" ? Number(e.target.value) : e.target.value })} /></label>;
@@ -70,13 +87,14 @@ export function DistributionAdmin({ apps }: { apps: { slug: string; name: string
         <label className="text-sm">Platform<input className={fieldClass} value="win-x64" readOnly /></label>
         {input("fileName", "Tên file tải về")}{input("entryPoint", "File bắt buộc sau giải nén")}
         <label className="text-sm">Thư mục trong Binaries (ZIP tài nguyên)<input className={fieldClass} value={source.installDirectory} onChange={e => setSource({ ...source, installDirectory: e.target.value })} /></label>
-        <label className="text-sm md:col-span-2">URL Cloudflare<input className={fieldClass} type="url" required value={source.url} onChange={e => setSource({ ...source, url: e.target.value })} /></label>
+        <label className="text-sm md:col-span-2">URL tải (Cloudflare R2 hoặc GitHub Release)<input className={fieldClass} type="url" required placeholder="https://github.com/owner/repo/releases/download/v1.0.0/App-1.0.0-win-x64.zip" value={source.url} onChange={e => setSource({ ...source, url: e.target.value.trim() })} />
+          {parseGitHubReleaseUrl(source.url) && <button type="button" disabled={busy} className={buttonClass + " mt-2"} onClick={() => void fillFromGitHub()}>Lấy tên file, dung lượng, SHA-256 từ GitHub</button>}</label>
         {input("size", "Dung lượng byte", "number")}
         <label className="text-sm md:col-span-2">SHA-256<input required pattern="[a-fA-F0-9]{64}" className={fieldClass} value={source.sha256} onChange={e => setSource({ ...source, sha256: e.target.value.trim() })} /></label>
         <label className="text-sm">Nạp file .sha256<input className={fieldClass} type="file" accept=".sha256,.txt" onChange={async e => {
           const file = e.target.files?.[0]; if (file && file.size < 4096) { const hash = (await file.text()).trim().split(/\s+/)[0]; setSource(s => ({ ...s, sha256: hash })); }
         }} /></label>
-        <label className="text-sm md:col-span-2">Upload gói/file lên R2 (tối đa 20 GiB)<input disabled={uploading || busy} className={fieldClass} type="file" accept=".zip,.exe,.onnx,.bin,.safetensors" onChange={async e => {
+        <label className="text-sm md:col-span-2">Hoặc upload gói/file lên R2 (tối đa 20 GiB)<input disabled={uploading || busy} className={fieldClass} type="file" accept=".zip,.exe,.onnx,.bin,.safetensors" onChange={async e => {
           const file = e.target.files?.[0]; if (!file) return;
           const url = await upload(file); if (url) setSource(s => ({ ...s, url, fileName: file.name, size: file.size, sha256: "" }));
         }} /></label>

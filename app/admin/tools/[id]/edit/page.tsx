@@ -4,14 +4,18 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Container } from "@/src/presentation/components/layout/container";
 import { requireAdmin } from "@/src/infrastructure/authentication/authorization";
-import { toolAdminCommands } from "@/src/infrastructure/composition";
+import { appsService, toolAdminCommands } from "@/src/infrastructure/composition";
 import { getDictionary } from "@/src/lib/i18n";
 import { ToolForm } from "@/src/presentation/components/admin/tool-form";
 
 export default async function AdminToolEditPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
   const { id } = await params;
-  const [dict, tool] = await Promise.all([getDictionary(), toolAdminCommands.getDetail(id)]);
+  const [dict, tool, apps] = await Promise.all([
+    getDictionary(),
+    toolAdminCommands.getDetail(id),
+    appsService.listActiveApps(),
+  ]);
   if (!tool) notFound();
 
   return (
@@ -27,7 +31,11 @@ export default async function AdminToolEditPage({ params }: { params: Promise<{ 
         <p className="mt-1 text-zinc-500">{dict.admin.tools.editSubtitle}</p>
       </div>
       <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <ToolForm dict={dict} tool={tool} />
+        <ToolForm
+          dict={dict}
+          tool={tool}
+          apps={apps.map((app) => ({ slug: app.slug, name: app.name }))}
+        />
       </div>
     </Container>
   );

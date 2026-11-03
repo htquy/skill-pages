@@ -49,6 +49,8 @@ Dùng chung `AppEndpoints`, không hardcode URL khác trong updater. Cần chạ
 
 Server dùng cấu hình R2 sẵn có trong `.env.example`. Bucket CORS phải cho phép PUT từ origin web/local, expose `ETag` cho multipart. Upload app-source tối đa 20 GiB, part 64 MiB; URL upload part có hạn 6 giờ để đủ thời gian cho model lớn. Các loại upload cũ giữ giới hạn 2 GiB và hạn URL hiện có. Admin có thể nhập URL có sẵn thuộc R2 đã cấu hình, trong `app-sources/`, `tools/` hoặc `tool-files/`. Server HEAD object bằng S3 API để kiểm tra file tồn tại và dung lượng; client kiểm tra SHA256 khi tải.
 
+Không bắt buộc dùng R2: URL có thể là asset của GitHub Release public, dạng `https://github.com/{owner}/{repo}/releases/download/{tag}/{file}`. Server gọi GitHub API (`/repos/{owner}/{repo}/releases/tags/{tag}`) để kiểm tra asset tồn tại, đúng dung lượng và đúng SHA-256 (khi GitHub có `digest`). Trang admin có nút lấy tên file, dung lượng, SHA-256 và version từ tag. Đặt `GITHUB_TOKEN` (tùy chọn) nếu vượt rate limit 60 req/giờ. Repo phải public vì máy khách tải trực tiếp không kèm credential.
+
 ## Phát hành từ GitHub (khuyến nghị)
 
 GitHub là nơi giữ version: mỗi bản phát hành là một tag `vX.Y.Z` trên repo DirectorCraft.NativeAOT.

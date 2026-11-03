@@ -4,13 +4,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Download, ExternalLink } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, ExternalLink } from "lucide-react";
 import { Container } from "@/src/presentation/components/layout/container";
 import { RichText } from "@/src/presentation/components/shared/rich-text";
-import { toolQueries } from "@/src/infrastructure/composition";
+import { appsService, distributionService, toolQueries } from "@/src/infrastructure/composition";
+import { isAppError } from "@/src/domain/errors";
 import { formatMoney } from "@/src/domain/shared";
 import { getVideoEmbedUrl, isDirectVideoUrl } from "@/src/lib/video";
-import { periodLabel } from "@/src/presentation/view-models/tool";
+import { lowestPlanPrice, periodLabel, productLinkOf } from "@/src/presentation/view-models/tool";
 import { formatSize } from "@/src/presentation/components/upload/format-size";
 import { getDictionary, trans } from "@/src/lib/i18n";
 
@@ -33,17 +34,47 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+/** Gói đang bán của app liên kết (qua facade AppsService); app bị xoá/ẩn thì coi như chưa liên kết. */
+async function loadLinkedApp(appSlug: string | null) {
+  if (!appSlug) return null;
+  try {
+    return await appsService.getApp(appSlug);
+  } catch (error) {
+    if (isAppError(error) && error.status === 404) return null;
+    throw error;
+  }
+}
+
+/** Bản phát hành đang PUBLISHED (kênh stable) của app liên kết; chưa có hoặc lỗi thì để trang dùng link của tool. */
+async function loadPublishedRelease(appSlug: string | null) {
+  if (!appSlug) return null;
+  try {
+    return await distributionService.manifest(appSlug, "stable", "win-x64");
+  } catch (error) {
+    if (isAppError(error) && error.status === 404) return null;
+    throw error;
+  }
+}
+
 export default async function ToolDetailPage({ params }: Props) {
   const { slug } = await params;
   const [dict, tool] = await Promise.all([getDictionary(), toolQueries.findBySlug(slug)]);
   if (!tool) notFound();
+  const [linked, release] = await Promise.all([loadLinkedApp(tool.appSlug), loadPublishedRelease(tool.appSlug)]);
+  const linkedPlans = linked?.plans.filter((plan) => plan.prices.length > 0) ?? [];
+  const fromPrice = lowestPlanPrice(linkedPlans);
+  const pricingHref = linked ? `/apps/${linked.app.slug}/pricing` : null;
 
   const version = tool.version;
   const videoEmbedUrl = tool.videoDemoUrl ? getVideoEmbedUrl(tool.videoDemoUrl) : null;
   const videoFileUrl =
     tool.videoDemoUrl && isDirectVideoUrl(tool.videoDemoUrl) ? tool.videoDemoUrl : null;
-  // `appUrl` do admin nhập nên chỉ mở link ngoài, không nhúng vào trang.
-  const appUrl = tool.appUrl;
+  // Link do admin nhập nên chỉ mở link ngoài, không nhúng vào trang.
+  // Bản phát hành đã xuất bản của app (admin/app-releases) là nguồn tải chính; thiếu thì dùng link nhập tay ở tool.
+  const productLink =
+    release && tool.type !== "WEB_APP"
+      ? { href: release.application.url, kind: "download" as const }
+      : productLinkOf(tool);
   const extraConfig = Object.fromEntries(
     Object.entries(tool.config ?? {}).filter(([key]) => key !== "appUrl"),
   );
@@ -133,7 +164,40 @@ export default async function ToolDetailPage({ params }: Props) {
 
           <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-zinc-900">{dict.tools.pricingTitle}</h2>
-            {tool.billingType === "FREE" || tool.prices.length === 0 ? (
+            {pricingHref ? (
+              <>
+                {fromPrice ? (
+                  <p className="mt-3 text-2xl font-bold tabular-nums text-zinc-950">
+                    {trans(dict.tools.plansFrom, { price: formatMoney(fromPrice.amount, fromPrice.currency) })}
+                  </p>
+                ) : (
+                  <p className="mt-3 text-sm text-zinc-600">{dict.tools.noPrice}</p>
+                )}
+                {linkedPlans.length > 0 ? (
+                  <ul className="mt-3 space-y-1.5 text-sm text-zinc-600">
+                    {linkedPlans.map((plan) => (
+                      <li key={plan.id} className="flex justify-between gap-3">
+                        <span>{plan.name}</span>
+                        <span className="tabular-nums text-zinc-900">
+                          {formatMoney(
+                            Math.min(...plan.prices.map((price) => price.amount)),
+                            plan.prices[0].currency,
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                <Link
+                  href={pricingHref}
+                  className="mt-5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-500"
+                >
+                  {dict.tools.viewPlans}
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                </Link>
+                <p className="mt-3 text-xs text-zinc-400">{dict.tools.plansHint}</p>
+              </>
+            ) : tool.billingType === "FREE" || tool.prices.length === 0 ? (
               <p className="mt-3 text-sm text-zinc-600">
                 {tool.billingType === "FREE" ? dict.tools.freeToUse : dict.tools.noPrice}
               </p>
@@ -153,21 +217,56 @@ export default async function ToolDetailPage({ params }: Props) {
               </ul>
             )}
 
-            {appUrl ? (
+            {productLink ? (
               <a
-                href={appUrl}
+                href={productLink.href}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="mt-5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-500"
+                className={
+                  "inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-colors " +
+                  (pricingHref
+                    ? "mt-3 border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50"
+                    : "mt-5 bg-brand-600 text-white hover:bg-brand-500")
+                }
               >
-                {dict.tools.openApp}
-                <ExternalLink className="size-4" aria-hidden="true" />
+                {productLink.kind === "access" ? (
+                  <>
+                    {dict.tools.access}
+                    <ExternalLink className="size-4" aria-hidden="true" />
+                  </>
+                ) : (
+                  <>
+                    <Download className="size-4" aria-hidden="true" />
+                    {dict.tools.download}
+                  </>
+                )}
               </a>
             ) : null}
-            <p className="mt-4 text-xs text-zinc-400">{dict.tools.purchaseSoon}</p>
+            {pricingHref ? null : (
+              <p className="mt-4 text-xs text-zinc-400">{dict.tools.purchaseSoon}</p>
+            )}
           </section>
 
-          {version?.fileUrl || version?.scriptUrl ? (
+          {release ? (
+            <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-zinc-900">{dict.tools.versionTitle}</h2>
+              <dl className="mt-3 space-y-3 text-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <dt className="text-zinc-500">{dict.tools.versionLabel}</dt>
+                  <dd className="text-right font-medium text-zinc-800">{release.version}</dd>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <dt className="text-zinc-500">{dict.tools.downloadFile}</dt>
+                  <dd className="break-all text-right font-medium text-zinc-800">{release.application.fileName}</dd>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <dt className="text-zinc-500">{dict.tools.fileSize}</dt>
+                  <dd className="text-right font-medium text-zinc-800">{formatSize(release.application.size)}</dd>
+                </div>
+              </dl>
+              {release.notes ? <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-600">{release.notes}</p> : null}
+            </section>
+          ) : version?.fileUrl || version?.scriptUrl ? (
             <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-zinc-900">{dict.tools.versionTitle}</h2>
               <dl className="mt-3 space-y-3 text-sm">
@@ -190,15 +289,6 @@ export default async function ToolDetailPage({ params }: Props) {
                   </div>
                 ) : null}
               </dl>
-              {version.fileUrl ? (
-                <p className="mt-4 flex items-start gap-2 rounded-xl bg-zinc-50 p-3 text-xs text-zinc-500 ring-1 ring-zinc-100">
-                  <Download className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-                  <span className="break-all">{version.fileUrl}</span>
-                </p>
-              ) : null}
-              {version.scriptUrl ? (
-                <p className="mt-4 break-all text-xs text-zinc-500">{version.scriptUrl}</p>
-              ) : null}
             </section>
           ) : null}
 

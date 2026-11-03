@@ -106,7 +106,7 @@ export default async function SkillDetailPage({ params }: Props) {
   return (
     <Container className="py-10 md:py-14">
       <Link
-        href="/#catalog"
+        href="/skills"
         className="group inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-brand-700"
       >
         <ArrowLeft className="size-4 transition-transform duration-500 ease-fluid group-hover:-translate-x-1" aria-hidden="true" />

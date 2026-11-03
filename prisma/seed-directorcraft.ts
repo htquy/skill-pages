@@ -56,6 +56,20 @@ export async function seedDirectorCraft(prisma: PrismaClient, demoUserId?: strin
     where: { id: { in: ["plan-video-month", "plan-video-year"] } },
     data: { isActive: false },
   });
+  // Người đã mua gói cũ vẫn còn hạn phải dùng được app mới (xem migration legacy_video_plans_unlock_directorcraft).
+  const legacyPlans = await prisma.subscriptionPlan.findMany({
+    where: { id: { in: ["plan-video-month", "plan-video-year"] } },
+    select: { id: true },
+  });
+  for (const plan of legacyPlans) {
+    for (const feature of features) {
+      await prisma.planFeature.upsert({
+        where: { planId_featureId: { planId: plan.id, featureId: feature.id } },
+        create: { planId: plan.id, featureId: feature.id },
+        update: {},
+      });
+    }
+  }
 
   const pro = await prisma.subscriptionPlan.upsert({
     where: { id: "plan-directorcraft-pro" },
@@ -118,5 +132,22 @@ export async function seedDirectorCraft(prisma: PrismaClient, demoUserId?: strin
       update: { planId: pro.id, status: "ACTIVE", endsAt },
     });
   }
+  // Trang giới thiệu ở /tools liên kết với app: lối vào để khách tìm tới bảng giá /apps/video-tool/pricing.
+  await prisma.tool.upsert({
+    where: { slug: "directorcraft-studio" },
+    create: {
+      slug: "directorcraft-studio",
+      title: app.name,
+      shortDescription: app.description ?? app.name,
+      description: `<p>${app.description ?? app.name}</p>`,
+      type: "DOWNLOADABLE",
+      billingType: "SUBSCRIPTION",
+      status: "PUBLISHED",
+      publishedAt: new Date(),
+      appSlug: app.slug,
+    },
+    update: { appSlug: app.slug },
+  });
+
   return app;
 }
