@@ -25,7 +25,7 @@ export async function NewsCard({ article }: { article: NewsCardViewModel }) {
       ) : (
         <div className="aurora relative flex aspect-[16/9] w-full items-center justify-center bg-gradient-to-br from-brand-50 via-white to-violet-50">
           <div aria-hidden="true" className="bg-grid pointer-events-none absolute inset-0 -z-10" />
-          <p className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-600 shadow-sm ring-1 ring-brand-100 backdrop-blur">
+          <p className="rounded-full bg-white/95 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-600 shadow-sm ring-1 ring-brand-100">
             {dict.news.eyebrow}
           </p>
         </div>

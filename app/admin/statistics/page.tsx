@@ -111,13 +111,13 @@ export default async function AdminStatisticsPage() {
           )}
         </section>
 
-        <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+        <section className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
           <div className="border-b border-zinc-100 px-6 py-4">
             <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.statistics.topSkillsTable}</h2>
             <p className="text-sm text-zinc-500">{dict.admin.statistics.topSkillsTableSub}</p>
           </div>
           {sales.items.length > 0 ? (
-            <table className="w-full text-left text-sm">
+            <table className="w-full min-w-[40rem] text-left text-sm">
               <thead className="border-b bg-zinc-50">
                 <tr>
                   <th className="px-5 py-3 font-medium text-zinc-500">{dict.admin.statistics.skill}</th>

@@ -152,7 +152,6 @@ body {
       radial-gradient(38% 42% at 18% 22%, rgb(112 96 241 / 0.22), transparent 70%),
       radial-gradient(30% 36% at 82% 18%, rgb(245 123 11 / 0.14), transparent 70%),
       radial-gradient(40% 40% at 65% 85%, rgb(139 92 246 / 0.16), transparent 70%);
-    filter: blur(8px);
     animation: var(--animate-aurora);
   }
 }
@@ -172,7 +171,6 @@ body {
       radial-gradient(35% 45% at 20% 20%, rgb(112 96 241 / 0.55), transparent 70%),
       radial-gradient(30% 40% at 85% 30%, rgb(245 123 11 / 0.28), transparent 70%),
       radial-gradient(40% 45% at 55% 100%, rgb(139 92 246 / 0.45), transparent 70%);
-    filter: blur(10px);
     animation: var(--animate-aurora);
   }
 }
@@ -228,6 +226,7 @@ body {
   justify-content: center;
   gap: 0.5rem;
   border-radius: 0.75rem;
+  min-height: 2.75rem;
   padding: 0.625rem 1rem;
   font-weight: 600;
   color: var(--color-white);
@@ -248,14 +247,16 @@ body {
     transform: translateX(-120%);
     transition: transform 0.8s var(--ease-fluid);
   }
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.22),
-      0 16px 44px -12px rgb(95 69 228 / 0.6);
-  }
-  &:hover::after {
-    transform: translateX(120%);
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.22),
+        0 16px 44px -12px rgb(95 69 228 / 0.6);
+    }
+    &:hover::after {
+      transform: translateX(120%);
+    }
   }
   &:active {
     transform: translateY(0) scale(0.98);
@@ -274,6 +275,7 @@ body {
   justify-content: center;
   gap: 0.5rem;
   border-radius: 0.75rem;
+  min-height: 2.75rem;
   border: 1px solid var(--color-zinc-300);
   background: var(--color-white);
   padding: 0.625rem 1rem;
@@ -285,11 +287,13 @@ body {
     border-color 0.3s,
     color 0.3s,
     box-shadow 0.4s var(--ease-fluid);
-  &:hover {
-    transform: translateY(-1px);
-    border-color: var(--color-brand-300);
-    color: var(--color-brand-700);
-    box-shadow: 0 10px 30px -14px rgb(95 69 228 / 0.4);
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-1px);
+      border-color: var(--color-brand-300);
+      color: var(--color-brand-700);
+      box-shadow: 0 10px 30px -14px rgb(95 69 228 / 0.4);
+    }
   }
   &:active {
     transform: translateY(0) scale(0.98);
@@ -302,10 +306,12 @@ body {
     transform 0.5s var(--ease-fluid),
     box-shadow 0.5s var(--ease-fluid),
     border-color 0.3s;
-  &:hover {
-    transform: translateY(-4px);
-    border-color: var(--color-brand-200);
-    box-shadow: var(--shadow-lift);
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-4px);
+      border-color: var(--color-brand-200);
+      box-shadow: var(--shadow-lift);
+    }
   }
 }
 
@@ -375,6 +381,18 @@ body {
   }
   to {
     background-position: -200% 0;
+  }
+}
+
+/* Mobile / màn hình cảm ứng: tắt các animation lặp vô hạn (tốn pin, gây repaint liên tục). */
+@media (max-width: 767px), (hover: none) {
+  .aurora::before,
+  .aurora-dark::before,
+  .text-gradient {
+    animation: none;
+  }
+  .text-gradient {
+    background-size: 100% auto;
   }
 }
 

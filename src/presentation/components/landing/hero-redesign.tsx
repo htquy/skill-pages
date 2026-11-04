@@ -71,9 +71,9 @@ export async function HeroRedesign({ counts }: { counts: StoreCounts }) {
         <div className="relative animate-fade-up stagger lg:col-span-5" style={delay(220)}>
           <div
             aria-hidden="true"
-            className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-gradient-to-br from-brand-300/50 via-violet-300/40 to-spark-200/50 blur-2xl"
+            className="absolute -inset-6 -z-10 hidden rounded-[2.5rem] sm:block bg-gradient-to-br from-brand-300/50 via-violet-300/40 to-spark-200/50 blur-2xl"
           />
-          <div className="animate-float rounded-3xl border-gradient p-4 shadow-lift">
+          <div className="md:animate-float rounded-3xl border-gradient p-4 shadow-lift">
             <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
               <div className="flex items-center gap-2">
                 <span className="flex gap-1.5" aria-hidden="true">

@@ -10,7 +10,9 @@ interface TaglineRevealProps {
 
 export function TaglineReveal({ lead, accent }: TaglineRevealProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [activeIndices, setActiveIndices] = useState<Set<number>>(new Set());
+  // Chỉ lưu SỐ từ đã sáng: state là số nguyên nên React bỏ qua render khi giá trị không đổi
+  // (trước đây mỗi khung hình cuộn tạo một Set mới → render lại liên tục trên điện thoại).
+  const [activeCount, setActiveCount] = useState(-1);
 
   const fullText = `${lead} ${accent}`;
   const words = fullText.split(" ").filter(Boolean);
@@ -43,13 +45,7 @@ export function TaglineReveal({ lead, accent }: TaglineRevealProps) {
           );
 
           const targetCount = Math.floor(currentProgress * words.length);
-          setActiveIndices((prev) => {
-            const next = new Set<number>();
-            for (let i = 0; i <= targetCount; i++) {
-              next.add(i);
-            }
-            return next;
-          });
+          setActiveCount(targetCount);
         }
       });
     };
@@ -64,16 +60,16 @@ export function TaglineReveal({ lead, accent }: TaglineRevealProps) {
   }, [words.length]);
 
   return (
-    <section className="relative overflow-hidden border-y border-zinc-200 bg-gradient-to-b from-zinc-50 via-white to-brand-50/40 py-24 sm:py-32">
+    <section className="relative overflow-hidden border-y border-zinc-200 bg-gradient-to-b from-zinc-50 via-white to-brand-50/40 py-16 sm:py-32">
       <Container>
         <div ref={containerRef} className="mx-auto max-w-[680px] text-center">
           <p className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-5xl [text-wrap:balance]">
             {words.map((word, index) => {
-              const isActive = activeIndices.has(index);
+              const isActive = index <= activeCount;
               return (
                 <span
                   key={`${word}-${index}`}
-                  className="inline-block transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                  className="inline-block transition-[color,opacity,transform] duration-700 ease-fluid"
                   style={{
                     color: isActive
                       ? index >= accentStart

@@ -23,7 +23,7 @@ export async function SiteFooter() {
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-24 left-1/2 h-48 w-[36rem] max-w-full -translate-x-1/2 rounded-full bg-brand-200/40 blur-3xl"
+        className="pointer-events-none absolute -bottom-24 left-1/2 hidden h-48 sm:block w-[36rem] max-w-full -translate-x-1/2 rounded-full bg-brand-200/40 blur-3xl"
       />
       <Container className="relative flex flex-col gap-8 py-12 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-md">
@@ -31,17 +31,17 @@ export async function SiteFooter() {
           <p className="mt-3 text-sm leading-relaxed text-zinc-500">{dict.meta.description}</p>
         </div>
         <nav aria-label={dict.siteFooter.aria}>
-          <ul className="flex flex-wrap gap-x-6 gap-y-2">
+          <ul className="flex flex-wrap gap-x-6 gap-y-0">
             {footerLinks.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="group relative text-sm text-zinc-600 transition-colors hover:text-brand-700"
+                  className="group relative inline-flex min-h-11 items-center text-sm text-zinc-600 transition-colors hover:text-brand-700"
                 >
                   {link.label}
                   <span
                     aria-hidden="true"
-                    className="absolute inset-x-0 -bottom-0.5 h-px origin-left scale-x-0 bg-brand-500 transition-transform duration-500 ease-fluid group-hover:scale-x-100"
+                    className="absolute inset-x-0 bottom-2.5 h-px origin-left scale-x-0 bg-brand-500 transition-transform duration-500 ease-fluid group-hover:scale-x-100"
                   />
                 </Link>
               </li>

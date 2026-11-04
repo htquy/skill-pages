@@ -36,9 +36,9 @@ export default async function AdminRankingsPage({
         </Link>
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
         {result.items.length > 0 ? (
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[40rem] text-left text-sm">
             <thead className="border-b bg-zinc-50">
               <tr>
                 <th className="px-5 py-3 font-medium text-zinc-500">Ranking</th>

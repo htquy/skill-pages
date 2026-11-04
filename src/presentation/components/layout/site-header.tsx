@@ -42,7 +42,7 @@ function MobileSearchLink({ dict }: { dict: Awaited<ReturnType<typeof getDiction
     <Link
       href="/search?q="
       aria-label={dict.siteHeader.searchSkills}
-      className="rounded-lg p-1.5 text-zinc-700 transition-colors hover:bg-brand-50 hover:text-brand-700 sm:p-2 md:hidden"
+      className="hidden size-11 items-center justify-center rounded-lg text-zinc-700 transition-colors hover:bg-brand-50 hover:text-brand-700 sm:inline-flex md:hidden"
     >
       <Search className="size-5" aria-hidden="true" />
     </Link>
@@ -53,7 +53,7 @@ export async function SiteHeader() {
   const [dict, locale] = await Promise.all([getDictionary(), getLocale()]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-200/60 bg-white/75 backdrop-blur-xl backdrop-saturate-150">
+    <header className="sticky top-0 z-40 border-b border-zinc-200/60 bg-white/95 md:bg-white/75 md:backdrop-blur-xl md:backdrop-saturate-150">
       {/* Đường sáng gradient dưới header. */}
       <div
         aria-hidden="true"
@@ -66,14 +66,14 @@ export async function SiteHeader() {
 
         <MainNavigation className="hidden lg:block" />
 
-        <div className="flex items-center gap-1.5 sm:gap-3">
+        <div className="flex items-center gap-1 sm:gap-3">
           <HeaderSearch dict={dict} />
           <MobileSearchLink dict={dict} />
           <Suspense fallback={<AccountFallback />}>
             <AccountMenuServer />
           </Suspense>
-          <LocaleSwitcher locale={locale} dict={dict} />
-          <MobileNavigation dict={dict} />
+          <LocaleSwitcher locale={locale} dict={dict} className="hidden sm:flex" />
+          <MobileNavigation dict={dict} locale={locale} />
         </div>
       </Container>
     </header>

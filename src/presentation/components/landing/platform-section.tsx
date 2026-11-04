@@ -69,7 +69,7 @@ export async function PlatformSection({ numbers }: { numbers: PlatformNumbers })
               >
                 <div
                   aria-hidden="true"
-                  className={`pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-gradient-to-br ${tone.glow} to-transparent opacity-0 blur-2xl transition-opacity duration-700 group-hover:opacity-100`}
+                  className={`pointer-events-none absolute -right-16 -top-16 hidden size-48 md:block rounded-full bg-gradient-to-br ${tone.glow} to-transparent opacity-0 blur-2xl transition-opacity duration-700 group-hover:opacity-100`}
                 />
                 <div
                   className={`relative inline-grid size-11 place-items-center rounded-xl transition-all duration-500 ease-spring group-hover:-rotate-6 group-hover:scale-110 group-hover:text-white ${tone.tile}`}
