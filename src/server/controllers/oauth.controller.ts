@@ -182,6 +182,14 @@ export class OAuthController {
     scopes: string[];
     params: Record<string, string>;
   }): NextResponse {
+    const redirectOrigin = (() => {
+      try {
+        const u = new URL(input.params.redirect_uri);
+        return u.protocol === "http:" || u.protocol === "https:" ? u.origin : "";
+      } catch {
+        return "";
+      }
+    })();
     const hiddenFields = Object.entries(input.params)
       .map(
         ([key, value]) =>
@@ -232,7 +240,9 @@ export class OAuthController {
       headers: {
         "Content-Type": "text/html; charset=utf-8",
         "Cache-Control": "no-store",
-        "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'",
+        // Trình duyệt (Chrome) áp form-action cho CẢ các bước redirect sau khi submit: phải cho phép origin của client,
+        // nếu không nút "Đồng ý" bị chặn khi hệ thống redirect về redirect_uri.
+        "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'" + (redirectOrigin ? " " + redirectOrigin : "") ,
       },
     });
   }

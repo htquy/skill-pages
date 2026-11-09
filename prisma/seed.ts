@@ -1,6 +1,7 @@
 
 
 import { seedDirectorCraft } from "./seed-directorcraft";
+import { seedSkillStudio } from "./seed-skillstudio";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -556,6 +557,8 @@ async function main() {
   // ---------------------------------------------------------------------------
   await seedDirectorCraft(prisma, demoId);
   console.log("✔ DirectorCraft app, features, Pro plan (1/6/12 tháng), menus & demo subscription upserted");
+  await seedSkillStudio(prisma, demoId);
+  console.log("✔ SkillStudio app, features, Pro plan, menus, OAuth client skill-studio-desktop & demo subscription upserted");
 
   // ---------------------------------------------------------------------------
   // 6. User Subscription (Demo user có gói 1 năm)

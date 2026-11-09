@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { seedDirectorCraft } from "../prisma/seed-directorcraft";
+import { seedSkillStudio } from "../prisma/seed-skillstudio";
 
 // Không hard-code chuỗi kết nối (có mật khẩu) trong mã nguồn: đặt SUPABASE_DATABASE_URL khi chạy script.
 const supabaseUrl = process.env.SUPABASE_DATABASE_URL;
@@ -97,6 +98,8 @@ async function main() {
 
   const videoApp = await seedDirectorCraft(prisma);
   console.log(`✅ [App] ${videoApp.slug} - ${videoApp.name}: features, gói Pro 1/6/12 tháng, menus`);
+  const ssApp = await seedSkillStudio(prisma);
+  console.log(`✅ [App] ${ssApp.slug} - ${ssApp.name}: features, gói Pro, menus, OAuth client skill-studio-desktop`);
 
   // 3. AI Gateway Client
   console.log("\n3. Đang nạp AI Gateway Client...");

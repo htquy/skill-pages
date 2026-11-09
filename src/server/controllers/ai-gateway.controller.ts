@@ -7,12 +7,43 @@ import { toProblemDetailsResponse } from "@/src/domain/ai/errors";
 const textRequestSchema = z.object({
   provider: z.string().optional(),
   model: z.string().optional(),
-  messages: z.array(
-    z.object({
-      role: z.enum(["system", "user", "assistant"]),
-      content: z.string().min(1),
-    }),
-  ).min(1),
+  messages: z
+    .array(
+      z.object({
+        role: z.enum(["system", "user", "assistant", "tool"]),
+        content: z.string().max(200_000),
+        tool_calls: z
+          .array(
+            z.object({
+              id: z.string().min(1),
+              type: z.literal("function"),
+              function: z.object({
+                name: z.string().min(1),
+                arguments: z.string(),
+              }),
+            }),
+          )
+          .max(32)
+          .optional(),
+        tool_call_id: z.string().optional(),
+      }),
+    )
+    .min(1),
+  tools: z
+    .array(
+      z.object({
+        type: z.literal("function"),
+        function: z.object({
+          name: z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/),
+          description: z.string().max(4000).optional(),
+          parameters: z.record(z.string(), z.unknown()),
+        }),
+      }),
+    )
+    .max(64)
+    .optional(),
+  toolChoice: z.enum(["auto", "none", "required"]).optional(),
+  dataCollection: z.enum(["allow", "deny"]).optional(),
   temperature: z.number().min(0).max(2).optional(),
   maxTokens: z.number().positive().optional(),
   stream: z.boolean().optional(),
@@ -51,10 +82,13 @@ const audioRequestSchema = z.object({
 
 export class AiGatewayController {
   private static extractAuth(request: Request) {
-    const apiKey = request.headers.get("x-api-key") || request.headers.get("authorization");
+    const apiKey =
+      request.headers.get("x-api-key") || request.headers.get("authorization");
     const byokKey = request.headers.get("x-provider-key") || undefined;
     const forwardedFor = request.headers.get("x-forwarded-for");
-    const ipAddress = forwardedFor ? forwardedFor.split(",")[0].trim() : "127.0.0.1";
+    const ipAddress = forwardedFor
+      ? forwardedFor.split(",")[0].trim()
+      : "127.0.0.1";
     return { apiKey, byokKey, ipAddress };
   }
 
@@ -63,7 +97,8 @@ export class AiGatewayController {
    * Hỗ trợ đồng bộ (JSON) và SSE Streaming (Server-Sent Events)
    */
   static async generateText(request: Request): Promise<Response> {
-    const { apiKey, byokKey, ipAddress } = AiGatewayController.extractAuth(request);
+    const { apiKey, byokKey, ipAddress } =
+      AiGatewayController.extractAuth(request);
 
     try {
       const auth = await aiGatewayService.authenticateClient(apiKey, ipAddress);
@@ -87,8 +122,15 @@ export class AiGatewayController {
               controller.enqueue(encoder.encode("data: [DONE]\n\n"));
               controller.close();
             } catch (streamErr) {
-              const problem = toProblemDetailsResponse(streamErr, "/api/v1/ai/text/generate");
-              controller.enqueue(encoder.encode(`event: error\ndata: ${JSON.stringify(problem)}\n\n`));
+              const problem = toProblemDetailsResponse(
+                streamErr,
+                "/api/v1/ai/text/generate",
+              );
+              controller.enqueue(
+                encoder.encode(
+                  `event: error\ndata: ${JSON.stringify(problem)}\n\n`,
+                ),
+              );
               controller.close();
             }
           },
@@ -107,7 +149,10 @@ export class AiGatewayController {
       const result = await aiGatewayService.generateText(parsed, auth);
       return NextResponse.json(result);
     } catch (error) {
-      const problem = toProblemDetailsResponse(error, "/api/v1/ai/text/generate");
+      const problem = toProblemDetailsResponse(
+        error,
+        "/api/v1/ai/text/generate",
+      );
       return NextResponse.json(problem, {
         status: problem.status,
         headers: { "Content-Type": "application/problem+json" },
@@ -119,7 +164,8 @@ export class AiGatewayController {
    * POST /api/v1/ai/image/generate
    */
   static async generateImage(request: Request): Promise<NextResponse> {
-    const { apiKey, byokKey, ipAddress } = AiGatewayController.extractAuth(request);
+    const { apiKey, byokKey, ipAddress } =
+      AiGatewayController.extractAuth(request);
 
     try {
       const auth = await aiGatewayService.authenticateClient(apiKey, ipAddress);
@@ -131,7 +177,10 @@ export class AiGatewayController {
       const result = await aiGatewayService.generateImage(parsed, auth);
       return NextResponse.json(result, { status: 202 });
     } catch (error) {
-      const problem = toProblemDetailsResponse(error, "/api/v1/ai/image/generate");
+      const problem = toProblemDetailsResponse(
+        error,
+        "/api/v1/ai/image/generate",
+      );
       return NextResponse.json(problem, {
         status: problem.status,
         headers: { "Content-Type": "application/problem+json" },
@@ -143,7 +192,8 @@ export class AiGatewayController {
    * POST /api/v1/ai/video/generate
    */
   static async generateVideo(request: Request): Promise<NextResponse> {
-    const { apiKey, byokKey, ipAddress } = AiGatewayController.extractAuth(request);
+    const { apiKey, byokKey, ipAddress } =
+      AiGatewayController.extractAuth(request);
 
     try {
       const auth = await aiGatewayService.authenticateClient(apiKey, ipAddress);
@@ -155,7 +205,10 @@ export class AiGatewayController {
       const result = await aiGatewayService.generateVideo(parsed, auth);
       return NextResponse.json(result, { status: 202 });
     } catch (error) {
-      const problem = toProblemDetailsResponse(error, "/api/v1/ai/video/generate");
+      const problem = toProblemDetailsResponse(
+        error,
+        "/api/v1/ai/video/generate",
+      );
       return NextResponse.json(problem, {
         status: problem.status,
         headers: { "Content-Type": "application/problem+json" },
@@ -167,7 +220,8 @@ export class AiGatewayController {
    * POST /api/v1/ai/audio/speech
    */
   static async synthesizeAudio(request: Request): Promise<Response> {
-    const { apiKey, byokKey, ipAddress } = AiGatewayController.extractAuth(request);
+    const { apiKey, byokKey, ipAddress } =
+      AiGatewayController.extractAuth(request);
 
     try {
       const auth = await aiGatewayService.authenticateClient(apiKey, ipAddress);
@@ -190,7 +244,10 @@ export class AiGatewayController {
 
       return NextResponse.json(result);
     } catch (error) {
-      const problem = toProblemDetailsResponse(error, "/api/v1/ai/audio/speech");
+      const problem = toProblemDetailsResponse(
+        error,
+        "/api/v1/ai/audio/speech",
+      );
       return NextResponse.json(problem, {
         status: problem.status,
         headers: { "Content-Type": "application/problem+json" },
@@ -201,7 +258,10 @@ export class AiGatewayController {
   /**
    * GET /api/v1/ai/tasks/[taskId]
    */
-  static async getTaskStatus(request: Request, taskId: string): Promise<NextResponse> {
+  static async getTaskStatus(
+    request: Request,
+    taskId: string,
+  ): Promise<NextResponse> {
     const { apiKey, ipAddress } = AiGatewayController.extractAuth(request);
 
     try {
@@ -209,7 +269,10 @@ export class AiGatewayController {
       const task = await aiGatewayService.getTask(taskId, auth);
       return NextResponse.json(task);
     } catch (error) {
-      const problem = toProblemDetailsResponse(error, `/api/v1/ai/tasks/${taskId}`);
+      const problem = toProblemDetailsResponse(
+        error,
+        `/api/v1/ai/tasks/${taskId}`,
+      );
       return NextResponse.json(problem, {
         status: problem.status,
         headers: { "Content-Type": "application/problem+json" },
@@ -235,7 +298,7 @@ export class AiGatewayController {
         return new Response(null, {
           status: 304,
           headers: {
-            "ETag": etag,
+            ETag: etag,
             "Cache-Control": "public, max-age=60",
           },
         });
@@ -243,7 +306,7 @@ export class AiGatewayController {
 
       return NextResponse.json(catalog, {
         headers: {
-          "ETag": etag,
+          ETag: etag,
           "Cache-Control": "public, max-age=60",
         },
       });
@@ -259,7 +322,10 @@ export class AiGatewayController {
   /**
    * GET /api/v1/ai/profiles/[profileId]
    */
-  static async getProfile(request: Request, profileId: string): Promise<Response> {
+  static async getProfile(
+    request: Request,
+    profileId: string,
+  ): Promise<Response> {
     const { apiKey, ipAddress } = AiGatewayController.extractAuth(request);
 
     try {
@@ -269,12 +335,15 @@ export class AiGatewayController {
 
       return NextResponse.json(profile, {
         headers: {
-          "ETag": etag,
+          ETag: etag,
           "Cache-Control": "public, max-age=300",
         },
       });
     } catch (error) {
-      const problem = toProblemDetailsResponse(error, `/api/v1/ai/profiles/${profileId}`);
+      const problem = toProblemDetailsResponse(
+        error,
+        `/api/v1/ai/profiles/${profileId}`,
+      );
       return NextResponse.json(problem, {
         status: problem.status,
         headers: { "Content-Type": "application/problem+json" },

@@ -731,8 +731,11 @@ function GrantSubscriptionForm({
 }) {
   const t = dict.admin.apps;
   const [userId, setUserId] = useState("");
-  const [planId, setPlanId] = useState(plans[0]?.id ?? "");
+  const [chosenPlanId, setPlanId] = useState("");
   const [months, setMonths] = useState("1");
+  // Gói đã chọn phải thuộc app đang xem. Khi đổi app (hoặc vừa tạo thêm gói) state cũ có thể trỏ tới gói của app khác,
+  // làm API trả "Gói không thuộc ứng dụng này": luôn quy về gói đầu tiên của danh sách hiện tại nếu lựa chọn không còn hợp lệ.
+  const planId = plans.some((plan) => plan.id === chosenPlanId) ? chosenPlanId : (plans[0]?.id ?? "");
 
   return (
     <form

@@ -30,7 +30,10 @@ import { prismaAuditLogRepository } from "@/src/infrastructure/repositories/pris
 import { prismaUserRepository } from "@/src/infrastructure/repositories/prisma-user-repository";
 import { prismaSkillAdminRepository } from "@/src/infrastructure/repositories/prisma-skill-admin-repository";
 import { prismaToolAdminRepository } from "@/src/infrastructure/repositories/prisma-tool-admin-repository";
-import { prismaNewsAdminRepository, prismaNewsCategoryAdminRepository } from "@/src/infrastructure/repositories/prisma-news-admin-repository";
+import {
+  prismaNewsAdminRepository,
+  prismaNewsCategoryAdminRepository,
+} from "@/src/infrastructure/repositories/prisma-news-admin-repository";
 import { prismaRankingAdminRepository } from "@/src/infrastructure/repositories/prisma-ranking-admin-repository";
 import { prismaWebhookEventRepository } from "@/src/infrastructure/repositories/prisma-webhook-event-repository";
 
@@ -47,13 +50,21 @@ import { siteConfig } from "@/src/lib/site";
  * - Có SEPAY_API_KEY + SEPAY_ACCOUNT_NUMBER => dùng SePay thật (QR VietQR + webhook).
  * - Ngược lại                      => provider giả lập để demo luồng mua local.
  */
-const paymentProvider = isSePayConfigured() ? sePayPaymentProvider : mockPaymentProvider;
+const paymentProvider = isSePayConfigured()
+  ? sePayPaymentProvider
+  : mockPaymentProvider;
 
-export const skillQueries = createSkillQueries({ skills: prismaSkillRepository });
+export const skillQueries = createSkillQueries({
+  skills: prismaSkillRepository,
+});
 export const toolQueries = createToolQueries({ tools: prismaToolRepository });
 export const newsQueries = createNewsQueries({ news: prismaNewsRepository });
-export const rankingQueries = createRankingQueries({ rankings: prismaRankingRepository });
-export const taxonomyQueries = createTaxonomyQueries({ taxonomy: prismaTaxonomyRepository });
+export const rankingQueries = createRankingQueries({
+  rankings: prismaRankingRepository,
+});
+export const taxonomyQueries = createTaxonomyQueries({
+  taxonomy: prismaTaxonomyRepository,
+});
 export const accountQueries = createAccountQueries({
   skills: prismaSkillRepository,
   engagement: prismaEngagementRepository,
@@ -123,7 +134,10 @@ export const skillAdminCommands = createSkillAdminCommands({
 export const toolAdminCommands = createToolAdminCommands({
   tools: prismaToolAdminRepository,
   audit: prismaAuditLogRepository,
-  apps: { exists: async (slug) => (await prismaAppRepository.findAppBySlug(slug)) !== null },
+  apps: {
+    exists: async (slug) =>
+      (await prismaAppRepository.findAppBySlug(slug)) !== null,
+  },
 });
 
 export const articleAdminCommands = createArticleAdminCommands({
@@ -157,7 +171,10 @@ import { prismaAiRepository } from "@/src/infrastructure/ai/repositories/prisma-
 import { KeyManagerService } from "@/src/application/ai/key-manager.service";
 import { taskQueue } from "@/src/infrastructure/ai/queue/task-queue";
 import { s3MediaStorage } from "@/src/infrastructure/ai/storage/s3-media-storage";
-import { openAIAdapter } from "@/src/infrastructure/ai/adapters/openai.adapter";
+import {
+  openAIAdapter,
+  openRouterAdapter,
+} from "@/src/infrastructure/ai/adapters/openai.adapter";
 import { geminiAdapter } from "@/src/infrastructure/ai/adapters/gemini.adapter";
 import { falAiFluxAdapter } from "@/src/infrastructure/ai/adapters/fal-flux.adapter";
 import { lumaVideoAdapter } from "@/src/infrastructure/ai/adapters/video.adapter";
@@ -184,15 +201,17 @@ export const aiGatewayService = new AiGatewayService({
   repository: prismaAiRepository,
   keyManager: keyManagerService,
   queue: taskQueue,
-  textProviders: [openAIAdapter, geminiAdapter],
+  textProviders: [openAIAdapter, openRouterAdapter, geminiAdapter],
   imageProviders: [falAiFluxAdapter],
   videoProviders: [lumaVideoAdapter],
   audioProviders: [audioTtsAdapter],
 });
 
-
-
 import { DistributionService } from "@/src/application/apps/distribution-service";
 import { prismaDistributionRepository } from "@/src/infrastructure/repositories/prisma-distribution-repository";
 import { distributionStorage } from "@/src/infrastructure/storage/distribution-storage";
-export const distributionService = new DistributionService(prismaAppRepository, prismaDistributionRepository, distributionStorage);
+export const distributionService = new DistributionService(
+  prismaAppRepository,
+  prismaDistributionRepository,
+  distributionStorage,
+);

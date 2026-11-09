@@ -22,7 +22,8 @@ export type AiProviderName =
   | string;
 
 export type AiTaskType = "TEXT" | "IMAGE" | "VIDEO" | "AUDIO" | "EMBEDDING";
-export type AiTaskStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "CANCELLED";
+export type AiTaskStatus =
+  "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "CANCELLED";
 export type AiKeyStatus = "ACTIVE" | "RATE_LIMITED" | "SUSPENDED" | "EXPIRED";
 export type AiCallbackStatus = "NONE" | "PENDING" | "DELIVERED" | "FAILED";
 
@@ -36,15 +37,33 @@ export interface TokenUsage {
 // Unified Text LLM Contracts
 // ---------------------------------------------------------------------------
 
+export interface ToolCall {
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
+}
+export interface FunctionTool {
+  type: "function";
+  function: {
+    name: string;
+    description?: string;
+    parameters: Record<string, unknown>;
+  };
+}
 export interface ChatMessage {
-  role: "system" | "user" | "assistant";
+  role: "system" | "user" | "assistant" | "tool";
   content: string;
+  tool_calls?: ToolCall[];
+  tool_call_id?: string;
 }
 
 export interface UnifiedTextRequest {
   provider?: AiProviderName;
   model?: string;
   messages: ChatMessage[];
+  tools?: FunctionTool[];
+  toolChoice?: "auto" | "none" | "required";
+  dataCollection?: "allow" | "deny";
   temperature?: number;
   maxTokens?: number;
   stream?: boolean;
@@ -57,6 +76,7 @@ export interface UnifiedTextResponse {
   provider: string;
   model: string;
   content: string;
+  toolCalls?: ToolCall[];
   usage: TokenUsage;
   finishReason?: string;
   executionTimeMs: number;
@@ -65,6 +85,12 @@ export interface UnifiedTextResponse {
 export interface TextStreamChunk {
   id: string;
   deltaText: string;
+  toolCallDeltas?: Array<{
+    index: number;
+    id?: string;
+    type?: "function";
+    function?: { name?: string; arguments?: string };
+  }>;
   isFinished: boolean;
   finishReason?: string;
   usage?: TokenUsage;
@@ -297,4 +323,3 @@ export interface CatalogResponse {
     }>;
   }>;
 }
-

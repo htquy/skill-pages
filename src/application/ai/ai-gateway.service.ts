@@ -46,7 +46,10 @@ export class AiGatewayService {
   private audioProviders = new Map<string, ITtsProvider>();
 
   // In-memory sliding rate limiter per client
-  private clientRequestCounts = new Map<string, { count: number; resetAt: number }>();
+  private clientRequestCounts = new Map<
+    string,
+    { count: number; resetAt: number }
+  >();
 
   constructor(deps: {
     repository: IAiRepository;
@@ -61,10 +64,18 @@ export class AiGatewayService {
     this.keyManager = deps.keyManager;
     this.queue = deps.queue;
 
-    deps.textProviders?.forEach((p) => this.textProviders.set(p.providerName, p));
-    deps.imageProviders?.forEach((p) => this.imageProviders.set(p.providerName, p));
-    deps.videoProviders?.forEach((p) => this.videoProviders.set(p.providerName, p));
-    deps.audioProviders?.forEach((p) => this.audioProviders.set(p.providerName, p));
+    deps.textProviders?.forEach((p) =>
+      this.textProviders.set(p.providerName, p),
+    );
+    deps.imageProviders?.forEach((p) =>
+      this.imageProviders.set(p.providerName, p),
+    );
+    deps.videoProviders?.forEach((p) =>
+      this.videoProviders.set(p.providerName, p),
+    );
+    deps.audioProviders?.forEach((p) =>
+      this.audioProviders.set(p.providerName, p),
+    );
   }
 
   registerTextProvider(provider: ITextProvider) {
@@ -83,12 +94,19 @@ export class AiGatewayService {
   /**
    * Xác thực Client và kiểm tra Rate Limiting
    */
-  async authenticateClient(apiKeyHeader?: string | null, ipAddress?: string): Promise<GatewayAuthContext> {
+  async authenticateClient(
+    apiKeyHeader?: string | null,
+    ipAddress?: string,
+  ): Promise<GatewayAuthContext> {
     if (!apiKeyHeader) {
-      throw new AiUnauthorizedClientError("Missing X-API-KEY or Authorization header");
+      throw new AiUnauthorizedClientError(
+        "Missing X-API-KEY or Authorization header",
+      );
     }
 
-    const token = apiKeyHeader.startsWith("Bearer ") ? apiKeyHeader.slice(7).trim() : apiKeyHeader.trim();
+    const token = apiKeyHeader.startsWith("Bearer ")
+      ? apiKeyHeader.slice(7).trim()
+      : apiKeyHeader.trim();
     const client = await this.repository.getClientByApiKey(token);
 
     if (!client || client.status !== "ACTIVE") {
@@ -105,7 +123,9 @@ export class AiGatewayService {
 
     rateRecord.count++;
     if (rateRecord.count > client.rateLimitPerMin) {
-      throw new AiRateLimitExceededError(`Client exceeded limit of ${client.rateLimitPerMin} requests per minute`);
+      throw new AiRateLimitExceededError(
+        `Client exceeded limit of ${client.rateLimitPerMin} requests per minute`,
+      );
     }
 
     return { client, ipAddress };
@@ -120,10 +140,23 @@ export class AiGatewayService {
   ): Promise<UnifiedTextResponse> {
     const providerName = (request.provider || "openai").toLowerCase();
     this.validatePermissions(auth.client, providerName, "TEXT");
+    if (
+      (request.tools?.length ||
+        request.messages.some(
+          (m) => m.role === "tool" || m.tool_calls?.length,
+        )) &&
+      !["openai", "openrouter"].includes(providerName)
+    ) {
+      throw new AiValidationError(
+        "Selected provider does not support gateway tool calling; use openai or openrouter.",
+      );
+    }
 
     const provider = this.textProviders.get(providerName);
     if (!provider) {
-      throw new AiValidationError(`Unsupported text provider '${providerName}'`);
+      throw new AiValidationError(
+        `Unsupported text provider '${providerName}'`,
+      );
     }
 
     const startTime = Date.now();
@@ -179,13 +212,29 @@ export class AiGatewayService {
   ): AsyncIterable<TextStreamChunk> {
     const providerName = (request.provider || "openai").toLowerCase();
     this.validatePermissions(auth.client, providerName, "TEXT");
+    if (
+      (request.tools?.length ||
+        request.messages.some(
+          (m) => m.role === "tool" || m.tool_calls?.length,
+        )) &&
+      !["openai", "openrouter"].includes(providerName)
+    ) {
+      throw new AiValidationError(
+        "Selected provider does not support gateway tool calling; use openai or openrouter.",
+      );
+    }
 
     const provider = this.textProviders.get(providerName);
     if (!provider) {
-      throw new AiValidationError(`Unsupported text provider '${providerName}'`);
+      throw new AiValidationError(
+        `Unsupported text provider '${providerName}'`,
+      );
     }
 
-    const key = await this.keyManager.getAvailableKey(providerName, auth.client.id);
+    const key = await this.keyManager.getAvailableKey(
+      providerName,
+      auth.client.id,
+    );
     const keyToUse = auth.byokKey || key.keySecret;
     const stream = provider.streamText(request, keyToUse);
 
@@ -229,7 +278,9 @@ export class AiGatewayService {
 
     const provider = this.imageProviders.get(providerName);
     if (!provider) {
-      throw new AiValidationError(`Unsupported image provider '${providerName}'`);
+      throw new AiValidationError(
+        `Unsupported image provider '${providerName}'`,
+      );
     }
 
     // 1. Tạo task trong DB
@@ -285,7 +336,9 @@ export class AiGatewayService {
 
     const provider = this.videoProviders.get(providerName);
     if (!provider) {
-      throw new AiValidationError(`Unsupported video provider '${providerName}'`);
+      throw new AiValidationError(
+        `Unsupported video provider '${providerName}'`,
+      );
     }
 
     const task = await this.repository.createTask({
@@ -338,7 +391,9 @@ export class AiGatewayService {
 
     const provider = this.audioProviders.get(providerName);
     if (!provider) {
-      throw new AiValidationError(`Unsupported audio provider '${providerName}'`);
+      throw new AiValidationError(
+        `Unsupported audio provider '${providerName}'`,
+      );
     }
 
     const startTime = Date.now();
@@ -385,17 +440,27 @@ export class AiGatewayService {
    * Lấy danh mục Model/Provider (Catalog) theo quyền của caller (không lộ API secrets)
    * Kiểm tra động theo trạng thái API Key trong Database
    */
-  async getCatalog(auth: GatewayAuthContext, requestedCapability?: string): Promise<CatalogResponse> {
+  async getCatalog(
+    auth: GatewayAuthContext,
+    requestedCapability?: string,
+  ): Promise<CatalogResponse> {
     const allowedProviders = auth.client.allowedProviders || ["*"];
-    const isAllowedProvider = (p: string) => allowedProviders.includes("*") || allowedProviders.includes(p);
+    const isAllowedProvider = (p: string) =>
+      allowedProviders.includes("*") || allowedProviders.includes(p);
     const allowedTasks = auth.client.allowedTasks || ["*"];
-    const isAllowedTask = (t: string) => allowedTasks.includes("*") || allowedTasks.includes(t);
+    const isAllowedTask = (t: string) =>
+      allowedTasks.includes("*") || allowedTasks.includes(t);
 
     // Kiểm tra trạng thái Key thật trong database
     const allKeys = await this.repository.getAllKeys();
     const activeProviders = new Set<string>();
     for (const k of allKeys) {
-      if (k.status === "ACTIVE" || (k.status === "RATE_LIMITED" && k.cooldownUntil && new Date() >= new Date(k.cooldownUntil))) {
+      if (
+        k.status === "ACTIVE" ||
+        (k.status === "RATE_LIMITED" &&
+          k.cooldownUntil &&
+          new Date() >= new Date(k.cooldownUntil))
+      ) {
         activeProviders.add(k.provider.toLowerCase());
       }
     }
@@ -408,14 +473,20 @@ export class AiGatewayService {
         profileId: "text.chat.fast",
         version: 1,
         displayName: "GPT-4o Mini",
-        description: "Mô hình phản hồi nhanh, tối ưu chi phí cho hội thoại và lập kịch bản",
+        description:
+          "Mô hình phản hồi nhanh, tối ưu chi phí cho hội thoại và lập kịch bản",
         capability: "text.generate",
         providerId: "openai",
         upstreamModelId: "gpt-4o-mini",
         executionMode: "gateway_proxy",
         status: activeProviders.has("openai") ? "enabled" : "degraded",
         limits: { maxOutputTokens: 4096 },
-        supportedParameters: ["temperature", "maxTokens", "stream", "systemPrompt"],
+        supportedParameters: [
+          "temperature",
+          "maxTokens",
+          "stream",
+          "systemPrompt",
+        ],
         pricing: { estimatedCostUsd: 0.00015, currency: "USD" },
       },
       {
@@ -429,7 +500,12 @@ export class AiGatewayService {
         executionMode: "gateway_proxy",
         status: activeProviders.has("openai") ? "enabled" : "degraded",
         limits: { maxOutputTokens: 8192 },
-        supportedParameters: ["temperature", "maxTokens", "stream", "systemPrompt"],
+        supportedParameters: [
+          "temperature",
+          "maxTokens",
+          "stream",
+          "systemPrompt",
+        ],
         pricing: { estimatedCostUsd: 0.0025, currency: "USD" },
       },
       {
@@ -443,7 +519,12 @@ export class AiGatewayService {
         executionMode: "gateway_proxy",
         status: activeProviders.has("gemini") ? "enabled" : "degraded",
         limits: { maxOutputTokens: 8192 },
-        supportedParameters: ["temperature", "maxTokens", "stream", "systemPrompt"],
+        supportedParameters: [
+          "temperature",
+          "maxTokens",
+          "stream",
+          "systemPrompt",
+        ],
         pricing: { estimatedCostUsd: 0.0001, currency: "USD" },
       },
       {
@@ -457,7 +538,12 @@ export class AiGatewayService {
         executionMode: "gateway_proxy",
         status: activeProviders.has("gemini") ? "enabled" : "degraded",
         limits: { maxOutputTokens: 8192 },
-        supportedParameters: ["temperature", "maxTokens", "stream", "systemPrompt"],
+        supportedParameters: [
+          "temperature",
+          "maxTokens",
+          "stream",
+          "systemPrompt",
+        ],
         pricing: { estimatedCostUsd: 0.00125, currency: "USD" },
       },
       {
@@ -498,8 +584,17 @@ export class AiGatewayService {
         upstreamModelId: "ray-2",
         executionMode: "gateway_proxy",
         status: activeProviders.has("luma") ? "enabled" : "degraded",
-        limits: { minDuration: 3, maxDuration: 9, allowedAspectRatios: ["16:9", "9:16", "1:1"] },
-        supportedParameters: ["prompt", "imageUrl", "aspectRatio", "durationSeconds"],
+        limits: {
+          minDuration: 3,
+          maxDuration: 9,
+          allowedAspectRatios: ["16:9", "9:16", "1:1"],
+        },
+        supportedParameters: [
+          "prompt",
+          "imageUrl",
+          "aspectRatio",
+          "durationSeconds",
+        ],
         pricing: { estimatedCostUsd: 0.15, currency: "USD" },
       },
       {
@@ -521,40 +616,53 @@ export class AiGatewayService {
     // Lọc theo quyền của caller (client.allowedProviders, client.allowedTasks)
     let filteredProfiles = allProfiles.filter((p) => {
       if (!isAllowedProvider(p.providerId)) return false;
-      const taskType = p.capability.startsWith("text") ? "TEXT"
-        : p.capability.startsWith("image") ? "IMAGE"
-        : p.capability.startsWith("video") ? "VIDEO"
-        : "AUDIO";
+      const taskType = p.capability.startsWith("text")
+        ? "TEXT"
+        : p.capability.startsWith("image")
+          ? "IMAGE"
+          : p.capability.startsWith("video")
+            ? "VIDEO"
+            : "AUDIO";
       return isAllowedTask(taskType);
     });
 
     if (requestedCapability) {
-      filteredProfiles = filteredProfiles.filter((p) => p.capability === requestedCapability);
+      filteredProfiles = filteredProfiles.filter(
+        (p) => p.capability === requestedCapability,
+      );
     }
 
     // Tổ chức danh sách providers cho các client dùng schema providers
-    const providersMap = new Map<string, {
-      id: string;
-      displayName: string;
-      enabled: boolean;
-      capabilities: Set<string>;
-      models: Array<{
+    const providersMap = new Map<
+      string,
+      {
         id: string;
         displayName: string;
         enabled: boolean;
-        capabilities: string[];
-        limits?: Record<string, unknown>;
-      }>;
-    }>();
+        capabilities: Set<string>;
+        models: Array<{
+          id: string;
+          displayName: string;
+          enabled: boolean;
+          capabilities: string[];
+          limits?: Record<string, unknown>;
+        }>;
+      }
+    >();
 
     for (const prof of filteredProfiles) {
       let prov = providersMap.get(prof.providerId);
       if (!prov) {
-        const displayName = prof.providerId === "openai" ? "OpenAI"
-          : prof.providerId === "gemini" ? "Google Gemini"
-          : prof.providerId === "fal-ai" ? "Fal AI"
-          : prof.providerId === "luma" ? "Luma Dream Machine"
-          : "Edge TTS";
+        const displayName =
+          prof.providerId === "openai"
+            ? "OpenAI"
+            : prof.providerId === "gemini"
+              ? "Google Gemini"
+              : prof.providerId === "fal-ai"
+                ? "Fal AI"
+                : prof.providerId === "luma"
+                  ? "Luma Dream Machine"
+                  : "Edge TTS";
         prov = {
           id: prof.providerId,
           displayName,
@@ -592,24 +700,43 @@ export class AiGatewayService {
     };
   }
 
-  async getProfile(profileId: string, auth: GatewayAuthContext): Promise<AIProfile> {
+  async getProfile(
+    profileId: string,
+    auth: GatewayAuthContext,
+  ): Promise<AIProfile> {
     const catalog = await this.getCatalog(auth);
     const profile = catalog.profiles.find((p) => p.profileId === profileId);
     if (!profile) {
-      throw new AiValidationError(`Profile '${profileId}' not found or not accessible`);
+      throw new AiValidationError(
+        `Profile '${profileId}' not found or not accessible`,
+      );
     }
     return profile;
   }
 
-  private validatePermissions(client: AiClientDto, provider: string, taskType: string) {
+  private validatePermissions(
+    client: AiClientDto,
+    provider: string,
+    taskType: string,
+  ) {
     if (client.allowedProviders && client.allowedProviders.length > 0) {
-      if (!client.allowedProviders.includes(provider) && !client.allowedProviders.includes("*")) {
-        throw new AiValidationError(`Client is not permitted to use provider '${provider}'`);
+      if (
+        !client.allowedProviders.includes(provider) &&
+        !client.allowedProviders.includes("*")
+      ) {
+        throw new AiValidationError(
+          `Client is not permitted to use provider '${provider}'`,
+        );
       }
     }
     if (client.allowedTasks && client.allowedTasks.length > 0) {
-      if (!client.allowedTasks.includes(taskType) && !client.allowedTasks.includes("*")) {
-        throw new AiValidationError(`Client is not permitted to execute task type '${taskType}'`);
+      if (
+        !client.allowedTasks.includes(taskType) &&
+        !client.allowedTasks.includes("*")
+      ) {
+        throw new AiValidationError(
+          `Client is not permitted to execute task type '${taskType}'`,
+        );
       }
     }
   }

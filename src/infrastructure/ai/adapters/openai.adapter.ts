@@ -7,14 +7,18 @@ import { ITextProvider } from "@/src/domain/ai/contracts";
 import { AiProviderUnavailableError } from "@/src/domain/ai/errors";
 
 export class OpenAIAdapter implements ITextProvider {
-  readonly providerName = "openai";
+  readonly providerName: string;
   private baseUrl: string;
 
-  constructor(baseUrl = "https://api.openai.com/v1") {
+  constructor(baseUrl = "https://api.openai.com/v1", providerName = "openai") {
+    this.providerName = providerName;
     this.baseUrl = baseUrl;
   }
 
-  async generateText(request: UnifiedTextRequest, apiKey: string): Promise<UnifiedTextResponse> {
+  async generateText(
+    request: UnifiedTextRequest,
+    apiKey: string,
+  ): Promise<UnifiedTextResponse> {
     const startTime = Date.now();
     const model = request.model || "gpt-4o-mini";
 
@@ -32,6 +36,17 @@ export class OpenAIAdapter implements ITextProvider {
       body: JSON.stringify({
         model,
         messages,
+        ...(request.tools?.length
+          ? { tools: request.tools, tool_choice: request.toolChoice ?? "auto" }
+          : {}),
+        ...(this.providerName === "openrouter"
+          ? {
+              provider: {
+                data_collection: request.dataCollection ?? "deny",
+                require_parameters: true,
+              },
+            }
+          : {}),
         temperature: request.temperature ?? 0.7,
         max_tokens: request.maxTokens,
         top_p: request.topP,
@@ -41,7 +56,9 @@ export class OpenAIAdapter implements ITextProvider {
 
     if (!response.ok) {
       const errText = await response.text();
-      const error = new Error(`OpenAI API error [${response.status}]: ${errText}`);
+      const error = new Error(
+        `OpenAI API error [${response.status}]: ${errText}`,
+      );
       (error as unknown as { statusCode: number }).statusCode = response.status;
       throw error;
     }
@@ -55,6 +72,9 @@ export class OpenAIAdapter implements ITextProvider {
       provider: this.providerName,
       model,
       content: choice?.message?.content || "",
+      ...(choice?.message?.tool_calls
+        ? { toolCalls: choice.message.tool_calls }
+        : {}),
       usage: {
         promptTokens: data.usage?.prompt_tokens || 0,
         completionTokens: data.usage?.completion_tokens || 0,
@@ -84,6 +104,17 @@ export class OpenAIAdapter implements ITextProvider {
       body: JSON.stringify({
         model,
         messages,
+        ...(request.tools?.length
+          ? { tools: request.tools, tool_choice: request.toolChoice ?? "auto" }
+          : {}),
+        ...(this.providerName === "openrouter"
+          ? {
+              provider: {
+                data_collection: request.dataCollection ?? "deny",
+                require_parameters: true,
+              },
+            }
+          : {}),
         temperature: request.temperature ?? 0.7,
         max_tokens: request.maxTokens,
         stream: true,
@@ -92,13 +123,18 @@ export class OpenAIAdapter implements ITextProvider {
 
     if (!response.ok) {
       const errText = await response.text();
-      const error = new Error(`OpenAI Stream error [${response.status}]: ${errText}`);
+      const error = new Error(
+        `OpenAI Stream error [${response.status}]: ${errText}`,
+      );
       (error as unknown as { statusCode: number }).statusCode = response.status;
       throw error;
     }
 
     if (!response.body) {
-      throw new AiProviderUnavailableError(this.providerName, "Response body is null");
+      throw new AiProviderUnavailableError(
+        this.providerName,
+        "Response body is null",
+      );
     }
 
     const reader = response.body.getReader();
@@ -134,10 +170,12 @@ export class OpenAIAdapter implements ITextProvider {
             const delta = parsed.choices?.[0]?.delta?.content || "";
             const finishReason = parsed.choices?.[0]?.finish_reason;
 
-            if (delta || finishReason) {
+            const toolCallDeltas = parsed.choices?.[0]?.delta?.tool_calls;
+            if (delta || finishReason || toolCallDeltas?.length) {
               yield {
                 id: parsed.id || `chunk-${Date.now()}`,
                 deltaText: delta,
+                ...(toolCallDeltas?.length ? { toolCallDeltas } : {}),
                 isFinished: Boolean(finishReason),
                 finishReason: finishReason ?? undefined,
               };
@@ -154,3 +192,7 @@ export class OpenAIAdapter implements ITextProvider {
 }
 
 export const openAIAdapter = new OpenAIAdapter();
+export const openRouterAdapter = new OpenAIAdapter(
+  "https://openrouter.ai/api/v1",
+  "openrouter",
+);
