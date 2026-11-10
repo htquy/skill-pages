@@ -21,7 +21,7 @@ export const SKILLSTUDIO_PAGE: ProductPage = {
   shortDescription:
     "Chọn phong cách, điền brief, để Claude Code / Codex / Gemini CLI dựng landing page, OG image, slide và video trên máy bạn — có kiểm định kết quả, lưu phiên bản và chỉnh tiếp trong cùng phiên.",
   description: `
-<p><strong>SkillStudio</strong> biến các agent CLI bạn đã cài (Claude Code, Codex, Gemini CLI) thành một xưởng sản xuất có giao diện: chọn <strong>Web, Image, Video hoặc Slides</strong> → chọn một trong hơn <strong>600 phong cách</strong> có ảnh/video mẫu → điền brief → app dựng workspace, cài đúng skill, điều khiển agent, theo dõi tiến độ trực tiếp và kiểm định kết quả trước khi giao cho bạn.</p>
+<p><strong>SkillStudio</strong> biến các agent CLI bạn đã cài (Claude Code, Codex, Gemini CLI) thành một xưởng sản xuất có giao diện: chọn <strong>Web, Image, Video hoặc Slides</strong> → chọn một trong hơn <strong>700 phong cách</strong> có ảnh/video mẫu → điền brief → app dựng workspace, cài đúng skill, điều khiển agent, theo dõi tiến độ trực tiếp và kiểm định kết quả trước khi giao cho bạn.</p>
 
 <h2>Làm được gì</h2>
 <ul>
@@ -38,10 +38,11 @@ export const SKILLSTUDIO_PAGE: ProductPage = {
   <li><strong>An toàn theo mặc định</strong>: 3 mức quyền (An toàn / Tiêu chuẩn / Toàn quyền), agent chỉ làm trong thư mục job, xin quyền từng bước qua giao diện; API key mã hoá bằng Windows DPAPI và chỉ chuyển cho agent khi phong cách cần.</li>
   <li><strong>Chạy trên máy bạn</strong>: dùng tài khoản agent CLI của chính bạn, không qua máy chủ trung gian, file kết quả nằm trong thư mục của bạn.</li>
   <li><strong>Thư viện luôn mới</strong>: kho phong cách đồng bộ từ đám mây — mỗi lần mở app chỉ một yêu cầu nhỏ để kiểm tra, có cập nhật mới tải phần thay đổi; video mẫu tải khi bạn xem.</li>
+  <li><strong>Tự động cập nhật</strong>: có bản mới là app báo ngay, tải nền, kiểm tra toàn vẹn rồi tự cài — bạn không phải tải lại thủ công.</li>
 </ul>
 
 <h2>Miễn phí và Pro</h2>
-<p>Bản miễn phí: duyệt toàn bộ thư viện, dùng các phong cách miễn phí, giao việc theo mô tả tự do, chẩn đoán máy. Gói <strong>Pro</strong> mở:</p>
+<p>Bản miễn phí: duyệt toàn bộ thư viện, dùng <strong>22 phong cách phổ biến</strong> miễn phí, giao việc theo mô tả tự do, chẩn đoán máy. Gói <strong>Pro</strong> mở:</p>
 <ul>
   <li><strong>Phong cách Pro</strong> — toàn bộ phong cách trả phí cho Web, Image, Slides.</li>
   <li><strong>Video Studio</strong> — các phong cách video &amp; motion (launch film, reel, kinetic type).</li>

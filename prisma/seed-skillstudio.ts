@@ -8,7 +8,7 @@ import { SKILLSTUDIO_PAGE } from "./product-pages";
  * (src/SkillStudio.Jobs/Licensing/LicenseFeatures.cs). Duyệt thư viện, phong cách miễn phí, job theo mô tả tự do,
  * chẩn đoán và cài đặt là miễn phí nên không có feature.
  *
- * Giá dưới đây là giá mẫu — chỉnh ở /admin/apps, không cần sửa code (upsert không ghi đè giá đã có).
+ * Giá dưới đây áp cho DB mới; DB đã có giá thì chỉnh ở /admin/apps hoặc chạy scripts/set-skillstudio-prices.ts (upsert không ghi đè giá đã có).
  */
 export const SKILLSTUDIO_FEATURES = [
   { key: "SS_PRO_STYLES", name: "Phong cách Pro", description: "Toàn bộ phong cách trả phí cho Web, Image và Slides." },
@@ -16,10 +16,11 @@ export const SKILLSTUDIO_FEATURES = [
   { key: "SS_ITERATE", name: "Chỉnh sửa tiếp & fork", description: "Tinh chỉnh kết quả trong cùng phiên agent và fork phiên bản." },
 ] as const;
 
-const PRO_PRICES = [
-  { months: 1, amount: 149000 },
-  { months: 6, amount: 790000 },
-  { months: 12, amount: 1390000 },
+/** Bảng giá gói Pro (VND). Muốn áp vào DB đã có: scripts/set-skillstudio-prices.ts (seed không ghi đè giá đã tồn tại). */
+export const SKILLSTUDIO_PRO_PRICES = [
+  { months: 1, amount: 199000 },
+  { months: 6, amount: 999000 },
+  { months: 12, amount: 1599000 },
 ];
 
 export async function seedSkillStudio(prisma: PrismaClient, demoUserId?: string) {
@@ -82,7 +83,7 @@ export async function seedSkillStudio(prisma: PrismaClient, demoUserId?: string)
       update: {},
     });
   }
-  for (const price of PRO_PRICES) {
+  for (const price of SKILLSTUDIO_PRO_PRICES) {
     await prisma.subscriptionPlanPrice.upsert({
       where: { planId_months_currency: { planId: pro.id, months: price.months, currency: "VND" } },
       create: { planId: pro.id, months: price.months, currency: "VND", amount: price.amount },
