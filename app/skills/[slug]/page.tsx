@@ -34,10 +34,11 @@ function FileRow({
   unlocked,
   openLabel,
 }: {
-  asset: { path: string; sizeBytes: number; url: string | null };
+  asset: { path: string; sizeBytes: number; url: string | null; kind: string };
   unlocked: boolean;
   openLabel: string;
 }) {
+  const fromEngine = asset.kind === "engine";
   return (
     <li className="flex items-center gap-3 px-4 py-2.5 text-sm">
       {unlocked ? (
@@ -46,6 +47,11 @@ function FileRow({
         <Lock className="size-4 shrink-0 text-zinc-400" aria-hidden="true" />
       )}
       <span className="min-w-0 flex-1 truncate font-mono text-xs text-zinc-700">{asset.path}</span>
+      {fromEngine ? (
+        <span className="shrink-0 rounded-full bg-brand-50 px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider text-brand-700 ring-1 ring-brand-200">
+          engine
+        </span>
+      ) : null}
       <span className="shrink-0 text-xs text-zinc-400">{formatBytes(asset.sizeBytes)}</span>
       {unlocked && asset.url ? (
         <a
@@ -124,6 +130,7 @@ export default async function SkillDetailPage({ params }: Props) {
   const isFavorite = user ? await engagementCommands.isFavorite(user.id, slug) : false;
   const isOwned = skill.accessType === "PAID" && Boolean(user && (await accessCommands.hasActiveAccess(user.id, skill.id)));
   const hasAccess = skill.accessType === "FREE" || isOwned;
+  const files = [...skill.assets].sort((a, b) => Number(a.kind === "engine") - Number(b.kind === "engine"));
   const visibleContent = hasAccess ? skill.content : dict.skillDetail.previewLocked;
   // Chỉ nhúng được nguồn có iframe (YouTube/Vimeo); file mp4/webm dùng thẻ
   // `<video>`; link lạ chỉ hiện để mở tab mới vì không rõ cách nhúng.
@@ -291,9 +298,28 @@ export default async function SkillDetailPage({ params }: Props) {
               <p className="mt-1 text-sm text-zinc-500">
                 {hasAccess ? dict.skillDetail.filesHint : dict.skillDetail.filesLocked}
               </p>
+              {skill.engine ? (
+                <p className="mt-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2.5 text-sm text-zinc-700">
+                  {skill.engine.layout === "overlay" ? (
+                    trans(dict.skillDetail.engineOverlay, {
+                      engine: skill.engine.sourceSlug,
+                      count: skill.assets.filter((a) => a.kind === "engine").length,
+                    })
+                  ) : (
+                    <>
+                      {trans(dict.skillDetail.engineSibling, { engine: skill.engine.storeTitle ?? skill.engine.sourceSlug })}{" "}
+                      {skill.engine.storeSlug ? (
+                        <Link href={`/skills/${skill.engine.storeSlug}`} className="font-medium text-brand-700 hover:underline">
+                          {dict.skillDetail.engineOpen}
+                        </Link>
+                      ) : null}
+                    </>
+                  )}
+                </p>
+              ) : null}
               <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 bg-surface">
                 <ul className="divide-y divide-zinc-100">
-                  {skill.assets.slice(0, FILES_VISIBLE).map((asset) => (
+                  {files.slice(0, FILES_VISIBLE).map((asset) => (
                     <FileRow key={asset.path} asset={asset} unlocked={hasAccess} openLabel={dict.skillDetail.download} />
                   ))}
                 </ul>
@@ -303,7 +329,7 @@ export default async function SkillDetailPage({ params }: Props) {
                       {trans(dict.skillDetail.moreFiles, { count: skill.assets.length - FILES_VISIBLE })}
                     </summary>
                     <ul className="divide-y divide-zinc-100 border-t border-zinc-100">
-                      {skill.assets.slice(FILES_VISIBLE).map((asset) => (
+                      {files.slice(FILES_VISIBLE).map((asset) => (
                         <FileRow key={asset.path} asset={asset} unlocked={hasAccess} openLabel={dict.skillDetail.download} />
                       ))}
                     </ul>

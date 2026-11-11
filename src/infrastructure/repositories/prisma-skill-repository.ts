@@ -67,7 +67,7 @@ function toSummary(skill: SkillWithSummary): SkillSummary {
   };
 }
 
-function toDetail(skill: SkillWithDetail): SkillDetail {
+function toDetail(skill: SkillWithDetail, engineInStore: { slug: string; title: string } | null = null): SkillDetail {
   const latest = skill.versions[0];
   return {
     ...toSummary(skill),
@@ -81,6 +81,15 @@ function toDetail(skill: SkillWithDetail): SkillDetail {
     authorName: skill.author?.name ?? null,
     prices: skill.prices.map((p) => ({ currency: p.currency, amount: p.amount })),
     r2Prefix: skill.r2Prefix,
+    engine: skill.baseSourceSlug
+      ? {
+          sourceSlug: skill.baseSourceSlug,
+          layout: skill.baseLayout === "overlay" ? "overlay" : "sibling",
+          storeSlug: engineInStore?.slug ?? null,
+          storeTitle: engineInStore?.title ?? null,
+        }
+      : null,
+    tier: skill.sourceTier,
     assets: skill.assets.map((a) => ({
       path: a.path,
       r2Key: a.r2Key,
@@ -191,7 +200,15 @@ export const prismaSkillRepository: SkillRepository = {
       where: { slug, status: "PUBLISHED" },
       include: detailInclude,
     });
-    return skill ? toDetail(skill) : null;
+    if (!skill) return null;
+    // Engine kiểu sibling là một skill riêng trong kho (garden-*): lấy trang của nó để dẫn link.
+    const engineInStore = skill.baseSourceSlug
+      ? await prisma.skill.findFirst({
+          where: { sourceSlug: skill.baseSourceSlug, status: "PUBLISHED" },
+          select: { slug: true, title: true },
+        })
+      : null;
+    return toDetail(skill, engineInStore);
   },
 
   async findContentById(id) {

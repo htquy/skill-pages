@@ -92,6 +92,20 @@ export interface SkillDetail extends SkillSummary {
   /** Thư mục gốc trên R2 (kết thúc bằng "/"), null với skill nhập tay. */
   r2Prefix: string | null;
   assets: SkillAssetInfo[];
+  /** Engine mà style chạy trên (frontmatter base:). null nếu skill tự đủ. */
+  engine: SkillEngineInfo | null;
+  /** template | library | rebuild (mức bám demo), null nếu không ghi. */
+  tier: string | null;
+}
+
+export interface SkillEngineInfo {
+  /** Slug engine trong feed R2, VD "skillry-launchmotion-engine". */
+  sourceSlug: string;
+  /** overlay: file engine đã gộp vào danh sách file của skill; sibling: engine là skill riêng trong kho. */
+  layout: "overlay" | "sibling";
+  /** Trang của engine trong kho (chỉ khi engine được bán / liệt kê riêng). */
+  storeSlug: string | null;
+  storeTitle: string | null;
 }
 
 export interface SkillListFilters {

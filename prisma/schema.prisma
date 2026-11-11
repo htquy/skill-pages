@@ -274,6 +274,13 @@ model Skill {
   sourceRevision   String?         @db.VarChar(40)
   /// Bản dịch: { "vi": { "title"?, "shortDescription"?, "description"? } }. Cột chính giữ tiếng Anh.
   translations     Json?
+  /// Engine skill mà style này chạy trên (frontmatter `base:` trong SKILL.md), VD "skillry-launchmotion-engine".
+  baseSourceSlug   String?         @db.VarChar(180)
+  /// Cách SkillStudio cài engine: "overlay" (gộp engine + style vào MỘT thư mục, file engine nằm trong SkillAsset kind=engine)
+  /// hoặc "sibling" (engine là thư mục riêng bên cạnh, là một skill riêng trong kho).
+  baseLayout       String?         @db.VarChar(16)
+  /// Mức độ bám demo (frontmatter `tier:`): template | library | rebuild. Null nếu skill không ghi.
+  sourceTier       String?         @db.VarChar(24)
   viewCount        BigInt          @default(0)
   favoriteCount    BigInt          @default(0)
   ratingAverage    Decimal?        @db.Decimal(3, 2)

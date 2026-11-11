@@ -12,6 +12,10 @@
  *   cũng bị xoá; nếu có đơn đã trả / có giao dịch thì dừng, không xoá gì.
  * - Đối chiếu bucket: nếu có R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET_NAME thì liệt kê bucket (chỉ đọc) và
  *   chỉ ghi vào SkillAsset những file THỰC SỰ có trên R2 (catalog có thể liệt kê file chưa được upload); không có khóa thì tin catalog.
+ * - Engine: style có frontmatter `base: <engine>` chạy trên engine skill. Với `base-layout: overlay` SkillStudio gộp engine
+ *   rồi chép style đè lên trong MỘT thư mục (SkillInstaller.Install) => ghi cả file engine vào SkillAsset (kind = "engine",
+ *   r2Key trỏ vào thư mục engine), bỏ các file SkillStudio không cài (preview.*, meta.json, skill.vi.json, demo-N.mp4).
+ *   Kiểu "sibling" (garden-*): engine là thư mục riêng, là một skill riêng trong kho => chỉ ghi baseSourceSlug.
  * - --prune: ẩn (ARCHIVED) skill có sourceSlug nhưng không còn trong danh sách chọn lọc.
  */
 import { ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
@@ -137,6 +141,13 @@ async function listBucket(under: string): Promise<Map<string, number> | null> {
   return out;
 }
 
+/** Tên file SkillStudio KHÔNG chép khi cài skill (SkillInstaller.SkipFiles + demo-N.mp4). */
+const INSTALL_SKIP = new Set(["preview.mp4", "preview.webp", "meta.json", "skillstudio.override.json", "skill.vi.json", ".garden-import", ".skillry-import"]);
+const installable = (path: string) => {
+  const name = path.split("/").pop()!.toLowerCase();
+  return !INSTALL_SKIP.has(name) && !/^demo-d+.mp4$/.test(name);
+};
+
 async function main() {
   console.log(`${dryRun ? "[dry-run] " : ""}feed: ${publicBase}/${prefix}index.json`);
   if (has("reset-manual")) await resetManualSkills();
@@ -171,7 +182,10 @@ async function main() {
     const files = bucket ? s.files.filter((f) => bucket.has(base + f.path)) : s.files;
     if (files.length !== s.files.length)
       console.warn(`  ! ${slug}: ${s.files.length - files.length} file trong catalog không có trên R2: ${s.files.filter((f) => !files.includes(f)).map((f) => f.path).join(", ")}`);
-    return { slug, s, files, base, title, description, vi: vi.description?.trim(), content: cleanSkillMd(mdRaw) };
+    const baseSlug = frontmatterField(mdRaw, "base") ?? null;
+    const layout = baseSlug ? (frontmatterField(mdRaw, "base-layout") === "overlay" ? "overlay" : "sibling") : null;
+    const tier = frontmatterField(mdRaw, "tier") ?? null;
+    return { slug, s, files, base, baseSlug, layout, tier, title, description, vi: vi.description?.trim(), content: cleanSkillMd(mdRaw) };
   });
 
   // ---- taxonomy
@@ -198,14 +212,28 @@ async function main() {
     for (const list of byUseCase.values()) if (list[round]) ordered.push(list[round]);
   const t0 = Date.now() - ordered.length * 1000;
 
-  let created = 0, updated = 0, free = 0, paid = 0, assets = 0;
+  /** File cài được của một engine trong feed (đã đối chiếu bucket), kèm thư mục của nó trên R2. */
+  const engineFiles = (engineSlug: string) => {
+    const e = feed.get(engineSlug);
+    if (!e) return null;
+    const dir = `${prefix}${index.filesBase}${e.category}/${engineSlug}/`;
+    return { dir, files: e.files.filter((f) => installable(f.path) && (!bucket || bucket.has(dir + f.path))) };
+  };
+
+  let created = 0, updated = 0, free = 0, paid = 0, assets = 0, engineRows = 0;
   for (const [i, l] of ordered.entries()) {
     const { slug, s, files } = l;
     const publicSlug = slug.replace(/^bs-/, "");
     const useCase = CURATED.get(slug)!;
     const isFree = s.free;
-    const poster = files.find((f) => f.kind === "poster")?.path;
-    const video = files.find((f) => f.kind === "video")?.path;
+    // Ưu tiên đúng file xem thử; demo-2/3/4.mp4 chỉ là clip phụ.
+    const poster = (files.find((f) => f.path === "preview.webp") ?? files.find((f) => f.kind === "poster"))?.path;
+    const video = (files.find((f) => f.path === "preview.mp4") ?? files.find((f) => f.kind === "video"))?.path;
+    let engine: ReturnType<typeof engineFiles> = null;
+    if (l.baseSlug) {
+      engine = engineFiles(l.baseSlug);
+      if (!engine) console.warn(`  ! ${slug}: engine "${l.baseSlug}" không có trong feed`);
+    }
     const r2Prefix = l.base;
     const posterKey = poster ? r2Prefix + poster : null;
     const previewVideoKey = video ? r2Prefix + video : null;
@@ -228,9 +256,16 @@ async function main() {
       previewVideoKey,
       sourceRevision: s.rev,
       translations,
+      baseSourceSlug: l.baseSlug,
+      baseLayout: l.layout,
+      sourceTier: l.tier,
     };
+    // Overlay: engine trước, style đè lên (cùng đường dẫn thì giữ file của style) — y như thư mục SkillStudio dựng khi chạy job.
+    const own = new Set(files.map((f) => f.path));
+    const merged = l.layout === "overlay" && engine ? engine.files.filter((f) => !own.has(f.path)) : [];
+    engineRows += merged.length;
     if (isFree) free++; else paid++;
-    assets += files.length;
+    assets += files.length + merged.length;
     if (dryRun) continue;
 
     const when = new Date(t0 + (ordered.length - i) * 1000); // /skills sắp createdAt giảm dần => phần tử đầu danh sách chọn lọc hiện trước
@@ -248,10 +283,16 @@ async function main() {
 
     await prisma.skillAsset.deleteMany({ where: { skillId: skill.id } });
     await prisma.skillAsset.createMany({
-      data: files.map((f) => ({
-        skillId: skill.id, path: f.path, r2Key: r2Prefix + f.path, kind: f.kind, contentType: typeOf(f.path),
-        sizeBytes: BigInt(f.size), sha256: f.sha256,
-      })),
+      data: [
+        ...files.map((f) => ({
+          skillId: skill.id, path: f.path, r2Key: r2Prefix + f.path, kind: f.kind, contentType: typeOf(f.path),
+          sizeBytes: BigInt(f.size), sha256: f.sha256,
+        })),
+        ...merged.map((f) => ({
+          skillId: skill.id, path: f.path, r2Key: engine!.dir + f.path, kind: "engine", contentType: typeOf(f.path),
+          sizeBytes: BigInt(f.size), sha256: f.sha256,
+        })),
+      ],
     });
 
     await prisma.skillPrice.deleteMany({ where: { skillId: skill.id } });
@@ -275,7 +316,7 @@ async function main() {
     console.log(`đã dọn ${cats.count} danh mục + ${useCases.count} use-case cũ không còn dùng`);
   }
 
-  console.log(`${dryRun ? "sẽ " : ""}${created} tạo mới, ${updated} cập nhật · ${free} FREE, ${paid} PAID ${PRICE_VND.toLocaleString("vi-VN")}đ · ${assets} file R2 được ghi nhận`);
+  console.log(`${dryRun ? "sẽ " : ""}${created} tạo mới, ${updated} cập nhật · ${free} FREE, ${paid} PAID ${PRICE_VND.toLocaleString("vi-VN")}đ · ${assets} file R2 được ghi nhận (${engineRows} file engine gộp vào style overlay)`);
 }
 
 main()
