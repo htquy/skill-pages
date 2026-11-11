@@ -28,13 +28,24 @@ type FeedSkill = { slug: string; category: string; rev: string; free: boolean; f
 
 const prisma = new PrismaClient();
 
+/** GET công khai có retry: r2.dev trả 429/5xx khi bị gọi dồn dập. */
+async function fetchRetry(url: string, init?: RequestInit): Promise<Response> {
+  for (let attempt = 1; ; attempt++) {
+    const r = await fetch(url, init);
+    if ((r.status === 429 || r.status >= 500) && attempt < 8) {
+      await new Promise((res) => setTimeout(res, 800 * 2 ** (attempt - 1)));
+      continue;
+    }
+    return r;
+  }
+}
 async function getJson<T>(url: string): Promise<T> {
-  const r = await fetch(url, { cache: "no-store" });
+  const r = await fetchRetry(url, { cache: "no-store" });
   if (!r.ok) throw new Error(`${url} -> ${r.status}`);
   return (await r.json()) as T;
 }
 async function getText(url: string): Promise<string | null> {
-  const r = await fetch(url);
+  const r = await fetchRetry(url);
   if (r.status === 404) return null;
   if (!r.ok) throw new Error(`${url} -> ${r.status}`);
   return await r.text();
@@ -121,7 +132,7 @@ async function main() {
 
   // ---- đọc nội dung từng skill (song song, chỉ GET công khai)
   const slugs = [...CURATED.keys()];
-  const loaded = await pool(slugs, 8, async (slug) => {
+  const loaded = await pool(slugs, 3, async (slug) => {
     const s = feed.get(slug)!;
     const base = `${prefix}${index.filesBase}${s.category}/${slug}/`;
     const names = new Set(s.files.map((f) => f.path));
