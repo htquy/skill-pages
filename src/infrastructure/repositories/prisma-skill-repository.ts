@@ -100,6 +100,11 @@ function buildWhere(filters: SkillListFilters): Prisma.SkillWhereInput {
       { title: { contains: filters.q, mode: "insensitive" } },
       { shortDescription: { contains: filters.q, mode: "insensitive" } },
       { description: { contains: filters.q, mode: "insensitive" } },
+      // Bản dịch tiếng Việt nằm trong JSON; JSON path không hỗ trợ mode insensitive nên thử cả nguyên văn lẫn chữ thường.
+      ...[...new Set([filters.q, filters.q.toLowerCase()])].flatMap((term) => [
+        { translations: { path: ["vi", "description"], string_contains: term } },
+        { translations: { path: ["vi", "shortDescription"], string_contains: term } },
+      ]),
     ];
   }
 

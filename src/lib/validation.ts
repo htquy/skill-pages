@@ -1,33 +1,43 @@
 import { z } from "zod";
 
+/**
+ * Form lọc (GET) luôn gửi đủ mọi ô, ô bỏ trống thành "?access=&useCase=". Chuỗi rỗng phải coi như "không lọc",
+ * nếu không enum (access, period...) fail và CẢ bộ lọc bị bỏ (chọn danh mục "Video" vẫn ra mọi loại).
+ */
+const blankToUndefined = (value: unknown) => (typeof value === "string" && value.trim() === "" ? undefined : value);
+const optionalText = (max: number) => z.preprocess(blankToUndefined, z.string().trim().max(max).optional());
+function optionalEnum<const T extends readonly [string, ...string[]]>(values: T) {
+  return z.preprocess(blankToUndefined, z.enum(values).optional());
+}
+
 export const skillFiltersSchema = z.object({
   q: z.string().trim().max(120).optional().default(""),
-  industry: z.string().trim().max(64).optional(),
-  category: z.string().trim().max(64).optional(),
-  useCase: z.string().trim().max(64).optional(),
-  tool: z.string().trim().max(64).optional(),
-  access: z.enum(["FREE", "PAID"]).optional(),
+  industry: optionalText(64),
+  category: optionalText(64),
+  useCase: optionalText(64),
+  tool: optionalText(64),
+  access: optionalEnum(["FREE", "PAID"]),
 });
 
 export const paginationSchema = z.object({
-  page: z.coerce.number().int().positive().max(500).optional().default(1),
-  pageSize: z.coerce.number().int().min(1).max(24).optional().default(12),
+  page: z.preprocess(blankToUndefined, z.coerce.number().int().positive().max(500).optional().default(1)),
+  pageSize: z.preprocess(blankToUndefined, z.coerce.number().int().min(1).max(24).optional().default(12)),
 });
 
 export const newsFiltersSchema = z.object({
-  category: z.string().trim().max(64).optional(),
+  category: optionalText(64),
 });
 
 export const toolFiltersSchema = z.object({
   q: z.string().trim().max(120).optional().default(""),
-  type: z.enum(["DOWNLOADABLE", "EMBED_WIDGET", "MCP_SERVER", "WEB_APP"]).optional(),
-  billing: z.enum(["FREE", "ONE_TIME", "SUBSCRIPTION"]).optional(),
+  type: optionalEnum(["DOWNLOADABLE", "EMBED_WIDGET", "MCP_SERVER", "WEB_APP"]),
+  billing: optionalEnum(["FREE", "ONE_TIME", "SUBSCRIPTION"]),
 });
 
 export const rankingFiltersSchema = z.object({
-  industry: z.string().trim().max(64).optional(),
-  category: z.string().trim().max(64).optional(),
-  period: z.enum(["WEEK", "MONTH", "QUARTER", "ALL_TIME"]).optional(),
+  industry: optionalText(64),
+  category: optionalText(64),
+  period: optionalEnum(["WEEK", "MONTH", "QUARTER", "ALL_TIME"]),
 });
 
 export type SkillFiltersInput = z.infer<typeof skillFiltersSchema>;
