@@ -160,14 +160,14 @@ export function VideoDemoField({
               title={dict.upload.previewAlt}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
-              className="h-28 w-full rounded-lg border-0 bg-zinc-900"
+              className="h-28 w-full rounded-lg border-0 bg-ink"
             />
           ) : videoFileUrl ? (
             <video
               src={videoFileUrl}
               controls
               preload="metadata"
-              className="h-28 w-full rounded-lg bg-zinc-900 object-contain"
+              className="h-28 w-full rounded-lg bg-ink object-contain"
             />
           ) : (
             <span className="flex size-16 items-center justify-center rounded-lg bg-zinc-100 text-[10px] font-semibold uppercase text-zinc-500">

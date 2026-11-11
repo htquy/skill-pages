@@ -316,7 +316,7 @@ export default async function SkillDetailPage({ params }: Props) {
           {skill.videoDemoUrl && !videoFileUrl ? (
             <section className="mt-10">
               <h2 className="text-lg font-semibold text-zinc-900">{dict.skillDetail.videoDemo}</h2>
-              <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-950 shadow-sm">
+              <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 bg-ink shadow-sm">
                 {videoEmbedUrl ? (
                   <iframe
                     src={videoEmbedUrl}

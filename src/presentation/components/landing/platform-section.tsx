@@ -41,12 +41,12 @@ export async function PlatformSection({ numbers }: { numbers: PlatformNumbers })
         </div>
 
         {/* Dải số liệu trên nền tối */}
-        <div className="aurora-dark reveal mt-12 rounded-3xl bg-gradient-to-br from-brand-950 via-zinc-950 to-zinc-950 p-6 md:p-10">
+        <div className="aurora-dark reveal mt-12 rounded-3xl border border-zinc-200 bg-ink p-6 md:p-10">
           <div aria-hidden="true" className="bg-grid-dark pointer-events-none absolute inset-0 -z-10" />
           <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
             {stats.map((stat) => (
               <div key={stat.label} className="text-center">
-                <p className="bg-gradient-to-b from-background to-brand-200 bg-clip-text font-mono text-3xl font-bold tracking-tight text-transparent tabular-nums sm:text-4xl">
+                <p className="bg-gradient-to-b from-white to-brand-700 bg-clip-text font-mono text-3xl font-bold tracking-tight text-transparent tabular-nums sm:text-4xl">
                   {number.format(stat.value)}
                 </p>
                 <p className="mt-1 text-xs text-zinc-400 sm:text-sm">{stat.label}</p>

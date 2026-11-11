@@ -23,7 +23,7 @@ export async function FeaturedNewsCard({ article }: { article: NewsCardViewModel
             className="object-cover transition-transform duration-700 ease-fluid group-hover:scale-[1.05]"
           />
         ) : (
-          <div className="aurora-dark flex h-full min-h-48 items-center justify-center bg-gradient-to-br from-brand-700 via-violet-700 to-zinc-950">
+          <div className="aurora-dark flex h-full min-h-48 items-center justify-center bg-gradient-to-br from-brand-700 via-violet-700 to-ink">
             <div aria-hidden="true" className="bg-grid-dark pointer-events-none absolute inset-0 -z-10" />
             <p className="text-sm font-semibold uppercase tracking-widest text-white/80">
               {featuredLabel}

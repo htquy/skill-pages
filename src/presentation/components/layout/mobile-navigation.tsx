@@ -53,7 +53,7 @@ export function MobileNavigation({ dict, locale }: { dict: Dict; locale: Locale 
           <div
             aria-hidden="true"
             onClick={() => setOpen(false)}
-            className="fixed inset-x-0 bottom-0 top-16 z-30 bg-zinc-900/30"
+            className="fixed inset-x-0 bottom-0 top-16 z-30 bg-black/50"
           />
           <nav
             id="mobile-navigation-panel"

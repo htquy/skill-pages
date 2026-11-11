@@ -33,7 +33,7 @@ export async function HowItWorks() {
               key={step.number}
               className="group card-lift reveal relative rounded-3xl border border-zinc-200 bg-surface p-6 sm:p-8"
             >
-              <div className="inline-grid size-12 place-items-center rounded-2xl bg-zinc-950 font-mono text-base font-bold text-white shadow-glow transition-transform duration-500 ease-spring group-hover:scale-110">
+              <div className="inline-grid size-12 place-items-center rounded-2xl bg-ink font-mono text-base font-bold text-white shadow-glow transition-transform duration-500 ease-spring group-hover:scale-110">
                 <span className="text-gradient">{step.number}</span>
               </div>
               <h3 className="mt-5 text-lg font-bold text-zinc-950">{step.title}</h3>

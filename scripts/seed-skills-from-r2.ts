@@ -10,8 +10,11 @@
  * - Giá: skill miễn phí trong feed => FREE; còn lại => PAID với 1 giá VND (mặc định 49000).
  * - --reset-manual: xoá các skill KHÔNG có sourceSlug (skill test nhập tay). Đơn hàng PENDING không có giao dịch của chúng
  *   cũng bị xoá; nếu có đơn đã trả / có giao dịch thì dừng, không xoá gì.
+ * - Đối chiếu bucket: nếu có R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET_NAME thì liệt kê bucket (chỉ đọc) và
+ *   chỉ ghi vào SkillAsset những file THỰC SỰ có trên R2 (catalog có thể liệt kê file chưa được upload); không có khóa thì tin catalog.
  * - --prune: ẩn (ARCHIVED) skill có sourceSlug nhưng không còn trong danh sách chọn lọc.
  */
+import { ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { CATEGORIES, CURATED, USE_CASES } from "./data/skill-curation";
 
@@ -119,6 +122,21 @@ async function resetManualSkills() {
   ]);
 }
 
+/** Liệt kê object thật trong bucket dưới <prefix>; null nếu không có khóa R2 (khi đó tin catalog). */
+async function listBucket(under: string): Promise<Map<string, number> | null> {
+  const { R2_ACCOUNT_ID: acc, R2_ACCESS_KEY_ID: key, R2_SECRET_ACCESS_KEY: secret, R2_BUCKET_NAME: Bucket } = process.env;
+  if (!acc || !key || !secret || !Bucket) return null;
+  const s3 = new S3Client({ region: "auto", endpoint: `https://${acc}.r2.cloudflarestorage.com`, credentials: { accessKeyId: key, secretAccessKey: secret } });
+  const out = new Map<string, number>();
+  let token: string | undefined;
+  do {
+    const r = await s3.send(new ListObjectsV2Command({ Bucket, Prefix: under, ContinuationToken: token }));
+    for (const o of r.Contents ?? []) out.set(o.Key!, o.Size ?? 0);
+    token = r.IsTruncated ? r.NextContinuationToken : undefined;
+  } while (token);
+  return out;
+}
+
 async function main() {
   console.log(`${dryRun ? "[dry-run] " : ""}feed: ${publicBase}/${prefix}index.json`);
   if (has("reset-manual")) await resetManualSkills();
@@ -129,6 +147,9 @@ async function main() {
   const missing = [...CURATED.keys()].filter((s) => !feed.has(s));
   if (missing.length) throw new Error(`Không có trong feed: ${missing.join(", ")}`);
   console.log(`revision ${index.revision}: ${catalog.length} skill trong feed, chọn ${CURATED.size}`);
+
+  const bucket = await listBucket(`${prefix}${index.filesBase}`);
+  console.log(bucket ? `đối chiếu bucket: ${bucket.size} object` : "không có khóa R2: tin catalog, không đối chiếu bucket");
 
   // ---- đọc nội dung từng skill (song song, chỉ GET công khai)
   const slugs = [...CURATED.keys()];
@@ -147,7 +168,10 @@ async function main() {
     const heading = /^# (.+)$/m.exec(mdRaw.replace(/^---[\s\S]*?\n---\n/, ""))?.[1];
     const title = cleanTitle(meta.title ?? heading ?? slug);
     const description = (meta.description ?? frontmatterField(mdRaw, "description") ?? title).replace(/\s+/g, " ").trim();
-    return { slug, s, base, title, description, vi: vi.description?.trim(), content: cleanSkillMd(mdRaw) };
+    const files = bucket ? s.files.filter((f) => bucket.has(base + f.path)) : s.files;
+    if (files.length !== s.files.length)
+      console.warn(`  ! ${slug}: ${s.files.length - files.length} file trong catalog không có trên R2: ${s.files.filter((f) => !files.includes(f)).map((f) => f.path).join(", ")}`);
+    return { slug, s, files, base, title, description, vi: vi.description?.trim(), content: cleanSkillMd(mdRaw) };
   });
 
   // ---- taxonomy
@@ -176,12 +200,12 @@ async function main() {
 
   let created = 0, updated = 0, free = 0, paid = 0, assets = 0;
   for (const [i, l] of ordered.entries()) {
-    const { slug, s } = l;
+    const { slug, s, files } = l;
     const publicSlug = slug.replace(/^bs-/, "");
     const useCase = CURATED.get(slug)!;
     const isFree = s.free;
-    const poster = s.files.find((f) => f.kind === "poster")?.path;
-    const video = s.files.find((f) => f.kind === "video")?.path;
+    const poster = files.find((f) => f.kind === "poster")?.path;
+    const video = files.find((f) => f.kind === "video")?.path;
     const r2Prefix = l.base;
     const posterKey = poster ? r2Prefix + poster : null;
     const previewVideoKey = video ? r2Prefix + video : null;
@@ -206,7 +230,7 @@ async function main() {
       translations,
     };
     if (isFree) free++; else paid++;
-    assets += s.files.length;
+    assets += files.length;
     if (dryRun) continue;
 
     const when = new Date(t0 + (ordered.length - i) * 1000); // /skills sắp createdAt giảm dần => phần tử đầu danh sách chọn lọc hiện trước
@@ -224,7 +248,7 @@ async function main() {
 
     await prisma.skillAsset.deleteMany({ where: { skillId: skill.id } });
     await prisma.skillAsset.createMany({
-      data: s.files.map((f) => ({
+      data: files.map((f) => ({
         skillId: skill.id, path: f.path, r2Key: r2Prefix + f.path, kind: f.kind, contentType: typeOf(f.path),
         sizeBytes: BigInt(f.size), sha256: f.sha256,
       })),

@@ -712,7 +712,7 @@ export function AiGatewayAdminPanel({
               )}
             </div>
 
-            <div className="mt-4 flex-1 overflow-auto rounded-lg bg-zinc-900 p-4 font-mono text-xs text-zinc-100">
+            <div className="mt-4 flex-1 overflow-auto rounded-lg bg-ink p-4 font-mono text-xs text-zinc-800">
               {testLoading && (
                 <div className="flex h-full items-center justify-center text-zinc-400 gap-2">
                   <RefreshCw className="size-4 animate-spin text-brand-400" />
@@ -739,7 +739,7 @@ export function AiGatewayAdminPanel({
                   {testResult.kind === "TEXT" && (
                     <div>
                       <div className="text-zinc-400 text-xs mb-1">[AI RESPONSE CONTENT]</div>
-                      <div className="text-emerald-400 whitespace-pre-wrap bg-zinc-800 p-3 rounded-md">
+                      <div className="text-emerald-400 whitespace-pre-wrap bg-ink p-3 rounded-md">
                         {String((testResult.result as { content?: string }).content ?? "")}
                       </div>
                     </div>
