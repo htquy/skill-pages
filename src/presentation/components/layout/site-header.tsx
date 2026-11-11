@@ -26,7 +26,7 @@ function HeaderSearch({ dict }: { dict: Awaited<ReturnType<typeof getDictionary>
           name="q"
           type="search"
           placeholder={dict.siteHeader.searchPlaceholder}
-          className="w-44 rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 transition-[width,border-color,box-shadow] duration-500 ease-fluid focus:w-56 focus:border-brand-400 focus:outline-none focus:ring-4 focus:ring-brand-100 xl:w-56 xl:focus:w-64"
+          className="w-44 rounded-lg border border-zinc-200 bg-surface py-2 pl-9 pr-3 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 transition-[width,border-color,box-shadow] duration-500 ease-fluid focus:w-56 focus:border-brand-400 focus:outline-none focus:ring-4 focus:ring-brand-100 xl:w-56 xl:focus:w-64"
         />
       </div>
     </Form>
@@ -53,7 +53,7 @@ export async function SiteHeader() {
   const [dict, locale] = await Promise.all([getDictionary(), getLocale()]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-200/60 bg-white/95 md:bg-white/75 md:backdrop-blur-xl md:backdrop-saturate-150">
+    <header className="sticky top-0 z-40 border-b border-zinc-200/60 bg-surface/95 md:bg-surface/75 md:backdrop-blur-xl md:backdrop-saturate-150">
       {/* Đường sáng gradient dưới header. */}
       <div
         aria-hidden="true"

@@ -33,7 +33,7 @@ export default async function AccountPage() {
             alt={user.name ?? dict.account.yourAvatar}
             width={80}
             height={80}
-            className="size-20 rounded-full border-4 border-white shadow-md ring-1 ring-zinc-200"
+            className="size-20 rounded-full border-4 border-surface shadow-md ring-1 ring-zinc-200"
           />
         ) : (
           <span className="flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-violet-600 text-2xl font-bold text-white shadow-md">
@@ -52,7 +52,7 @@ export default async function AccountPage() {
         ) : null}
       </div>
 
-      <section className="mt-10 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+      <section className="mt-10 overflow-hidden rounded-2xl border border-zinc-200 bg-surface shadow-sm">
         <div className="flex items-center gap-4 border-b border-zinc-100 px-6 py-5">
           <span className="flex size-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
             <Package className="size-5" aria-hidden="true" />
@@ -98,7 +98,7 @@ export default async function AccountPage() {
         )}
       </section>
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+      <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 bg-surface shadow-sm">
         <Link
           href="/account/saved"
           className="group flex items-center gap-4 border-b border-zinc-100 px-6 py-5 transition-colors hover:bg-zinc-50"

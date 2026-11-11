@@ -8,7 +8,7 @@ export async function FinalCta() {
   const cta = dict.landing.finalCta;
 
   return (
-    <section className="bg-white py-20 sm:py-28">
+    <section className="bg-surface py-20 sm:py-28">
       <Container>
         <div className="aurora-dark reveal rounded-3xl bg-zinc-950 p-8 text-center text-white shadow-glow sm:p-16">
           <div aria-hidden="true" className="bg-grid-dark pointer-events-none absolute inset-0 -z-10" />
@@ -21,7 +21,7 @@ export async function FinalCta() {
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 href="/tools"
-                className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-white px-5 py-3 text-base font-semibold text-zinc-950 shadow-[0_0_0_1px_rgb(255_255_255/0.2),0_18px_50px_-12px_rgb(138_127_248/0.7)] transition-all duration-500 ease-fluid hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgb(255_255_255/0.3),0_24px_60px_-10px_rgb(138_127_248/0.9)] active:scale-[0.98]"
+                className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-surface px-5 py-3 text-base font-semibold text-zinc-950 shadow-[0_0_0_1px_rgb(255_255_255/0.2),0_18px_50px_-12px_rgb(138_127_248/0.7)] transition-all duration-500 ease-fluid hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgb(255_255_255/0.3),0_24px_60px_-10px_rgb(138_127_248/0.9)] active:scale-[0.98]"
               >
                 {cta.buttonPrimary}
                 <ArrowRight
@@ -31,13 +31,13 @@ export async function FinalCta() {
               </Link>
               <Link
                 href="/skills"
-                className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-base font-semibold text-white ring-1 ring-white/20 transition-colors duration-500 ease-fluid hover:bg-white/10"
+                className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-base font-semibold text-white ring-1 ring-white/20 transition-colors duration-500 ease-fluid hover:bg-surface/10"
               >
                 {cta.buttonSecondary}
               </Link>
             </div>
 
-            <div className="mt-8 inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-xs text-zinc-300 ring-1 ring-white/10">
+            <div className="mt-8 inline-flex items-center gap-2 rounded-full bg-surface/5 px-3 py-1.5 text-xs text-zinc-300 ring-1 ring-white/10">
               <ShieldCheck className="size-4 text-emerald-400" aria-hidden="true" />
               <span>{cta.note}</span>
             </div>

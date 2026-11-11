@@ -3,6 +3,7 @@ import { HeroRedesign } from "@/src/presentation/components/landing/hero-redesig
 import { TaglineReveal } from "@/src/presentation/components/landing/tagline-reveal";
 import { ProductLines } from "@/src/presentation/components/landing/product-lines";
 import { FeaturedTools } from "@/src/presentation/components/landing/featured-tools";
+import { FeaturedSkills } from "@/src/presentation/components/landing/featured-skills";
 import { HowItWorks } from "@/src/presentation/components/landing/how-it-works";
 import { PlatformSection } from "@/src/presentation/components/landing/platform-section";
 import { FinalCta } from "@/src/presentation/components/landing/final-cta";
@@ -21,6 +22,7 @@ export default async function HomePage() {
   return (
     <>
       <HeroRedesign counts={metrics} />
+      <FeaturedSkills />
       <TaglineReveal
         lead={dict.landing.taglineReveal.lead}
         accent={dict.landing.taglineReveal.accent}

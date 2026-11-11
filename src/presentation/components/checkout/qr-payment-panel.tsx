@@ -50,7 +50,7 @@ export function QrPaymentPanel({
           alt={qr.alt}
           width={320}
           height={320}
-          className="mx-auto aspect-square w-full max-w-64 rounded-xl border border-zinc-200 bg-white p-2 object-contain shadow-sm"
+          className="mx-auto aspect-square w-full max-w-64 rounded-xl border border-zinc-200 bg-surface p-2 object-contain shadow-sm"
         />
       ) : (
         <div className="mx-auto flex aspect-square w-full max-w-64 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-xs text-zinc-400">

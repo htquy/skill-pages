@@ -97,7 +97,7 @@ export default async function AdminRankingDetailPage({
         </ConfirmButton>
       </div>
 
-      <dl className="mt-8 grid gap-3 rounded-2xl border border-zinc-200 bg-white p-6 text-sm shadow-sm sm:grid-cols-2">
+      <dl className="mt-8 grid gap-3 rounded-2xl border border-zinc-200 bg-surface p-6 text-sm shadow-sm sm:grid-cols-2">
         <Row label={dict.common.status} value={ranking.status} />
         <Row label={dict.admin.rankings.periodType} value={dict.periodType[ranking.periodType]} />
         <Row label={dict.admin.rankings.industry} value={ranking.industryId ?? "—"} />
@@ -108,7 +108,7 @@ export default async function AdminRankingDetailPage({
         <Row label={dict.admin.rankings.updated} value={formatDate(ranking.updatedAt)} />
       </dl>
 
-      <section className="mt-8 overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
+      <section className="mt-8 overflow-x-auto rounded-2xl border border-zinc-200 bg-surface shadow-sm">
         <div className="border-b border-zinc-100 px-6 py-4">
           <h2 className="text-lg font-semibold text-zinc-900">
             {trans(dict.admin.rankings.entriesTitle, { count: ranking.entries.length })}

@@ -37,7 +37,7 @@ function Field({
         id={id}
         name={name}
         defaultValue={defaultValue}
-        className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+        className="rounded-lg border border-zinc-200 bg-surface px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
       >
         <option value="">{allLabel}</option>
         {options.map((option) => (
@@ -79,7 +79,7 @@ export async function RankingFilters({
     <FilterForm
       action={action}
       resetKey={resetKey}
-      className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+      className="rounded-2xl border border-zinc-200 bg-surface p-4 shadow-sm"
     >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field

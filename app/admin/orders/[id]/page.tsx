@@ -34,7 +34,7 @@ export default async function AdminOrderDetailPage({
         {trans(dict.admin.orders.placed, { date: formatDate(order.createdAt), userId: order.userId })}
       </p>
 
-      <dl className="mt-8 grid gap-3 rounded-2xl border border-zinc-200 bg-white p-6 text-sm shadow-sm sm:grid-cols-2">
+      <dl className="mt-8 grid gap-3 rounded-2xl border border-zinc-200 bg-surface p-6 text-sm shadow-sm sm:grid-cols-2">
         <Row label={dict.admin.orders.skill} value={order.skillTitle} />
         <Row label={dict.admin.orders.skillId} value={order.skillId ?? order.planPriceId ?? "—"} />
         <Row label={dict.admin.orders.amount} value={formatMoney(order.amount, order.currency)} />
@@ -52,13 +52,13 @@ export default async function AdminOrderDetailPage({
       <div className="mt-6 flex flex-wrap gap-3">
         <Link
           href={order.productPath}
-          className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
+          className="rounded-lg border border-zinc-300 bg-surface px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
         >
           {dict.admin.orders.viewSkillPage}
         </Link>
         <Link
           href={order.skillId ? `/admin/skills/${order.skillId}` : "/admin/apps"}
-          className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
+          className="rounded-lg border border-zinc-300 bg-surface px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
         >
           {dict.admin.orders.adminSkillDetail}
         </Link>

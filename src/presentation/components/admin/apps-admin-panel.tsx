@@ -103,7 +103,7 @@ export function AppsAdminPanel({
                 "rounded-lg border px-3 py-2 text-left text-sm transition-colors " +
                 (selectedSlug === config.app.slug
                   ? "border-brand-300 bg-brand-50 text-brand-700"
-                  : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50")
+                  : "border-zinc-200 bg-surface text-zinc-700 hover:bg-zinc-50")
               }
             >
               <span className="block font-medium">{config.app.name}</span>
@@ -127,7 +127,7 @@ export function AppsAdminPanel({
 
           {selected ? (
             <>
-              <section className="rounded-xl border border-zinc-200 bg-white p-5">
+              <section className="rounded-xl border border-zinc-200 bg-surface p-5">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h2 className="text-base font-semibold text-zinc-900">{selected.app.name}</h2>
                   <span className="text-xs text-zinc-400">
@@ -140,7 +140,7 @@ export function AppsAdminPanel({
                 <CatalogLinks config={selected} t={t} />
               </section>
 
-              <section className="rounded-xl border border-zinc-200 bg-white p-5">
+              <section className="rounded-xl border border-zinc-200 bg-surface p-5">
                 <h3 className="text-sm font-semibold text-zinc-900">{t.plans}</h3>
                 {selected.plans.length === 0 ? (
                   <p className="mt-2 text-sm text-zinc-500">{t.noPlans}</p>
@@ -181,7 +181,7 @@ export function AppsAdminPanel({
                 />
               </section>
 
-              <section className="rounded-xl border border-zinc-200 bg-white p-5">
+              <section className="rounded-xl border border-zinc-200 bg-surface p-5">
                 <h3 className="text-sm font-semibold text-zinc-900">{t.menus}</h3>
                 {selected.menus.length === 0 ? (
                   <p className="mt-2 text-sm text-zinc-500">{t.noMenus}</p>
@@ -214,7 +214,7 @@ export function AppsAdminPanel({
                 />
               </section>
 
-              <section className="rounded-xl border border-zinc-200 bg-white p-5">
+              <section className="rounded-xl border border-zinc-200 bg-surface p-5">
                 <h3 className="text-sm font-semibold text-zinc-900">{t.grant}</h3>
                 <GrantSubscriptionForm
                   dict={dict}
@@ -296,7 +296,7 @@ function CreateAppForm({
 function CatalogLinks({ config, t }: { config: AdminAppConfig; t: Dict["admin"]["apps"] }) {
   const published = config.catalogPages.filter((page) => page.status === "PUBLISHED");
   const linkClass =
-    "inline-flex items-center gap-1 rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50";
+    "inline-flex items-center gap-1 rounded-lg border border-zinc-300 bg-surface px-2.5 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50";
   return (
     <div className="mt-4 space-y-3 border-t border-zinc-100 pt-4">
       <div className="text-sm">

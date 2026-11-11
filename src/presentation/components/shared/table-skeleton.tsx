@@ -17,7 +17,7 @@ export function TableSkeleton({
     <div
       role="status"
       aria-live="polite"
-      className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
+      className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 bg-surface shadow-sm"
     >
       <span className="sr-only">{label}</span>
       <div aria-hidden="true" className="divide-y divide-zinc-100">

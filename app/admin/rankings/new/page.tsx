@@ -25,7 +25,7 @@ export default async function AdminRankingNewPage() {
           {dict.admin.rankings.newSubtitle}
         </p>
       </div>
-      <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <div className="mt-8 rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
         <RankingForm industries={taxonomy.industries} categories={taxonomy.categories} dict={dict} />
       </div>
     </Container>

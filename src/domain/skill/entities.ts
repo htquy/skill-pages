@@ -14,6 +14,26 @@ export interface AIToolRef {
   logoUrl: string | null;
 }
 
+export interface SkillTranslation {
+  title?: string;
+  shortDescription?: string;
+  description?: string;
+}
+
+/** Bản dịch theo mã ngôn ngữ, VD { vi: { shortDescription } }. Cột chính của skill là tiếng Anh. */
+export type SkillTranslations = Record<string, SkillTranslation>;
+
+/** Một file trong thư mục skill trên R2 (r2Key = r2Prefix + path). */
+export interface SkillAssetInfo {
+  path: string;
+  r2Key: string;
+  kind: string;
+  contentType: string | null;
+  sizeBytes: number;
+  /** URL công khai = R2_PUBLIC_URL + "/" + r2Key (null nếu chưa cấu hình R2_PUBLIC_URL). */
+  url: string | null;
+}
+
 export interface SkillSummary {
   id: string;
   slug: string;
@@ -22,6 +42,9 @@ export interface SkillSummary {
   accessType: SkillAccessType;
   coverImageUrl: string | null;
   videoDemoUrl: string | null;
+  translations: SkillTranslations | null;
+  /** Giá đang bán (null với skill miễn phí). */
+  price: SkillPriceInfo | null;
   viewCount: number;
   favoriteCount: number;
   ratingAverage: number | null;
@@ -66,6 +89,9 @@ export interface SkillDetail extends SkillSummary {
   publishedAt: Date | null;
   authorName: string | null;
   prices: SkillPriceInfo[];
+  /** Thư mục gốc trên R2 (kết thúc bằng "/"), null với skill nhập tay. */
+  r2Prefix: string | null;
+  assets: SkillAssetInfo[];
 }
 
 export interface SkillListFilters {

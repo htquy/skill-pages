@@ -55,7 +55,7 @@ async function RankingResults({ filters }: { filters: RankingQueryFilters }) {
           action={
             <Link
               href="/rankings"
-              className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
+              className="rounded-lg border border-zinc-300 bg-surface px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
             >
               {dict.rankings.clearAction}
             </Link>
@@ -119,7 +119,7 @@ export default async function RankingsPage({ searchParams }: PageProps<"/ranking
               className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ease-fluid ${
                 active
                   ? "bg-gradient-to-r from-brand-600 to-violet-600 text-white shadow-glow"
-                  : "border border-zinc-200 bg-white text-zinc-700 hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-700"
+                  : "border border-zinc-200 bg-surface text-zinc-700 hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-700"
               }`}
             >
               {tab.label}

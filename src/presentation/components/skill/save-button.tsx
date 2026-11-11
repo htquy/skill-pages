@@ -39,7 +39,7 @@ export function SaveButton({
         "inline-flex items-center justify-center gap-2 rounded-lg border px-3.5 py-2 text-sm font-medium shadow-sm transition-colors disabled:opacity-60",
         isSaved
           ? "border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100"
-          : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50",
+          : "border-zinc-300 bg-surface text-zinc-700 hover:bg-zinc-50",
         compact ? "px-3 py-1.5" : undefined,
       )}
     >

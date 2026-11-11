@@ -19,7 +19,7 @@ export async function ProductLines({ counts }: { counts: StoreCounts }) {
   const number = new Intl.NumberFormat(locale);
 
   return (
-    <section className="border-b border-zinc-200 bg-white py-16 sm:py-24">
+    <section className="border-b border-zinc-200 bg-surface py-16 sm:py-24">
       <Container>
         <div className="mx-auto max-w-[680px] text-center">
           <div className="eyebrow">{pl.badge}</div>
@@ -41,7 +41,7 @@ export async function ProductLines({ counts }: { counts: StoreCounts }) {
               <li key={line.key} className={spans[index]}>
                 <Link
                   href={line.href}
-                  className="group card-lift reveal flex h-full flex-col rounded-3xl border border-zinc-200 bg-white p-6 sm:p-8"
+                  className="group card-lift reveal flex h-full flex-col rounded-3xl border border-zinc-200 bg-surface p-6 sm:p-8"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <span

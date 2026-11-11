@@ -1,4 +1,4 @@
-import type { SkillSummary } from "@/src/domain/skill";
+import type { SkillPriceInfo, SkillSummary, SkillTranslation } from "@/src/domain/skill";
 import { formatNumber } from "@/src/lib/utils";
 
 export interface SkillCardViewModel {
@@ -9,6 +9,7 @@ export interface SkillCardViewModel {
   accessType: SkillSummary["accessType"];
   coverImageUrl: string | null;
   videoDemoUrl: string | null;
+  price: SkillPriceInfo | null;
   isOwned: boolean;
   categories: string[];
   industries: string[];
@@ -20,18 +21,28 @@ export interface SkillCardViewModel {
   viewCountLabel: string;
 }
 
+/** Bản dịch của skill theo ngôn ngữ (rỗng nếu không có) — cột chính luôn là tiếng Anh. */
+export function pickTranslation(
+  skill: Pick<SkillSummary, "translations">,
+  locale: string,
+): SkillTranslation {
+  return skill.translations?.[locale] ?? {};
+}
+
 export function toSkillCardViewModel(
   skill: SkillSummary,
-  options: { isOwned?: boolean } = {},
+  options: { isOwned?: boolean; locale?: string } = {},
 ): SkillCardViewModel {
+  const t = pickTranslation(skill, options.locale ?? "en");
   return {
     id: skill.id,
     slug: skill.slug,
-    title: skill.title,
-    description: skill.shortDescription,
+    title: t.title ?? skill.title,
+    description: t.shortDescription ?? skill.shortDescription,
     accessType: skill.accessType,
     coverImageUrl: skill.coverImageUrl,
     videoDemoUrl: skill.videoDemoUrl,
+    price: skill.price,
     isOwned: options.isOwned ?? false,
     categories: skill.categories.map((c) => c.name),
     industries: skill.industries.map((i) => i.name),

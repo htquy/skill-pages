@@ -13,7 +13,7 @@ import { skillQueries, taxonomyQueries, accessCommands } from "@/src/infrastruct
 import { getCurrentUser } from "@/src/infrastructure/authentication/authorization";
 import type { SkillFiltersValues } from "@/src/presentation/components/skill/skill-filters";
 import { skillFiltersSchema, paginationSchema } from "@/src/lib/validation";
-import { getDictionary, trans } from "@/src/lib/i18n";
+import { getDictionary, getLocale, trans } from "@/src/lib/i18n";
 
 function toUrlSearchParams(searchParams: Record<string, string | string[] | undefined>) {
   const params = new URLSearchParams();
@@ -53,7 +53,8 @@ async function SearchResults({ filters, pagination, searchParams }: SearchResult
   ]);
 
   const isOwned = createOwnershipLookup(ownedSkillIds);
-  const cards = result.items.map((skill) => toSkillCardViewModel(skill, { isOwned: isOwned(skill.id) }));
+  const locale = await getLocale();
+  const cards = result.items.map((skill) => toSkillCardViewModel(skill, { isOwned: isOwned(skill.id), locale }));
 
   const dict = await getDictionary();
   const countText = trans(dict.search.resultsCount, { count: result.total });
@@ -103,7 +104,8 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
         values={filters}
         industries={taxonomy.industries}
         categories={taxonomy.categories}
-        tools={taxonomy.tools}
+        useCases={taxonomy.useCases}
+        tools={[]}
       />
 
       <div className="mt-8">

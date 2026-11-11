@@ -10,7 +10,7 @@ import { toSkillCardViewModel, createOwnershipLookup } from "@/src/presentation/
 import { accountQueries, accessCommands } from "@/src/infrastructure/composition";
 import { requireUser } from "@/src/infrastructure/authentication/authorization";
 import type { CurrentUser } from "@/src/domain/identity/entities";
-import { getDictionary, trans } from "@/src/lib/i18n";
+import { getDictionary, getLocale, trans } from "@/src/lib/i18n";
 
 async function SavedSkills({ user }: { user: CurrentUser }) {
   const [saved, ownedSkillIds] = await Promise.all([
@@ -18,7 +18,8 @@ async function SavedSkills({ user }: { user: CurrentUser }) {
     accessCommands.listOwnedSkillIds(user.id),
   ]);
   const isOwned = createOwnershipLookup(ownedSkillIds);
-  const cards = saved.map((skill) => toSkillCardViewModel(skill, { isOwned: isOwned(skill.id) }));
+  const locale = await getLocale();
+  const cards = saved.map((skill) => toSkillCardViewModel(skill, { isOwned: isOwned(skill.id), locale }));
   const dict = await getDictionary();
 
   const subtitle =

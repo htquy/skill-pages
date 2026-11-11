@@ -10,8 +10,8 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-brand-200 bg-gradient-to-b from-brand-50/60 to-white px-6 py-16 text-center">
-      <span className="inline-grid size-14 place-items-center rounded-2xl bg-white text-brand-400 shadow-lift ring-1 ring-brand-100">
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-brand-200 bg-gradient-to-b from-brand-50/60 to-background px-6 py-16 text-center">
+      <span className="inline-grid size-14 place-items-center rounded-2xl bg-surface text-brand-400 shadow-lift ring-1 ring-brand-100">
         <SearchX className="size-7" aria-hidden="true" />
       </span>
       <h2 className="mt-4 text-lg font-semibold text-zinc-900">{title}</h2>

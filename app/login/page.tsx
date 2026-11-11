@@ -26,8 +26,8 @@ export default async function LoginPage(props: {
   };
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-gradient-to-b from-brand-50/60 via-white to-white px-6 py-16">
-      <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+    <div className="flex flex-1 items-center justify-center bg-gradient-to-b from-brand-50/60 via-background to-background px-6 py-16">
+      <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-surface p-8 shadow-sm">
         <div className="flex justify-center">
           <span className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-violet-600 text-xl font-bold text-white shadow-md">
             {siteConfig.name.slice(0, 2)}
@@ -43,7 +43,7 @@ export default async function LoginPage(props: {
         <form action={handleSignIn} className="mt-8">
           <button
             type="submit"
-            className="flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-900 shadow-sm transition-colors hover:bg-zinc-50"
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-300 bg-surface px-4 py-3 text-sm font-medium text-zinc-900 shadow-sm transition-colors hover:bg-zinc-50"
           >
             <Image
               src="/brand/google.svg"

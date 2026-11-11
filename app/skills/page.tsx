@@ -16,7 +16,7 @@ import { skillQueries, taxonomyQueries, accessCommands } from "@/src/infrastruct
 import { getCurrentUser } from "@/src/infrastructure/authentication/authorization";
 import type { SkillFiltersValues } from "@/src/presentation/components/skill/skill-filters";
 import { skillFiltersSchema, paginationSchema } from "@/src/lib/validation";
-import { getDictionary, trans } from "@/src/lib/i18n";
+import { getDictionary, getLocale, trans } from "@/src/lib/i18n";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -63,7 +63,8 @@ async function CatalogResults({ filters, pagination, searchParams }: CatalogResu
   ]);
 
   const isOwned = createOwnershipLookup(ownedSkillIds);
-  const cards = result.items.map((skill) => toSkillCardViewModel(skill, { isOwned: isOwned(skill.id) }));
+  const locale = await getLocale();
+  const cards = result.items.map((skill) => toSkillCardViewModel(skill, { isOwned: isOwned(skill.id), locale }));
 
   const dict = await getDictionary();
 
@@ -120,7 +121,8 @@ export default async function SkillsPage({ searchParams }: { searchParams: Promi
           values={filters}
           industries={taxonomy.industries}
           categories={taxonomy.categories}
-          tools={taxonomy.tools}
+          useCases={taxonomy.useCases}
+          tools={[]}
         />
 
         <div className="mt-8">

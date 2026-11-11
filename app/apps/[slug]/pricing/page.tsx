@@ -125,7 +125,7 @@ export default async function AppPricingPage({ params }: Props) {
                   className={`card-lift animate-fade-up stagger relative flex flex-col rounded-3xl p-6 sm:p-7 ${
                     isBest
                       ? "border-gradient shadow-lift ring-2 ring-spark-300"
-                      : "border border-zinc-200 bg-white shadow-sm hover:border-brand-200"
+                      : "border border-zinc-200 bg-surface shadow-sm hover:border-brand-200"
                   }`}
                   style={{ "--d": `${120 + index * 90}ms` } as React.CSSProperties}
                 >

@@ -85,7 +85,7 @@ export default async function AdminDashboardPage() {
         </div>
         <Link
           href="/admin/statistics"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-surface px-3.5 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
         >
           {dict.admin.dashboard.detailedStats}
           <ArrowUpRight className="size-4" aria-hidden="true" />
@@ -97,7 +97,7 @@ export default async function AdminDashboardPage() {
           <Link
             key={card.label}
             href={card.href}
-            className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-colors hover:border-brand-200"
+            className="rounded-2xl border border-zinc-200 bg-surface p-5 shadow-sm transition-colors hover:border-brand-200"
           >
             <div className="flex items-center justify-between">
               <p className="text-sm text-zinc-500">{card.label}</p>
@@ -111,7 +111,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="mt-10 grid gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.dashboard.revenueByMonth}</h2>
@@ -125,7 +125,7 @@ export default async function AdminDashboardPage() {
           )}
         </section>
 
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.dashboard.orderStatus}</h2>
           <p className="mb-6 text-sm text-zinc-500">{dict.admin.dashboard.orderStatusSub}</p>
           <DonutChart
@@ -138,7 +138,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="mt-10 grid gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.dashboard.topSelling}</h2>
@@ -164,7 +164,7 @@ export default async function AdminDashboardPage() {
           )}
         </section>
 
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.dashboard.recentOrders}</h2>

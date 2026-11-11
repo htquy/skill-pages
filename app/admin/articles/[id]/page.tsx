@@ -52,7 +52,7 @@ export default async function AdminArticleDetailPage({
               href={article.sourceUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-surface px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
             >
               <ExternalLink className="size-4" aria-hidden="true" />
               {dict.admin.articles.source}
@@ -102,14 +102,14 @@ export default async function AdminArticleDetailPage({
       </div>
 
       <div className="mt-8 space-y-6">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.articles.content}</h2>
           <div className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">
             {article.content}
           </div>
         </section>
 
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.articles.metadata}</h2>
           <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
             <Row label={dict.common.status} value={article.status} />

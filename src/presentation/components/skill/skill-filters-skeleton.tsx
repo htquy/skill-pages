@@ -11,7 +11,7 @@ function FilterField({ className, labelWidth }: { className?: string; labelWidth
 
 export function SkillFiltersSkeleton() {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-zinc-200 bg-surface p-4 shadow-sm">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <FilterField className="sm:col-span-2 lg:col-span-2" labelWidth="w-14" />
         <FilterField labelWidth="w-20" />

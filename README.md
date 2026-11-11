@@ -382,3 +382,22 @@ extension, because browsers report binaries such as `.dmg` or `.AppImage` as
 - **Users** — accounts are created through authentication; admins block/unblock accounts and
   change roles, but cannot delete them.
 - **Audit** — destructive and publish actions write an `AuditLog` entry with the acting admin.
+
+---
+
+## Kho skill lấy từ R2 (SkillStudio feed)
+
+`/skills` hiển thị các phong cách chọn lọc từ feed R2 của SkillStudio (`<R2_PUBLIC_URL>/skills-feed/`, do `scripts/upload-skills-feed.ts` tải lên).
+
+- **DB**: `catalog."Skill"` có `sourceSlug` (slug trong feed, khóa đồng bộ), `r2Prefix` (thư mục gốc trên R2), `posterKey` / `previewVideoKey` (object key), `sourceRevision`, `translations` (JSON, VD tiếng Việt). Bảng `catalog."SkillAsset"` ghi từng file trong thư mục skill (`path`, `r2Key`, `kind`, `sizeBytes`, `sha256`). Nội dung `SKILL.md` nằm ở `SkillVersion.content`.
+- **Danh sách chọn lọc**: `scripts/data/skill-curation.ts` (mỗi phong cách chỉ giữ một đại diện; skill miễn phí trong feed luôn giữ và luôn FREE). Skill trả phí đều đồng giá 49.000₫.
+- **Đồng bộ** (idempotent, chỉ đọc R2 qua URL công khai):
+
+```bash
+npx prisma migrate deploy
+npx tsx --env-file=.env scripts/seed-skills-from-r2.ts --dry-run
+npx tsx --env-file=.env scripts/seed-skills-from-r2.ts --reset-manual   # lần đầu: xoá skill test nhập tay
+npx tsx --env-file=.env scripts/seed-skills-from-r2.ts                  # các lần sau: thêm / cập nhật theo danh sách chọn lọc
+```
+
+Thêm `--prune` để ẩn skill đã bị bỏ khỏi danh sách chọn lọc, `--price <VND>` để đổi giá chung.

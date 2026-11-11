@@ -70,7 +70,7 @@ export function AdminSidebar({ dict }: { dict: Dict }) {
       {/* Điện thoại / máy tính bảng: thanh menu cuộn ngang, dính ngay dưới header. */}
       <nav
         aria-label={dict.admin.nav.aria}
-        className="sticky top-16 z-20 border-b border-zinc-200 bg-white lg:hidden"
+        className="sticky top-16 z-20 border-b border-zinc-200 bg-surface lg:hidden"
       >
         <ul className="flex gap-1 overflow-x-auto overscroll-x-contain px-3 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {groups
@@ -103,7 +103,7 @@ export function AdminSidebar({ dict }: { dict: Dict }) {
       </nav>
 
       {/* Máy tính: sidebar dọc. */}
-      <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] shrink-0 border-r border-zinc-200 bg-white lg:block">
+      <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] shrink-0 border-r border-zinc-200 bg-surface lg:block">
         <nav aria-label={dict.admin.nav.aria} className="h-full w-60 overflow-y-auto px-3 py-6">
           <div className="space-y-5">
             {groups.map((group, index) => (

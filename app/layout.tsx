@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { SiteHeader } from "@/src/presentation/components/layout/site-header";
 import { SiteFooter } from "@/src/presentation/components/layout/site-footer";
 import { siteConfig } from "@/src/lib/site";
@@ -12,8 +12,14 @@ const geistSans = Geist({
   display: "swap",
 });
 
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: "#181b20",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -45,9 +51,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang={locale}
       suppressHydrationWarning
-      className={`${geistSans.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-dvh flex-col bg-white text-zinc-900">
+      <body className="flex min-h-dvh flex-col bg-background text-zinc-900">
         <SiteHeader />
         <main className="flex flex-1 flex-col">{children}</main>
         <SiteFooter />

@@ -20,7 +20,7 @@ export async function HeroRedesign({ counts }: { counts: StoreCounts }) {
   const number = new Intl.NumberFormat(locale);
 
   return (
-    <section className="aurora border-b border-zinc-200 bg-white py-16 sm:py-24">
+    <section className="aurora border-b border-zinc-200 bg-surface py-16 sm:py-24">
       <div aria-hidden="true" className="bg-grid pointer-events-none absolute inset-0 -z-10" />
 
       <Container className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">

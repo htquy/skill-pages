@@ -220,7 +220,7 @@ export function AiGatewayAdminPanel({
     <div className="space-y-6">
       {/* Metrics Row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs">
+        <div className="rounded-xl border border-zinc-200 bg-surface p-5 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-zinc-500">Tổng API Keys</span>
             <Key className="size-5 text-brand-600" />
@@ -231,7 +231,7 @@ export function AiGatewayAdminPanel({
           </div>
         </div>
 
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs">
+        <div className="rounded-xl border border-zinc-200 bg-surface p-5 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-zinc-500">Khả dụng (Active)</span>
             <CheckCircle2 className="size-5 text-emerald-600" />
@@ -242,7 +242,7 @@ export function AiGatewayAdminPanel({
           </div>
         </div>
 
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs">
+        <div className="rounded-xl border border-zinc-200 bg-surface p-5 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-zinc-500">Đang Cooldown (429)</span>
             <Clock className="size-5 text-amber-500" />
@@ -253,7 +253,7 @@ export function AiGatewayAdminPanel({
           </div>
         </div>
 
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs">
+        <div className="rounded-xl border border-zinc-200 bg-surface p-5 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-zinc-500">Tổng Request Đã Log</span>
             <Activity className="size-5 text-blue-600" />
@@ -331,7 +331,7 @@ export function AiGatewayAdminPanel({
                   <select
                     value={newKeyProvider}
                     onChange={(e) => setNewKeyProvider(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
+                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-surface px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
                   >
                     {SUPPORTED_PROVIDERS.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -349,7 +349,7 @@ export function AiGatewayAdminPanel({
                     required
                     value={newKeySecret}
                     onChange={(e) => setNewKeySecret(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
+                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-surface px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
                   />
                 </div>
 
@@ -360,7 +360,7 @@ export function AiGatewayAdminPanel({
                     placeholder="VD: OpenAI Tier 4 Primary"
                     value={newKeyAlias}
                     onChange={(e) => setNewKeyAlias(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
+                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-surface px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
                   />
                 </div>
 
@@ -372,7 +372,7 @@ export function AiGatewayAdminPanel({
                     max="10"
                     value={newKeyWeight}
                     onChange={(e) => setNewKeyWeight(Number(e.target.value))}
-                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
+                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-surface px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
                   />
                 </div>
               </div>
@@ -381,7 +381,7 @@ export function AiGatewayAdminPanel({
                 <button
                   type="button"
                   onClick={() => setIsAddingKey(false)}
-                  className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50"
+                  className="rounded-lg border border-zinc-300 bg-surface px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50"
                 >
                   Hủy
                 </button>
@@ -398,7 +398,7 @@ export function AiGatewayAdminPanel({
           )}
 
           {/* Bảng danh sách Keys */}
-          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xs">
+          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-surface shadow-xs">
             <table className="min-w-full divide-y divide-zinc-200 text-left text-sm">
               <thead className="bg-zinc-50 font-medium text-zinc-600">
                 <tr>
@@ -454,7 +454,7 @@ export function AiGatewayAdminPanel({
                       <button
                         onClick={() => handleToggleStatus(k)}
                         title={k.status === "ACTIVE" ? "Tạm ngưng key" : "Kích hoạt lại key"}
-                        className="inline-flex items-center rounded-md border border-zinc-200 bg-white p-1.5 text-zinc-600 hover:bg-zinc-50"
+                        className="inline-flex items-center rounded-md border border-zinc-200 bg-surface p-1.5 text-zinc-600 hover:bg-zinc-50"
                       >
                         <RotateCcw className="size-3.5" />
                       </button>
@@ -491,7 +491,7 @@ export function AiGatewayAdminPanel({
             <span className="text-xs text-zinc-500">Hiển thị {logs.length} bản ghi gần nhất</span>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-xs">
+          <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-surface shadow-xs">
             <table className="min-w-full divide-y divide-zinc-200 text-left text-sm">
               <thead className="bg-zinc-50 font-medium text-zinc-600">
                 <tr>
@@ -583,7 +583,7 @@ export function AiGatewayAdminPanel({
       {activeTab === "tester" && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Cột Trái: Input Controls */}
-          <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs space-y-4">
+          <div className="rounded-xl border border-zinc-200 bg-surface p-5 shadow-xs space-y-4">
             <div className="flex items-center gap-2 text-zinc-900 font-semibold">
               <Sliders className="size-4 text-brand-600" />
               <span>Cấu hình Thử nghiệm API</span>
@@ -617,7 +617,7 @@ export function AiGatewayAdminPanel({
                     className={`flex items-center justify-center gap-2 rounded-lg border py-2 text-xs font-medium transition-colors ${
                       testTaskType === item.id
                         ? "border-brand-600 bg-brand-50 text-brand-700"
-                        : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
+                        : "border-zinc-200 bg-surface text-zinc-700 hover:bg-zinc-50"
                     }`}
                   >
                     <item.icon className="size-3.5" />
@@ -633,7 +633,7 @@ export function AiGatewayAdminPanel({
                 <select
                   value={testProvider}
                   onChange={(e) => setTestProvider(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
+                  className="w-full rounded-lg border border-zinc-300 bg-surface px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
                 >
                   {testTaskType === "TEXT" && (
                     <>
@@ -652,7 +652,7 @@ export function AiGatewayAdminPanel({
                   type="text"
                   value={testModel}
                   onChange={(e) => setTestModel(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
+                  className="w-full rounded-lg border border-zinc-300 bg-surface px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
                 />
               </div>
             </div>
@@ -666,7 +666,7 @@ export function AiGatewayAdminPanel({
                 placeholder="Để trống nếu muốn dùng key có sẵn trong hệ thống"
                 value={testCustomKey}
                 onChange={(e) => setTestCustomKey(e.target.value)}
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
+                className="w-full rounded-lg border border-zinc-300 bg-surface px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand-500"
               />
             </div>
 
@@ -678,7 +678,7 @@ export function AiGatewayAdminPanel({
                 rows={4}
                 value={testPrompt}
                 onChange={(e) => setTestPrompt(e.target.value)}
-                className="w-full rounded-lg border border-zinc-300 bg-white p-3 text-sm text-zinc-900 outline-none focus:border-brand-500"
+                className="w-full rounded-lg border border-zinc-300 bg-surface p-3 text-sm text-zinc-900 outline-none focus:border-brand-500"
                 placeholder="Nhập nội dung cần AI xử lý..."
               />
             </div>
@@ -699,7 +699,7 @@ export function AiGatewayAdminPanel({
           </div>
 
           {/* Cột Phải: Kết quả Output */}
-          <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs flex flex-col">
+          <div className="rounded-xl border border-zinc-200 bg-surface p-5 shadow-xs flex flex-col">
             <div className="flex items-center justify-between text-zinc-900 font-semibold pb-3 border-b border-zinc-100">
               <span className="flex items-center gap-2">
                 <Zap className="size-4 text-amber-500" />

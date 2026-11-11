@@ -263,6 +263,17 @@ model Skill {
   coverImageUrl    String?
   /// Link video demo (YouTube/Vimeo/MP4 public hoặc file đã upload lên R2).
   videoDemoUrl     String?
+  /// Slug của skill trong feed R2 của SkillStudio. Khóa đồng bộ idempotent (upsert theo cột này).
+  sourceSlug       String?         @unique @db.VarChar(180)
+  /// Thư mục gốc của skill trên R2, kết thúc bằng "/" (VD "skills-feed/skills/video/bs-x/"). Mọi file của skill nằm dưới đây.
+  r2Prefix         String?
+  /// Object key (không phải URL) của ảnh poster / video xem thử trên R2. URL công khai = R2_PUBLIC_URL + "/" + key.
+  posterKey        String?
+  previewVideoKey  String?
+  /// Revision nội dung của skill trong feed (trường `rev` của catalog), để biết khi nào cần cập nhật.
+  sourceRevision   String?         @db.VarChar(40)
+  /// Bản dịch: { "vi": { "title"?, "shortDescription"?, "description"? } }. Cột chính giữ tiếng Anh.
+  translations     Json?
   viewCount        BigInt          @default(0)
   favoriteCount    BigInt          @default(0)
   ratingAverage    Decimal?        @db.Decimal(3, 2)
@@ -272,6 +283,7 @@ model Skill {
   updatedAt        DateTime        @updatedAt @db.Timestamptz(3)
 
   versions    SkillVersion[]
+  assets      SkillAsset[]
   prices      SkillPrice[]
   categories  SkillCategoryLink[]
   industries  SkillIndustryLink[]
@@ -304,6 +316,29 @@ model SkillVersion {
 
   @@unique([skillId, version])
   @@index([skillId, version])
+  @@schema("catalog")
+}
+
+/// Một file nằm trong thư mục skill trên R2 (SKILL.md, meta.json, preview.webp, scripts/..., references/...).
+/// Skill có `r2Prefix`; mỗi file ở đây có r2Key = r2Prefix + path. Dùng để liệt kê / tải nguyên thư mục skill.
+model SkillAsset {
+  id          String   @id @default(uuid())
+  skillId     String
+  /// Đường dẫn tương đối trong thư mục skill, dùng "/" (VD "references/styles/ink-wash.md").
+  path        String   @db.VarChar(512)
+  /// Object key đầy đủ trong bucket R2.
+  r2Key       String
+  /// Loại do feed gán: core | poster | video | ...
+  kind        String   @db.VarChar(24)
+  contentType String?  @db.VarChar(120)
+  sizeBytes   BigInt
+  sha256      String   @db.Char(64)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([skillId, path])
+  @@index([skillId, kind])
   @@schema("catalog")
 }
 

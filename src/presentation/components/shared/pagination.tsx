@@ -41,7 +41,7 @@ export async function Pagination({
         <Link
           href={buildPaginationHref(path, params, info.page - 1)}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50",
+            "inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-surface px-3.5 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50",
           )}
         >
           <ChevronLeft className="size-4" aria-hidden="true" />
@@ -62,7 +62,7 @@ export async function Pagination({
       {info.page < info.totalPages ? (
         <Link
           href={buildPaginationHref(path, params, info.page + 1)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-surface px-3.5 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
         >
           {dict.pagination.next}
           <ChevronRight className="size-4" aria-hidden="true" />

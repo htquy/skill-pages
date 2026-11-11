@@ -42,7 +42,7 @@ async function WebhookEventsTable({ status, page }: { status: string; page: numb
         <CountCard label={dict.admin.webhookEvents.failed} value={counts.FAILED} />
       </dl>
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+      <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 bg-surface shadow-sm">
         {result.items.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -174,7 +174,7 @@ export default async function AdminWebhookEventsPage({
         </div>
         <Link
           href="/admin/orders"
-          className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
+          className="rounded-lg border border-zinc-300 bg-surface px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
         >
           {dict.admin.orders.title}
         </Link>
@@ -186,7 +186,7 @@ export default async function AdminWebhookEventsPage({
           <select
             name="status"
             defaultValue={status}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            className="rounded-lg border border-zinc-300 bg-surface px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           >
             {STATUS_OPTIONS.map((option) => (
               <option key={option} value={option}>
@@ -208,7 +208,7 @@ export default async function AdminWebhookEventsPage({
 
 function CountCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-zinc-200 bg-surface p-4 shadow-sm">
       <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</dt>
       <dd className="mt-1 text-2xl font-bold text-zinc-900">{value}</dd>
     </div>

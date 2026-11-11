@@ -6,7 +6,7 @@ import { useR2Upload } from "@/src/presentation/components/upload/use-r2-upload"
 const initial: SourceInput = { key: "app", name: "VideoTool", version: "1.0.1", kind: "APPLICATION", format: "ZIP",
   platform: "win-x64", url: "", sha256: "", size: 0, fileName: "VideoTool-win-x64.zip", installDirectory: "",
   entryPoint: "DirectorCraftStudio.exe", requiredFiles: ["VideoTool.Updater.exe", "libSkiaSharp.dll", "libHarfBuzzSharp.dll", "av_libglesv2.dll"], description: "", metadata: {} };
-const fieldClass = "mt-1 w-full rounded-lg border border-zinc-300 bg-white p-2 text-sm";
+const fieldClass = "mt-1 w-full rounded-lg border border-zinc-300 bg-surface p-2 text-sm";
 const buttonClass = "rounded-lg border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-100 disabled:opacity-40";
 type Config = { sources: AppSourceRecord[]; releases: AppReleaseRecord[] };
 async function api(url: string, method = "GET", body?: unknown) {
@@ -72,7 +72,7 @@ export function DistributionAdmin({ apps }: { apps: { slug: string; name: string
       {apps.map(a => <option key={a.slug} value={a.slug}>{a.name} ({a.slug})</option>)}</select></label>
     <p role="status" aria-live="polite" className="text-sm text-brand-700">{message || state.error}</p>
     {!slug ? <p>Hãy tạo ứng dụng tại Quản lý apps trước.</p> : <>
-    <form className="rounded-xl border border-zinc-200 bg-white p-5" onSubmit={e => { e.preventDefault(); void action(async () => {
+    <form className="rounded-xl border border-zinc-200 bg-surface p-5" onSubmit={e => { e.preventDefault(); void action(async () => {
       const extra: unknown = JSON.parse(metadata);
       if (!extra || Array.isArray(extra) || typeof extra !== "object") throw new Error("Metadata phải là JSON object");
       await api(base + "/sources" + (editId ? "/" + editId : ""), editId ? "PUT" : "POST", { ...source,
@@ -113,7 +113,7 @@ export function DistributionAdmin({ apps }: { apps: { slug: string; name: string
       <p className="my-3 text-xs text-zinc-500">Đường dẫn source trên máy publisher chỉ là metadata; server không đọc ổ E: của bạn. Upload tạo URL mới. SHA-256 lấy từ script đóng gói, không nạp model lớn vào bộ nhớ trình duyệt.</p>
       <div className="flex gap-3"><button disabled={busy || uploading} className={buttonClass}>Lưu phiên bản file</button><button type="button" className={buttonClass} onClick={() => { setEditId(undefined); setSource(initial); setRequiredFiles(initial.requiredFiles.join("\n")); setMetadata("{}"); }}>Tạo mới</button></div>
     </form>
-    <section className="rounded-xl border border-zinc-200 bg-white p-5"><h2 className="text-lg font-semibold">2. Chọn file và tạo bản nháp</h2>
+    <section className="rounded-xl border border-zinc-200 bg-surface p-5"><h2 className="text-lg font-semibold">2. Chọn file và tạo bản nháp</h2>
       <p className="my-2 text-xs text-zinc-500">Chọn một gói app và một phiên bản mỗi tài nguyên cần dùng. Tài nguyên tùy chọn chưa cài trên máy khách sẽ không bị tự tải. Xóa cấu hình chỉ áp dụng cho file chưa ghim; object R2 được giữ để tránh làm hỏng bản tải cũ.</p>
       <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th>Ghim</th><th>Thành phần</th><th>Phiên bản</th><th>Dung lượng</th><th>Thao tác</th></tr></thead><tbody>
         {config.sources.map(s => <tr className="border-t border-zinc-100" key={s.id}>
@@ -127,7 +127,7 @@ export function DistributionAdmin({ apps }: { apps: { slug: string; name: string
         <label className="block text-sm">Nội dung cập nhật<textarea className={fieldClass} rows={3} value={notes} onChange={e => setNotes(e.target.value)} /></label><button disabled={busy || !selected.length} className={buttonClass}>Tạo bản nháp</button>
       </form>
     </section>
-    <section className="rounded-xl border border-zinc-200 bg-white p-5"><h2 className="text-lg font-semibold">3. Phát hành</h2>
+    <section className="rounded-xl border border-zinc-200 bg-surface p-5"><h2 className="text-lg font-semibold">3. Phát hành</h2>
       <a className="my-2 block text-sm text-brand-600 underline" href={`/api/apps/${encodeURIComponent(slug)}/updates?channel=stable&platform=win-x64`} target="_blank" rel="noreferrer">Xem manifest stable</a>
       {config.releases.map(r => <div key={r.id} className="border-t py-4"><div className="flex flex-wrap items-center gap-3"><strong>{r.version}</strong><span className="text-sm">{r.channel} · {r.status}</span>
         {r.status === "DRAFT" && <><button disabled={busy} className={buttonClass} onClick={() => { if (confirm(`Phát hành ${r.version} tới người dùng?`)) void action(() => api(base + "/releases/" + r.id, "PATCH", { status: "PUBLISHED" })); }}>Phát hành</button><button disabled={busy} className={buttonClass} onClick={() => void action(() => api(base + "/releases/" + r.id, "DELETE"))}>Xóa nháp</button></>}

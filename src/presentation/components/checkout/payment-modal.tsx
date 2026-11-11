@@ -137,7 +137,7 @@ export function PaymentModal({
         aria-modal="true"
         aria-labelledby="payment-modal-title"
         tabIndex={-1}
-        className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-y-auto rounded-t-2xl bg-white shadow-2xl outline-none sm:rounded-2xl"
+        className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-y-auto rounded-t-2xl bg-surface shadow-2xl outline-none sm:rounded-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="flex items-start justify-between gap-4 border-b border-zinc-100 px-5 py-4">

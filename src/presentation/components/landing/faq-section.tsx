@@ -37,7 +37,7 @@ export function FaqSection({ badge, title, items }: FaqSectionProps) {
   };
 
   return (
-    <section className="border-t border-zinc-200 bg-gradient-to-b from-zinc-50/70 to-white py-16 sm:py-24">
+    <section className="border-t border-zinc-200 bg-gradient-to-b from-zinc-50/70 to-background py-16 sm:py-24">
       {/* JSON-LD for Search Engines and AI Answer Engines */}
       <script
         type="application/ld+json"
@@ -60,8 +60,8 @@ export function FaqSection({ badge, title, items }: FaqSectionProps) {
                 key={index}
                 className={`overflow-hidden rounded-2xl border transition-all duration-500 ease-fluid ${
                   isOpen
-                    ? "border-brand-200 bg-white shadow-lift"
-                    : "border-zinc-200 bg-zinc-50 hover:border-brand-200 hover:bg-white"
+                    ? "border-brand-200 bg-surface shadow-lift"
+                    : "border-zinc-200 bg-zinc-50 hover:border-brand-200 hover:bg-surface"
                 }`}
               >
                 <button
@@ -75,7 +75,7 @@ export function FaqSection({ badge, title, items }: FaqSectionProps) {
                   </span>
                   <span
                     className={`inline-grid size-7 shrink-0 place-items-center rounded-full transition-all duration-500 ease-fluid ${
-                      isOpen ? "rotate-180 bg-brand-600 text-white" : "bg-white text-zinc-500 ring-1 ring-zinc-200"
+                      isOpen ? "rotate-180 bg-brand-600 text-white" : "bg-surface text-zinc-500 ring-1 ring-zinc-200"
                     }`}
                   >
                     <ChevronDown className="size-4" aria-hidden="true" />

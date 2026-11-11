@@ -46,7 +46,7 @@ export default async function AdminSkillDetailPage({
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/skills/${skill.slug}`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-surface px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
           >
             <Eye className="size-4" aria-hidden="true" />
             {dict.admin.skills.viewPage}
@@ -90,7 +90,7 @@ export default async function AdminSkillDetailPage({
           [dict.admin.skills.rating, skill.ratingAverage === null ? "—" : `${skill.ratingAverage}/5`],
           [dict.admin.skills.ratingCount, formatNumber(skill.ratingCount ?? 0)],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <div key={label} className="rounded-2xl border border-zinc-200 bg-surface p-5 shadow-sm">
             <p className="text-sm text-zinc-500">{label}</p>
             <p className="mt-2 text-2xl font-bold text-zinc-900">{value}</p>
           </div>
@@ -98,14 +98,14 @@ export default async function AdminSkillDetailPage({
       </div>
 
       <div className="mt-8 space-y-6">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.skills.description}</h2>
           <div className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">
             {skill.description}
           </div>
         </section>
 
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.skills.promptContent}</h2>
           <pre className="mt-3 whitespace-pre-wrap rounded-xl bg-zinc-50 p-5 font-mono text-sm leading-relaxed text-zinc-800 ring-1 ring-zinc-100">
             {skill.content}
@@ -131,7 +131,7 @@ export default async function AdminSkillDetailPage({
         </section>
 
         <div className="grid gap-6 sm:grid-cols-2">
-          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.skills.classification}</h2>
             <dl className="mt-3 space-y-3 text-sm">
               <Row label={dict.admin.skills.accessType} value={accessTypeLabel(skill.accessType, dict)} />
@@ -144,7 +144,7 @@ export default async function AdminSkillDetailPage({
             </dl>
           </section>
 
-          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.skills.statusHistory}</h2>
             <dl className="mt-3 space-y-3 text-sm">
               <Row label={dict.common.status} value={skill.status} />

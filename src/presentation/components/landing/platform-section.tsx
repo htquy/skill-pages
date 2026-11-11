@@ -31,7 +31,7 @@ export async function PlatformSection({ numbers }: { numbers: PlatformNumbers })
   ];
 
   return (
-    <section className="border-b border-zinc-200 bg-white py-16 sm:py-24">
+    <section className="border-b border-zinc-200 bg-surface py-16 sm:py-24">
       <Container>
         <div className="mx-auto max-w-[680px] text-center">
           <div className="eyebrow">{platform.badge}</div>
@@ -46,7 +46,7 @@ export async function PlatformSection({ numbers }: { numbers: PlatformNumbers })
           <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
             {stats.map((stat) => (
               <div key={stat.label} className="text-center">
-                <p className="bg-gradient-to-b from-white to-brand-200 bg-clip-text font-mono text-3xl font-bold tracking-tight text-transparent tabular-nums sm:text-4xl">
+                <p className="bg-gradient-to-b from-background to-brand-200 bg-clip-text font-mono text-3xl font-bold tracking-tight text-transparent tabular-nums sm:text-4xl">
                   {number.format(stat.value)}
                 </p>
                 <p className="mt-1 text-xs text-zinc-400 sm:text-sm">{stat.label}</p>
@@ -65,7 +65,7 @@ export async function PlatformSection({ numbers }: { numbers: PlatformNumbers })
             return (
               <div
                 key={item.title}
-                className="group card-lift reveal relative overflow-hidden rounded-3xl border border-zinc-200 bg-white p-6"
+                className="group card-lift reveal relative overflow-hidden rounded-3xl border border-zinc-200 bg-surface p-6"
               >
                 <div
                   aria-hidden="true"

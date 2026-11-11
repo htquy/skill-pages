@@ -20,7 +20,7 @@ export default async function AdminSkillNewPage() {
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900">{dict.admin.skills.newTitle}</h1>
         <p className="mt-1 text-zinc-500">{dict.admin.skills.newSubtitle}</p>
       </div>
-      <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <div className="mt-8 rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
         <SkillForm dict={dict} taxonomy={taxonomy} />
       </div>
     </Container>

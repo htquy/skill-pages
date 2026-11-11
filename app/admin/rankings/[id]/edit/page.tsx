@@ -31,7 +31,7 @@ export default async function AdminRankingEditPage({
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900">{dict.admin.rankings.editTitle}</h1>
         <p className="mt-1 text-zinc-500">{dict.admin.rankings.editSubtitle}</p>
       </div>
-      <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <div className="mt-8 rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
         <RankingForm
           ranking={ranking}
           industries={taxonomy.industries}

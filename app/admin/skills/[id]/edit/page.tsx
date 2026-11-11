@@ -31,7 +31,7 @@ export default async function AdminSkillEditPage({
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900">{dict.admin.skills.editTitle}</h1>
         <p className="mt-1 text-zinc-500">{dict.admin.skills.editSubtitle}</p>
       </div>
-      <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <div className="mt-8 rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
         <SkillForm dict={dict} skill={skill} taxonomy={taxonomy} />
       </div>
     </Container>

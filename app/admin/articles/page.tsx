@@ -45,7 +45,7 @@ async function ArticlesTable({ filters, page }: { filters: AdminArticleFilters; 
         {trans(dict.admin.articles.count, { count: result.total })}
       </p>
 
-      <div className="mt-3 overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
+      <div className="mt-3 overflow-x-auto rounded-2xl border border-zinc-200 bg-surface shadow-sm">
         {result.items.length > 0 ? (
           <table className="w-full min-w-[40rem] text-left text-sm">
             <thead className="border-b bg-zinc-50">
@@ -132,7 +132,7 @@ export default async function AdminArticlesPage({
             type="search"
             defaultValue={filters.q}
             placeholder={dict.admin.articles.searchPlaceholder}
-            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            className="w-full rounded-lg border border-zinc-300 bg-surface px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           />
         </label>
         <label>
@@ -140,7 +140,7 @@ export default async function AdminArticlesPage({
           <select
             name="status"
             defaultValue={filters.status}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            className="rounded-lg border border-zinc-300 bg-surface px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           >
             {STATUS_OPTIONS.map((option) => (
               <option key={option} value={option}>

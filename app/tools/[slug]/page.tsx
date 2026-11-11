@@ -162,7 +162,7 @@ export default async function ToolDetailPage({ params }: Props) {
             </div>
           ) : null}
 
-          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-zinc-900">{dict.tools.pricingTitle}</h2>
             {pricingHref ? (
               <>
@@ -225,7 +225,7 @@ export default async function ToolDetailPage({ params }: Props) {
                 className={
                   "inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-colors " +
                   (pricingHref
-                    ? "mt-3 border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50"
+                    ? "mt-3 border border-zinc-300 bg-surface text-zinc-800 hover:bg-zinc-50"
                     : "mt-5 bg-brand-600 text-white hover:bg-brand-500")
                 }
               >
@@ -248,7 +248,7 @@ export default async function ToolDetailPage({ params }: Props) {
           </section>
 
           {release ? (
-            <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-zinc-900">{dict.tools.versionTitle}</h2>
               <dl className="mt-3 space-y-3 text-sm">
                 <div className="flex items-start justify-between gap-4">
@@ -267,7 +267,7 @@ export default async function ToolDetailPage({ params }: Props) {
               {release.notes ? <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-600">{release.notes}</p> : null}
             </section>
           ) : version?.fileUrl || version?.scriptUrl ? (
-            <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-zinc-900">{dict.tools.versionTitle}</h2>
               <dl className="mt-3 space-y-3 text-sm">
                 {version.versionCode ? (
@@ -293,7 +293,7 @@ export default async function ToolDetailPage({ params }: Props) {
           ) : null}
 
           {Object.keys(extraConfig).length > 0 ? (
-            <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-zinc-900">{dict.tools.configTitle}</h2>
               <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-xl bg-zinc-50 p-4 font-mono text-xs text-zinc-700 ring-1 ring-zinc-100">
                 {JSON.stringify(extraConfig, null, 2)}

@@ -110,7 +110,7 @@ export function VideoDemoField({
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
+              className="rounded-lg border border-zinc-300 bg-surface px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
             >
               {dict.upload.replace}
             </button>
@@ -153,7 +153,7 @@ export function VideoDemoField({
       </div>
 
       {preview ? (
-        <div className="flex items-start gap-3 rounded-xl border border-zinc-200 bg-white p-3">
+        <div className="flex items-start gap-3 rounded-xl border border-zinc-200 bg-surface p-3">
           {videoEmbedUrl ? (
             <iframe
               src={videoEmbedUrl}

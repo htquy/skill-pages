@@ -3,7 +3,7 @@ import { Skeleton } from "@/src/presentation/components/shared/skeleton";
 
 export function NewsCardSkeleton() {
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+    <div className="flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-surface shadow-sm">
       <Skeleton className="aspect-[16/9] w-full rounded-none" />
 
       <div className="flex flex-1 flex-col p-5">

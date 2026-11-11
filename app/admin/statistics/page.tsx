@@ -42,7 +42,7 @@ export default async function AdminStatisticsPage() {
           [dict.admin.statistics.conversionRate, `${metrics.conversionRate}%`],
           [dict.admin.statistics.totalOrders, formatNumber(metrics.totalOrders)],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <div key={label} className="rounded-2xl border border-zinc-200 bg-surface p-5 shadow-sm">
             <p className="text-sm text-zinc-500">{label}</p>
             <p className="mt-2 text-3xl font-bold text-zinc-900">{value}</p>
           </div>
@@ -56,7 +56,7 @@ export default async function AdminStatisticsPage() {
           [dict.admin.statistics.totalUsers, formatNumber(users.totalUsers)],
           [dict.admin.statistics.adminUsers, formatNumber(users.adminUsers)],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <div key={label} className="rounded-2xl border border-zinc-200 bg-surface p-5 shadow-sm">
             <p className="text-sm text-zinc-500">{label}</p>
             <p className="mt-2 text-3xl font-bold text-zinc-900">{value}</p>
           </div>
@@ -64,7 +64,7 @@ export default async function AdminStatisticsPage() {
       </div>
 
       <div className="mt-10 grid gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.statistics.revenueByMonth}</h2>
           <p className="mb-6 text-sm text-zinc-500">
             {trans(dict.admin.statistics.totalPaidOnly, { value: VNDish(revenue.total) })}
@@ -76,7 +76,7 @@ export default async function AdminStatisticsPage() {
           )}
         </section>
 
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.statistics.userHealth}</h2>
           <p className="mb-6 text-sm text-zinc-500">
             {trans(dict.admin.statistics.userHealthSummary, {
@@ -94,7 +94,7 @@ export default async function AdminStatisticsPage() {
       </div>
 
       <div className="mt-10 grid gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.statistics.skillSales}</h2>
           <p className="mb-6 text-sm text-zinc-500">{dict.admin.statistics.skillSalesSub}</p>
           {sales.items.length > 0 ? (
@@ -111,7 +111,7 @@ export default async function AdminStatisticsPage() {
           )}
         </section>
 
-        <section className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
+        <section className="overflow-x-auto rounded-2xl border border-zinc-200 bg-surface shadow-sm">
           <div className="border-b border-zinc-100 px-6 py-4">
             <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.statistics.topSkillsTable}</h2>
             <p className="text-sm text-zinc-500">{dict.admin.statistics.topSkillsTableSub}</p>

@@ -11,7 +11,7 @@ export async function FeaturedNewsCard({ article }: { article: NewsCardViewModel
   return (
     <Link
       href={`/news/${article.slug}`}
-      className="group card-lift card-topline relative flex flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm md:flex-row"
+      className="group card-lift card-topline relative flex flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-surface shadow-sm md:flex-row"
     >
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-zinc-100 md:aspect-auto md:w-1/2">
         {article.coverImageUrl ? (

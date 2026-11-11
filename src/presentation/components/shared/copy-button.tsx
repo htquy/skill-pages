@@ -34,7 +34,7 @@ export function CopyButton({
         iconOnly ? "size-8 justify-center" : "gap-1.5 px-3 py-2 text-sm font-medium",
         copied
           ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-          : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50",
+          : "border-zinc-300 bg-surface text-zinc-700 hover:bg-zinc-50",
       )}
       aria-label={copied ? dict.copyButton.copiedAria : dict.copyButton.copyAria}
       title={copied ? dict.copyButton.copied : dict.copyButton.copyAria}

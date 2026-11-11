@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Bookmark, Calendar, Eye, FolderOpen, Megaphone } from "lucide-react";
+import { ArrowLeft, Bookmark, Calendar, Eye, FileText, FolderOpen, Lock, Megaphone, Rocket } from "lucide-react";
 import { Container } from "@/src/presentation/components/layout/container";
 import { SkillBadge } from "@/src/presentation/components/skill/skill-badge";
 import { StarRating } from "@/src/presentation/components/skill/star-rating";
@@ -18,7 +18,48 @@ import { getCurrentUser } from "@/src/infrastructure/authentication/authorizatio
 import { formatMoney } from "@/src/domain/shared";
 import { formatDate, formatNumber } from "@/src/lib/utils";
 import { getVideoEmbedUrl, isDirectVideoUrl } from "@/src/lib/video";
-import { getDictionary, trans } from "@/src/lib/i18n";
+import { getDictionary, getLocale, trans } from "@/src/lib/i18n";
+import { pickTranslation } from "@/src/presentation/view-models/skill";
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes < 10240 ? 1 : 0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+const FILES_VISIBLE = 12;
+
+function FileRow({
+  asset,
+  unlocked,
+  openLabel,
+}: {
+  asset: { path: string; sizeBytes: number; url: string | null };
+  unlocked: boolean;
+  openLabel: string;
+}) {
+  return (
+    <li className="flex items-center gap-3 px-4 py-2.5 text-sm">
+      {unlocked ? (
+        <FileText className="size-4 shrink-0 text-zinc-400" aria-hidden="true" />
+      ) : (
+        <Lock className="size-4 shrink-0 text-zinc-400" aria-hidden="true" />
+      )}
+      <span className="min-w-0 flex-1 truncate font-mono text-xs text-zinc-700">{asset.path}</span>
+      <span className="shrink-0 text-xs text-zinc-400">{formatBytes(asset.sizeBytes)}</span>
+      {unlocked && asset.url ? (
+        <a
+          href={asset.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 text-xs font-medium text-brand-600 hover:underline"
+        >
+          {openLabel}
+        </a>
+      ) : null}
+    </li>
+  );
+}
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -61,7 +102,7 @@ function Chips({
         <Link
           key={item.slug}
           href={`/search?${new URLSearchParams({ [queryKey]: item.slug })}`}
-          className="rounded-full border border-zinc-200 bg-white px-2.5 py-0.5 text-xs font-medium text-zinc-700 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+          className="rounded-full border border-zinc-200 bg-surface px-2.5 py-0.5 text-xs font-medium text-zinc-700 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
         >
           {item.name}
         </Link>
@@ -75,7 +116,11 @@ export default async function SkillDetailPage({ params }: Props) {
   const skill = await skillQueries.findBySlug(slug);
   if (!skill) notFound();
 
-  const [dict, user] = await Promise.all([getDictionary(), getCurrentUser()]);
+  const [dict, user, locale] = await Promise.all([getDictionary(), getCurrentUser(), getLocale()]);
+  const t = pickTranslation(skill, locale);
+  const title = t.title ?? skill.title;
+  const shortDescription = t.shortDescription ?? skill.shortDescription;
+  const aboutText = t.description ?? skill.description;
   const isFavorite = user ? await engagementCommands.isFavorite(user.id, slug) : false;
   const isOwned = skill.accessType === "PAID" && Boolean(user && (await accessCommands.hasActiveAccess(user.id, skill.id)));
   const hasAccess = skill.accessType === "FREE" || isOwned;
@@ -118,15 +163,48 @@ export default async function SkillDetailPage({ params }: Props) {
           <div className="flex flex-wrap items-center gap-2">
             <SkillBadge accessType={skill.accessType} />
             {isOwned ? <OwnedBadge dict={dict} /> : null}
-            <StarRating rating={skill.ratingAverage ?? 0} count={skill.ratingCount} />
+            {skill.categories[0] || skill.useCases[0] ? (
+              <span className="eyebrow">
+                {[skill.categories[0]?.name, skill.useCases[0]?.name].filter(Boolean).join(" · ")}
+              </span>
+            ) : null}
+            {skill.ratingCount > 0 ? <StarRating rating={skill.ratingAverage ?? 0} count={skill.ratingCount} /> : null}
           </div>
 
           <h1 className="mt-4 animate-fade-up text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl [text-wrap:balance]">
-            {skill.title}
+            {title}
           </h1>
           <p className="mt-3 text-lg leading-relaxed text-zinc-600">
-            {skill.shortDescription}
+            {shortDescription}
           </p>
+
+          {skill.coverImageUrl || videoFileUrl ? (
+            <div className="relative mt-8 overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-100 shadow-glow">
+              {videoFileUrl ? (
+                <video
+                  src={videoFileUrl}
+                  poster={skill.coverImageUrl ?? undefined}
+                  controls
+                  muted
+                  loop
+                  preload="none"
+                  playsInline
+                  aria-label={dict.skillDetail.preview}
+                  className="aspect-video w-full bg-black object-cover"
+                />
+              ) : (
+                <Image
+                  src={skill.coverImageUrl!}
+                  alt={title}
+                  width={1280}
+                  height={720}
+                  sizes="(min-width: 1024px) 66vw, 100vw"
+                  priority
+                  className="aspect-video w-full object-cover"
+                />
+              )}
+            </div>
+          ) : null}
 
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-3 text-sm text-zinc-500">
             <span className="flex items-center gap-1.5">
@@ -172,9 +250,11 @@ export default async function SkillDetailPage({ params }: Props) {
             />
           </div>
 
-          <section className="mt-10 rounded-2xl border border-zinc-200 bg-white shadow-sm">
+          <section className="mt-10 rounded-2xl border border-zinc-200 bg-surface shadow-sm">
             <div className="border-b border-zinc-100 px-5 py-4 sm:px-7">
-              <h2 className="text-lg font-semibold text-zinc-900">{dict.skillDetail.thePrompt}</h2>
+              <h2 className="text-lg font-semibold text-zinc-900">
+                {skill.r2Prefix ? dict.skillDetail.skillContent : dict.skillDetail.thePrompt}
+              </h2>
               <p className="mt-0.5 text-sm text-zinc-500">
                 {trans(dict.skillDetail.version, { version: skill.version })}
                 {skill.changelog ? ` · ${skill.changelog}` : ""}
@@ -198,14 +278,42 @@ export default async function SkillDetailPage({ params }: Props) {
             </section>
           ) : null}
 
-          {skill.description ? (
+          {aboutText ? (
             <section className="mt-10">
               <h2 className="text-lg font-semibold text-zinc-900">{dict.skillDetail.about}</h2>
-              <RichText html={skill.description} className="mt-3" />
+              <RichText html={aboutText} className="mt-3" />
             </section>
           ) : null}
 
-          {skill.videoDemoUrl ? (
+          {skill.assets.length > 0 ? (
+            <section className="mt-10">
+              <h2 className="text-lg font-semibold text-zinc-900">{dict.skillDetail.files}</h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                {hasAccess ? dict.skillDetail.filesHint : dict.skillDetail.filesLocked}
+              </p>
+              <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 bg-surface">
+                <ul className="divide-y divide-zinc-100">
+                  {skill.assets.slice(0, FILES_VISIBLE).map((asset) => (
+                    <FileRow key={asset.path} asset={asset} unlocked={hasAccess} openLabel={dict.skillDetail.download} />
+                  ))}
+                </ul>
+                {skill.assets.length > FILES_VISIBLE ? (
+                  <details className="group border-t border-zinc-100">
+                    <summary className="cursor-pointer select-none px-4 py-2.5 text-xs font-medium text-brand-600 hover:bg-zinc-50">
+                      {trans(dict.skillDetail.moreFiles, { count: skill.assets.length - FILES_VISIBLE })}
+                    </summary>
+                    <ul className="divide-y divide-zinc-100 border-t border-zinc-100">
+                      {skill.assets.slice(FILES_VISIBLE).map((asset) => (
+                        <FileRow key={asset.path} asset={asset} unlocked={hasAccess} openLabel={dict.skillDetail.download} />
+                      ))}
+                    </ul>
+                  </details>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
+
+          {skill.videoDemoUrl && !videoFileUrl ? (
             <section className="mt-10">
               <h2 className="text-lg font-semibold text-zinc-900">{dict.skillDetail.videoDemo}</h2>
               <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-950 shadow-sm">
@@ -246,7 +354,7 @@ export default async function SkillDetailPage({ params }: Props) {
           {skill.variables ? (
             <section className="mt-10">
               <h2 className="text-lg font-semibold text-zinc-900">{dict.skillDetail.inputFields}</h2>
-              <dl className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+              <dl className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 bg-surface shadow-sm">
                 {Object.entries(skill.variables).map(([key, value], index) => (
                   <div
                     key={key}
@@ -268,7 +376,7 @@ export default async function SkillDetailPage({ params }: Props) {
         </article>
 
         <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
               {skill.accessType === "PAID" ? dict.skillDetail.pricing : dict.skillDetail.access}
             </h3>
@@ -281,7 +389,7 @@ export default async function SkillDetailPage({ params }: Props) {
                   >
                     <span className="text-sm text-zinc-500">{price.currency}</span>
                     <span className="text-lg font-bold text-zinc-900">
-                      {formatMoney(price.amount, price.currency)}
+                      {formatMoney(price.amount, price.currency, locale === "vi" ? "vi-VN" : "en-US")}
                     </span>
                   </div>
                 ))}
@@ -298,7 +406,7 @@ export default async function SkillDetailPage({ params }: Props) {
                   skill={{
                     id: skill.id,
                     slug: skill.slug,
-                    title: skill.title,
+                    title,
                     accessType: skill.accessType,
                     isOwned,
                   }}
@@ -308,7 +416,17 @@ export default async function SkillDetailPage({ params }: Props) {
             ) : null}
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          {skill.tools.length === 0 ? (
+            <div className="aurora rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
+              <Rocket className="size-5 text-[#c490ff]" aria-hidden="true" />
+              <h3 className="mt-3 text-base font-semibold text-zinc-900">{dict.skillDetail.runWith}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-zinc-500">{dict.skillDetail.runWithText}</p>
+              <Link href="/apps/skill-studio" className="btn-secondary mt-4 w-full text-sm">
+                {dict.skillDetail.getSkillStudio}
+              </Link>
+            </div>
+          ) : (
+          <div className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
               {dict.skillDetail.worksWith}
             </h3>
@@ -340,6 +458,7 @@ export default async function SkillDetailPage({ params }: Props) {
               ))}
             </ul>
           </div>
+          )}
         </aside>
       </div>
     </Container>

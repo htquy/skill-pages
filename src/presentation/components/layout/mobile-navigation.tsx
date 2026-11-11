@@ -62,7 +62,7 @@ export function MobileNavigation({ dict, locale }: { dict: Dict; locale: Locale 
             onClick={(event) => {
               if ((event.target as HTMLElement).closest("a")) setOpen(false);
             }}
-            className="absolute inset-x-0 top-full z-40 max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain border-b border-zinc-200 bg-white shadow-lg"
+            className="absolute inset-x-0 top-full z-40 max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain border-b border-zinc-200 bg-surface shadow-lg"
           >
             <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               {publicNav.map((item) => (

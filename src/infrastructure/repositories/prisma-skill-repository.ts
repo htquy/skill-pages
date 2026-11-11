@@ -1,5 +1,6 @@
 import { Prisma, type SkillAccessType as PrismaSkillAccessType } from "@prisma/client";
 import { prisma } from "@/src/infrastructure/database/prisma";
+import { getOptionalEnv } from "@/src/lib/env";
 import type {
   Pagination,
   PaginatedResult,
@@ -8,6 +9,7 @@ import type {
   SkillListFilters,
   SkillRepository,
   SkillSummary,
+  SkillTranslations,
 } from "@/src/domain/skill";
 
 const summaryInclude = {
@@ -15,6 +17,7 @@ const summaryInclude = {
   categories: { include: { category: true }, orderBy: { categoryId: "asc" as const } },
   useCases: { include: { useCase: true }, orderBy: { useCaseId: "asc" as const } },
   tools: { include: { tool: true }, orderBy: { toolId: "asc" as const } },
+  prices: { where: { isActive: true }, orderBy: { createdAt: "desc" as const }, take: 1 },
 } satisfies Prisma.SkillInclude;
 
 type SkillWithSummary = Prisma.SkillGetPayload<{ include: typeof summaryInclude }>;
@@ -23,6 +26,7 @@ const detailInclude = {
   ...summaryInclude,
   versions: { orderBy: { version: "desc" as const }, take: 1 },
   prices: { where: { isActive: true }, orderBy: { createdAt: "desc" as const } },
+  assets: { orderBy: { path: "asc" as const } },
   author: { select: { name: true } },
 } satisfies Prisma.SkillInclude;
 
@@ -30,6 +34,11 @@ type SkillWithDetail = Prisma.SkillGetPayload<{ include: typeof detailInclude }>
 
 function toDomainAccess(value: PrismaSkillAccessType): SkillAccessType {
   return value;
+}
+
+function r2PublicBase(): string | null {
+  const base = getOptionalEnv("R2_PUBLIC_URL");
+  return base ? base.replace(/\/+$/, "") : null;
 }
 
 function toSummary(skill: SkillWithSummary): SkillSummary {
@@ -41,6 +50,8 @@ function toSummary(skill: SkillWithSummary): SkillSummary {
     accessType: toDomainAccess(skill.accessType),
     coverImageUrl: skill.coverImageUrl,
     videoDemoUrl: skill.videoDemoUrl,
+    translations: (skill.translations as SkillTranslations | null) ?? null,
+    price: skill.prices[0] ? { currency: skill.prices[0].currency, amount: skill.prices[0].amount } : null,
     viewCount: Number(skill.viewCount),
     favoriteCount: Number(skill.favoriteCount),
     ratingAverage: skill.ratingAverage === null ? null : Number(skill.ratingAverage),
@@ -69,6 +80,15 @@ function toDetail(skill: SkillWithDetail): SkillDetail {
     publishedAt: skill.publishedAt,
     authorName: skill.author?.name ?? null,
     prices: skill.prices.map((p) => ({ currency: p.currency, amount: p.amount })),
+    r2Prefix: skill.r2Prefix,
+    assets: skill.assets.map((a) => ({
+      path: a.path,
+      r2Key: a.r2Key,
+      kind: a.kind,
+      contentType: a.contentType,
+      sizeBytes: Number(a.sizeBytes),
+      url: r2PublicBase() ? `${r2PublicBase()}/${a.r2Key}` : null,
+    })),
   };
 }
 

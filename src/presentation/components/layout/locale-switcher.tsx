@@ -22,7 +22,7 @@ export function LocaleSwitcher({
 
   return (
     <div
-      className={cn("flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-0.5", className)}
+      className={cn("flex items-center gap-1 rounded-lg border border-zinc-200 bg-surface p-0.5", className)}
       title={trans(dict.locale.switchLanguage)}
     >
       <Languages className="ml-1 hidden size-3.5 text-zinc-400 sm:block" aria-hidden="true" />

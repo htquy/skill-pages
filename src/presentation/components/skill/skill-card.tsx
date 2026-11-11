@@ -1,107 +1,86 @@
+import Image from "next/image";
 import Link from "next/link";
-import { Bookmark, Eye } from "lucide-react";
+import { Layers, Play } from "lucide-react";
 import type { SkillCardViewModel } from "@/src/presentation/view-models/skill";
 import { SkillBadge } from "@/src/presentation/components/skill/skill-badge";
-import { StarRating } from "@/src/presentation/components/skill/star-rating";
 import { PurchasePanel } from "@/src/presentation/components/checkout/purchase-panel";
-import { getDictionary, trans } from "@/src/lib/i18n";
+import { OwnedBadge } from "@/src/presentation/components/shared/owned-badge";
+import { formatMoney } from "@/src/domain/shared";
+import { getDictionary, getLocale } from "@/src/lib/i18n";
 
-function ToolTags({
-  tools,
-  dict,
-  limit = 3,
-}: {
-  tools: SkillCardViewModel["tools"];
-  dict: Awaited<ReturnType<typeof getDictionary>>;
-  limit?: number;
-}) {
-  if (tools.length === 0) return null;
-  const visible = tools.slice(0, limit);
-  return (
-    <p className="text-sm text-zinc-600">
-      <span className="font-medium text-zinc-500">{dict.common.toolsLabel}</span>{" "}
-      {visible.map((tool, index) => (
-        <span key={tool.slug}>
-          {index > 0 ? " / " : ""}
-          {tool.name}
-        </span>
-      ))}
-      {tools.length > limit ? ` +${tools.length - limit}` : ""}
-    </p>
-  );
-}
-
-export async function SkillCard({ skill }: { skill: SkillCardViewModel }) {
-  const dict = await getDictionary();
+/**
+ * Thẻ skill kiểu "SaaS AI": poster xem thử (từ R2) phủ đầu thẻ, huy hiệu Free/Pro + giá nổi trên ảnh,
+ * bên dưới là nhãn loại sản phẩm (mono), tên, mô tả ngắn. Cả thẻ là một link phủ kín.
+ */
+export async function SkillCard({ skill, priority = false }: { skill: SkillCardViewModel; priority?: boolean }) {
+  const [dict, locale] = await Promise.all([getDictionary(), getLocale()]);
+  const price =
+    skill.accessType === "PAID" && skill.price
+      ? formatMoney(skill.price.amount, skill.price.currency, locale === "vi" ? "vi-VN" : "en-US")
+      : null;
 
   return (
-    // Cả thẻ là vùng bấm được (link phủ kín), nên nội dung bên trong đặt
-    // `pointer-events-none` để click rơi xuống link; nút "Mua ngay" là ngoại lệ
-    // vì tương tác của nó phải được giữ lại (không lồng <button> trong <a>).
-    <article className="group card-lift card-topline relative flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+    // Link phủ kín thẻ; nội dung đặt `pointer-events-none` để click rơi xuống link. Nút "Mua ngay" là ngoại lệ
+    // vì cần giữ tương tác (không lồng <button> trong <a>).
+    <article className="group card-lift card-topline relative flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-surface shadow-sm">
       <Link
         href={`/skills/${skill.slug}`}
-        className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+        className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400"
         aria-label={skill.title}
       />
 
-      <div className="pointer-events-none relative z-10 flex flex-1 flex-col">
-        <div className="flex items-center justify-between gap-2">
+      <div className="pointer-events-none relative z-10 aspect-[16/10] overflow-hidden bg-zinc-100">
+        {skill.coverImageUrl ? (
+          <Image
+            src={skill.coverImageUrl}
+            alt=""
+            fill
+            sizes="(min-width: 1280px) 30vw, (min-width: 640px) 45vw, 100vw"
+            priority={priority}
+            className="object-cover transition-transform duration-700 ease-fluid group-hover:scale-[1.04]"
+          />
+        ) : (
+          <div className="aurora flex h-full w-full items-center justify-center text-zinc-400">
+            <Layers className="size-8" aria-hidden="true" />
+          </div>
+        )}
+        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/45 to-transparent" />
+        <div className="absolute left-3 top-3 flex items-center gap-2">
           <SkillBadge accessType={skill.accessType} />
-          {skill.categories[0] ? (
-            <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-700 ring-1 ring-violet-100">
-              {skill.categories[0]}
+          {skill.videoDemoUrl ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 font-mono text-[0.65rem] font-medium uppercase tracking-wide text-white backdrop-blur">
+              <Play className="size-3" aria-hidden="true" />
+              Demo
             </span>
           ) : null}
         </div>
+        {price ? (
+          <span className="absolute bottom-3 right-3 rounded-full bg-white px-3 py-1 text-sm font-bold text-[#4f55c1] shadow-lg">
+            {price}
+          </span>
+        ) : null}
+        {skill.isOwned ? (
+          <span className="absolute right-3 top-3">
+            <OwnedBadge dict={dict} />
+          </span>
+        ) : null}
+      </div>
 
-        <h3 className="mt-4 text-lg font-semibold leading-snug text-zinc-900 transition-colors duration-300 group-hover:text-brand-700">
+      <div className="pointer-events-none relative z-10 flex flex-1 flex-col p-5">
+        {skill.useCases[0] ? (
+          <p className="font-mono text-[0.7rem] font-medium uppercase tracking-wider text-[#c490ff]">
+            {skill.categories[0] ? `${skill.categories[0]} · ` : ""}
+            {skill.useCases[0]}
+          </p>
+        ) : null}
+        <h3 className="mt-1.5 text-lg font-semibold leading-snug text-zinc-900 transition-colors duration-300 group-hover:text-brand-700">
           {skill.title}
         </h3>
-        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-zinc-600">
-          {skill.description}
-        </p>
-
-        <div className="mt-4 space-y-1.5">
-          {skill.industries[0] ? (
-            <p className="text-sm text-zinc-600">
-              <span className="font-medium text-zinc-500">{dict.skillCard.industryLabel}</span>{" "}
-              {skill.industries.join(", ")}
-            </p>
-          ) : null}
-          {skill.useCases[0] ? (
-            <p className="text-sm text-zinc-600">
-              <span className="font-medium text-zinc-500">{dict.skillCard.useCaseLabel}</span>{" "}
-              {skill.useCases.join(", ")}
-            </p>
-          ) : null}
-          <ToolTags tools={skill.tools} dict={dict} />
-        </div>
+        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-zinc-500">{skill.description}</p>
       </div>
 
-      <div className="mt-5 flex items-center justify-between gap-3 border-t border-zinc-100 pt-4">
-        {skill.ratingAverage != null ? (
-          <StarRating rating={skill.ratingAverage} count={skill.ratingCount} />
-        ) : (
-          <span className="text-sm text-zinc-400">{dict.skillCard.noRatings}</span>
-        )}
-        <span
-          className="pointer-events-none flex items-center gap-2 text-sm text-zinc-500"
-          aria-label={trans(dict.skillCard.savesAria, { count: skill.favoriteCountLabel })}
-        >
-          <span className="flex items-center gap-1">
-            <Bookmark className="size-4" aria-hidden="true" />
-            {skill.favoriteCountLabel}
-          </span>
-          <span className="flex items-center gap-1">
-            <Eye className="size-4" aria-hidden="true" />
-            {skill.viewCountLabel}
-          </span>
-        </span>
-      </div>
-
-      {skill.accessType === "PAID" ? (
-        <div className="relative z-10 mt-4">
+      {skill.accessType === "PAID" && !skill.isOwned ? (
+        <div className="relative z-10 px-5 pb-5">
           <PurchasePanel skill={skill} />
         </div>
       ) : null}

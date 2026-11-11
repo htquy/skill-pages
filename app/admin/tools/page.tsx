@@ -27,7 +27,7 @@ function firstValue(value: string | string[] | undefined): string {
 }
 
 const selectClass =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100";
+  "rounded-lg border border-zinc-300 bg-surface px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100";
 
 interface AdminToolFilters {
   q: string;
@@ -59,7 +59,7 @@ async function ToolsTable({ filters, page }: { filters: AdminToolFilters; page: 
         {trans(dict.admin.tools.count, { count: result.total })}
       </p>
 
-      <div className="mt-3 overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
+      <div className="mt-3 overflow-x-auto rounded-2xl border border-zinc-200 bg-surface shadow-sm">
         {result.items.length > 0 ? (
           <table className="w-full min-w-[40rem] text-left text-sm">
             <thead className="border-b bg-zinc-50">
@@ -174,7 +174,7 @@ export default async function AdminToolsPage({
             type="search"
             defaultValue={filters.q}
             placeholder={dict.admin.tools.searchPlaceholder}
-            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            className="w-full rounded-lg border border-zinc-300 bg-surface px-3 py-2 text-sm shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
           />
         </label>
         <label>

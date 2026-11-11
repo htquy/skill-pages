@@ -77,7 +77,7 @@ export default async function AdminUserDetailPage({
         )}
       </div>
 
-      <dl className="mt-8 grid gap-3 rounded-2xl border border-zinc-200 bg-white p-6 text-sm shadow-sm sm:grid-cols-2">
+      <dl className="mt-8 grid gap-3 rounded-2xl border border-zinc-200 bg-surface p-6 text-sm shadow-sm sm:grid-cols-2">
         <Row label={dict.admin.users.role} value={dict.role[user.role]} />
         <Row label={dict.admin.users.status} value={dict.status[user.status]} />
         <Row label={dict.admin.users.orders} value={String(user.orderCount)} />

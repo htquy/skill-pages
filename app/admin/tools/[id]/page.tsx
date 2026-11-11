@@ -45,7 +45,7 @@ export default async function AdminToolDetailPage({ params }: { params: Promise<
           {tool.status === "PUBLISHED" ? (
             <Link
               href={`/tools/${tool.slug}`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-surface px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
             >
               <Eye className="size-4" aria-hidden="true" />
               {dict.admin.tools.viewPage}
@@ -96,13 +96,13 @@ export default async function AdminToolDetailPage({ params }: { params: Promise<
       </div>
 
       <div className="mt-8 space-y-6">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.tools.description}</h2>
           <RichText html={tool.description} className="mt-3 text-sm" />
         </section>
 
         <div className="grid gap-6 sm:grid-cols-2">
-          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.tools.classification}</h2>
             <dl className="mt-3 space-y-3 text-sm">
               <Row label={dict.admin.tools.type} value={dict.tools.types[tool.type]} />
@@ -141,7 +141,7 @@ export default async function AdminToolDetailPage({ params }: { params: Promise<
             </dl>
           </section>
 
-          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.tools.statusHistory}</h2>
             <dl className="mt-3 space-y-3 text-sm">
               <Row label={dict.common.status} value={tool.status} />
@@ -151,7 +151,7 @@ export default async function AdminToolDetailPage({ params }: { params: Promise<
           </section>
         </div>
 
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.tools.prices}</h2>
           {tool.prices.length > 0 ? (
             <ul className="mt-3 space-y-2 text-sm">
@@ -172,7 +172,7 @@ export default async function AdminToolDetailPage({ params }: { params: Promise<
           )}
         </section>
 
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.tools.versionTitle}</h2>
           {tool.version ? (
             <dl className="mt-3 space-y-3 text-sm">
@@ -200,7 +200,7 @@ export default async function AdminToolDetailPage({ params }: { params: Promise<
           ) : null}
         </section>
 
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-zinc-200 bg-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-zinc-900">{dict.admin.tools.configTitle}</h2>
           {tool.config ? (
             <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-xl bg-zinc-50 p-5 font-mono text-xs leading-relaxed text-zinc-800 ring-1 ring-zinc-100">

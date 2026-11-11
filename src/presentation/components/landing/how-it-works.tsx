@@ -12,7 +12,7 @@ export async function HowItWorks() {
   ];
 
   return (
-    <section className="relative overflow-hidden border-b border-zinc-200 bg-gradient-to-b from-white to-brand-50/50 py-16 sm:py-24">
+    <section className="relative overflow-hidden border-b border-zinc-200 bg-gradient-to-b from-background to-brand-50/50 py-16 sm:py-24">
       <Container>
         <div className="mx-auto max-w-[680px] text-center">
           <div className="eyebrow">{hiw.badge}</div>
@@ -31,7 +31,7 @@ export async function HowItWorks() {
           {steps.map((step) => (
             <li
               key={step.number}
-              className="group card-lift reveal relative rounded-3xl border border-zinc-200 bg-white p-6 sm:p-8"
+              className="group card-lift reveal relative rounded-3xl border border-zinc-200 bg-surface p-6 sm:p-8"
             >
               <div className="inline-grid size-12 place-items-center rounded-2xl bg-zinc-950 font-mono text-base font-bold text-white shadow-glow transition-transform duration-500 ease-spring group-hover:scale-110">
                 <span className="text-gradient">{step.number}</span>

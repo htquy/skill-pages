@@ -103,7 +103,7 @@ export default async function NewsArticlePage({ params }: Props) {
             href={article.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-8 inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 shadow-sm transition-colors hover:bg-zinc-50"
+            className="mt-8 inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-surface px-4 py-2 text-sm font-medium text-zinc-900 shadow-sm transition-colors hover:bg-zinc-50"
           >
             {dict.news.readOriginal}
             <ExternalLink className="size-4" aria-hidden="true" />
@@ -111,7 +111,7 @@ export default async function NewsArticlePage({ params }: Props) {
         ) : null}
 
         {article.tools.length > 0 ? (
-          <div className="mt-10 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="mt-10 rounded-2xl border border-zinc-200 bg-surface p-5 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
               {dict.news.toolsMentioned}
             </h2>

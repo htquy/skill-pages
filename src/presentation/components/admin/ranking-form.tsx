@@ -79,7 +79,7 @@ export function RankingForm({
       <div className="flex items-center justify-end gap-3 border-t border-zinc-200 pt-6">
         <a
           href={ranking ? `/admin/rankings/${ranking.id}` : "/admin/rankings"}
-          className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
+          className="rounded-lg border border-zinc-300 bg-surface px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
         >
           {dict.admin.forms.cancel}
         </a>
