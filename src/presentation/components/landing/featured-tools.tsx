@@ -21,7 +21,7 @@ export async function FeaturedTools() {
   const featured = dict.landing.featured;
 
   return (
-    <section className="border-b border-zinc-200 bg-gradient-to-b from-zinc-50/70 to-background py-16 sm:py-24">
+    <section className="border-b border-zinc-200 py-16 sm:py-24 bg-zinc-50/70">
       <Container>
         <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>

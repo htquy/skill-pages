@@ -57,7 +57,7 @@ export async function SiteHeader() {
       {/* Đường sáng gradient dưới header. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-brand-400/60 to-transparent"
+        className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-white/[0.06]"
       />
       <Container className="flex h-16 items-center justify-between gap-2 sm:gap-4">
         <div className="flex items-center gap-2">

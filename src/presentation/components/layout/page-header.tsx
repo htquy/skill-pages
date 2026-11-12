@@ -21,7 +21,7 @@ export function PageHeader({
     <div className={cn("relative isolate mb-8 animate-fade-up", className)}>
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -left-10 -top-16 -z-10 hidden h-48 sm:block w-[28rem] max-w-full rounded-full bg-gradient-to-r from-brand-200/50 via-violet-200/40 to-spark-100/40 blur-3xl"
+        className="pointer-events-none absolute -left-10 -top-16 -z-10 hidden h-48 sm:block w-[28rem] max-w-full rounded-full hidden"
       />
       {eyebrow ? (
         <div className="eyebrow">

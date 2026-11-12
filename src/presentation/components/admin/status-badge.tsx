@@ -15,7 +15,7 @@ const toneByStatus: Record<string, string> = {
   FAILED: "bg-red-50 text-red-700 ring-red-200",
   REFUNDED: "bg-sky-50 text-sky-700 ring-sky-200",
   FREE: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  PAID_SKILL: "bg-violet-50 text-violet-700 ring-violet-200",
+  PAID_SKILL: "bg-brand-50 text-brand-700 ring-brand-200",
 };
 
 export async function StatusBadge({

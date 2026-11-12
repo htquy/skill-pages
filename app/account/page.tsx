@@ -36,7 +36,7 @@ export default async function AccountPage() {
             className="size-20 rounded-full border-4 border-surface shadow-md ring-1 ring-zinc-200"
           />
         ) : (
-          <span className="flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-violet-600 text-2xl font-bold text-white shadow-md">
+          <span className="flex size-20 items-center justify-center rounded-full text-2xl font-bold text-white shadow-md bg-brand-600">
             {(user.name ?? user.email ?? "U").slice(0, 2).toUpperCase()}
           </span>
         )}

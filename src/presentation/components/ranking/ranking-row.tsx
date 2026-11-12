@@ -7,9 +7,9 @@ import { getDictionary, trans } from "@/src/lib/i18n";
 
 // Huy chương vàng / bạc / đồng cho top 3.
 const RANK_BADGES: Record<number, string> = {
-  1: "border-transparent bg-gradient-to-br from-spark-300 to-spark-500 text-white shadow-[0_6px_18px_-6px_rgb(245_123_11/0.7)]",
-  2: "border-transparent bg-gradient-to-br from-zinc-200 to-zinc-400 text-white shadow-[0_6px_18px_-8px_rgb(82_82_91/0.6)]",
-  3: "border-transparent bg-gradient-to-br from-orange-300 to-orange-600 text-white shadow-[0_6px_18px_-8px_rgb(234_88_12/0.6)]",
+  1: "border-transparent text-white shadow-[0_6px_18px_-6px_rgb(245_123_11/0.7)] bg-spark-300",
+  2: "border-transparent text-white shadow-[0_6px_18px_-8px_rgb(82_82_91/0.6)] bg-zinc-200",
+  3: "border-transparent text-white shadow-[0_6px_18px_-8px_rgb(234_88_12/0.6)] bg-orange-300",
 };
 
 export async function RankingRow({ entry }: { entry: RankingEntryView }) {
@@ -20,12 +20,12 @@ export async function RankingRow({ entry }: { entry: RankingEntryView }) {
     <li
       className={cn(
         "group flex items-center gap-4 border-b border-zinc-100 px-4 py-4 transition-colors duration-300 last:border-b-0 hover:bg-brand-50/50 sm:px-6",
-        entry.rank <= 3 ? "bg-gradient-to-r from-spark-50/60 to-transparent" : null,
+        entry.rank <= 3 ? "bg-spark-50/60" : null,
       )}
     >
       <span
         className={cn(
-          "flex size-9 shrink-0 items-center justify-center rounded-full border text-sm font-bold tabular-nums transition-transform duration-500 ease-spring group-hover:scale-110",
+          "flex size-9 shrink-0 items-center justify-center rounded-full border text-sm font-bold tabular-nums transition-transform duration-500 ease-out",
           badgeClass,
         )}
         aria-label={trans(dict.rankings.rankingAria, { rank: entry.rank })}

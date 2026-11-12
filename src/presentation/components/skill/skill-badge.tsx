@@ -4,7 +4,7 @@ import type { SkillAccessType } from "@/src/domain/skill";
 
 const CLASSES: Record<SkillAccessType, string> = {
   FREE: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-  PAID: "bg-gradient-to-r from-spark-50 to-brand-50 text-spark-700 border border-spark-200",
+  PAID: "text-spark-700 border border-spark-200 bg-spark-50",
 };
 
 export async function SkillBadge({ accessType }: { accessType: SkillAccessType }) {

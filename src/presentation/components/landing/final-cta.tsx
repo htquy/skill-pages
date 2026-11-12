@@ -10,7 +10,7 @@ export async function FinalCta() {
   return (
     <section className="py-20 sm:py-28">
       <Container>
-        <div className="aurora-dark reveal rounded-3xl border border-zinc-200 bg-ink p-8 text-center text-white shadow-glow sm:p-16">
+        <div className="aurora-dark reveal rounded-2xl border border-zinc-200 bg-ink p-8 text-center text-white shadow-glow sm:p-16">
           <div aria-hidden="true" className="bg-grid-dark pointer-events-none absolute inset-0 -z-10" />
           <div className="mx-auto max-w-[680px]">
             <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl [text-wrap:balance]">

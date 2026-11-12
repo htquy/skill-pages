@@ -70,7 +70,7 @@ export default async function AdminUserDetailPage({
             id={user.id}
             message={dict.admin.confirmation.promoteUser}
             workingLabel={dict.common.working}
-            className="border-violet-300 bg-violet-50 text-violet-700 hover:bg-violet-100"
+            className="border-brand-300 bg-brand-50 text-brand-700 hover:bg-brand-100"
           >
             {dict.admin.users.promote}
           </ConfirmButton>

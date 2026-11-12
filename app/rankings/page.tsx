@@ -118,7 +118,7 @@ export default async function RankingsPage({ searchParams }: PageProps<"/ranking
               aria-current={active ? "page" : undefined}
               className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ease-fluid ${
                 active
-                  ? "bg-gradient-to-r from-brand-600 to-violet-600 text-white shadow-glow"
+                  ? "text-white shadow-glow bg-brand-600"
                   : "border border-zinc-200 bg-surface text-zinc-700 hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-700"
               }`}
             >

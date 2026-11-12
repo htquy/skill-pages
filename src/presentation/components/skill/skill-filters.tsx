@@ -78,7 +78,7 @@ export async function SkillFilters({
     <FilterForm
       action={action}
       resetKey={resetKey}
-      className="rounded-3xl border border-zinc-200 bg-surface/70 p-4 shadow-sm backdrop-blur sm:p-5"
+      className="rounded-2xl border border-zinc-200 bg-surface/70 p-4 shadow-sm backdrop-blur sm:p-5"
     >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end">
         <div className="flex flex-col gap-1.5 sm:col-span-2 lg:min-w-64 lg:flex-[2_1_16rem]">

@@ -60,7 +60,7 @@ export function TaglineReveal({ lead, accent }: TaglineRevealProps) {
   }, [words.length]);
 
   return (
-    <section className="relative overflow-hidden border-y border-zinc-200 bg-gradient-to-b from-zinc-50 via-background to-brand-50/40 py-16 sm:py-32">
+    <section className="relative overflow-hidden border-y border-zinc-200 py-16 sm:py-32 bg-zinc-50">
       <Container>
         <div ref={containerRef} className="mx-auto max-w-[680px] text-center">
           <p className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-5xl [text-wrap:balance]">

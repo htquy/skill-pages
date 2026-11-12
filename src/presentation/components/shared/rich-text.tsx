@@ -45,7 +45,7 @@ export function RichText({ html, className, fallbackClassName }: Props) {
         "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5",
         "[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-5",
         "[&_li]:pl-1",
-        "[&_blockquote]:my-4 [&_blockquote]:border-l-2 [&_blockquote]:border-violet-200 [&_blockquote]:bg-violet-50/50 [&_blockquote]:px-4 [&_blockquote]:py-2 [&_blockquote]:text-zinc-600",
+        "[&_blockquote]:my-4 [&_blockquote]:border-l-2 [&_blockquote]:border-brand-200 [&_blockquote]:bg-brand-50/50 [&_blockquote]:px-4 [&_blockquote]:py-2 [&_blockquote]:text-zinc-600",
         "[&_code]:rounded [&_code]:bg-zinc-100 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-zinc-800",
         "[&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-ink [&_pre]:p-4 [&_pre]:text-zinc-800",
         "[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-sm [&_pre_code]:text-zinc-100",

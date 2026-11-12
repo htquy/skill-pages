@@ -54,7 +54,7 @@ export default async function NewsArticlePage({ params }: Props) {
       <article className="mt-8">
         <div className="flex flex-wrap items-center gap-2 text-sm text-zinc-500">
           {article.category ? (
-            <span className="rounded-full bg-violet-50 px-2.5 py-0.5 font-medium text-violet-700">
+            <span className="rounded-full bg-brand-50 px-2.5 py-0.5 font-medium text-brand-700">
               {article.category.name}
             </span>
           ) : null}

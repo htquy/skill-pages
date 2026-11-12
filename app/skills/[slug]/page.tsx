@@ -186,7 +186,7 @@ export default async function SkillDetailPage({ params }: Props) {
           </p>
 
           {skill.coverImageUrl || videoFileUrl ? (
-            <div className="relative mt-8 overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-100 shadow-glow">
+            <div className="relative mt-8 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 shadow-glow">
               {videoFileUrl ? (
                 <video
                   src={videoFileUrl}
@@ -279,7 +279,7 @@ export default async function SkillDetailPage({ params }: Props) {
               <h2 className="text-lg font-semibold text-zinc-900">{dict.skillDetail.howToUse}</h2>
               <RichText
                 html={skill.instructions}
-                className="mt-3 rounded-2xl border border-violet-100 bg-violet-50/50 p-5 text-sm"
+                className="mt-3 rounded-2xl border border-brand-100 bg-brand-50/50 p-5 text-sm"
                 fallbackClassName="text-sm text-zinc-700"
               />
             </section>

@@ -26,10 +26,10 @@ export default async function LoginPage(props: {
   };
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-gradient-to-b from-brand-50/60 via-background to-background px-6 py-16">
-      <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-surface p-8 shadow-sm">
+    <div className="flex flex-1 items-center justify-center px-6 py-16 bg-brand-50/60">
+      <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-surface p-8 shadow-sm">
         <div className="flex justify-center">
-          <span className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-violet-600 text-xl font-bold text-white shadow-md">
+          <span className="flex size-14 items-center justify-center rounded-2xl text-xl font-bold text-white shadow-md bg-brand-600">
             {siteConfig.name.slice(0, 2)}
           </span>
         </div>

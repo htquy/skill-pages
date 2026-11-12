@@ -23,7 +23,7 @@ export async function NewsCard({ article }: { article: NewsCardViewModel }) {
           />
         </div>
       ) : (
-        <div className="aurora relative flex aspect-[16/9] w-full items-center justify-center bg-gradient-to-br from-brand-50 via-background to-violet-50">
+        <div className="aurora relative flex aspect-[16/9] w-full items-center justify-center bg-brand-50">
           <div aria-hidden="true" className="bg-grid pointer-events-none absolute inset-0 -z-10" />
           <p className="rounded-full bg-surface/95 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-600 shadow-sm ring-1 ring-brand-100">
             {dict.news.eyebrow}
@@ -34,7 +34,7 @@ export async function NewsCard({ article }: { article: NewsCardViewModel }) {
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-center gap-2 text-xs text-zinc-500">
           {article.categoryName ? (
-            <span className="rounded-full bg-violet-50 px-2.5 py-0.5 font-medium text-violet-700">
+            <span className="rounded-full bg-brand-50 px-2.5 py-0.5 font-medium text-brand-700">
               {article.categoryName}
             </span>
           ) : null}

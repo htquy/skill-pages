@@ -37,7 +37,7 @@ export function FaqSection({ badge, title, items }: FaqSectionProps) {
   };
 
   return (
-    <section className="border-t border-zinc-200 bg-gradient-to-b from-zinc-50/70 to-background py-16 sm:py-24">
+    <section className="border-t border-zinc-200 py-16 sm:py-24 bg-zinc-50/70">
       {/* JSON-LD for Search Engines and AI Answer Engines */}
       <script
         type="application/ld+json"

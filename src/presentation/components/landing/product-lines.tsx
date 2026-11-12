@@ -41,11 +41,11 @@ export async function ProductLines({ counts }: { counts: StoreCounts }) {
               <li key={line.key} className={spans[index]}>
                 <Link
                   href={line.href}
-                  className="group card-lift reveal flex h-full flex-col rounded-3xl border border-zinc-200 bg-surface p-6 sm:p-8"
+                  className="group card-lift reveal flex h-full flex-col rounded-2xl border border-zinc-200 bg-surface p-6 sm:p-8"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <span
-                      className={`inline-grid size-12 place-items-center rounded-xl transition-transform duration-500 ease-spring group-hover:-rotate-6 group-hover:scale-110 ${line.tile}`}
+                      className={`inline-grid size-12 place-items-center rounded-xl transition-transform duration-500 ease-out ${line.tile}`}
                     >
                       <line.Icon className="size-6" aria-hidden="true" />
                     </span>

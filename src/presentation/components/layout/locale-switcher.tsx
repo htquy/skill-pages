@@ -43,7 +43,7 @@ export function LocaleSwitcher({
             className={cn(
               "min-h-9 min-w-9 rounded-md px-2 py-0.5 text-xs font-semibold uppercase sm:min-h-0 sm:min-w-0 sm:px-1.5 transition-colors disabled:opacity-60",
               isActive
-                ? "bg-gradient-to-r from-brand-600 to-violet-600 text-white shadow-sm"
+                ? "text-white shadow-sm bg-brand-600"
                 : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900",
             )}
           >

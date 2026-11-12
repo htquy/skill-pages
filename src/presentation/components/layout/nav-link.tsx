@@ -34,7 +34,7 @@ export function NavLink({
         <span
           aria-hidden="true"
           className={cn(
-            "absolute inset-x-0 -bottom-[3px] h-0.5 origin-left rounded-full bg-gradient-to-r from-brand-500 via-violet-500 to-spark-400 transition-transform duration-500 ease-fluid",
+            "absolute inset-x-0 -bottom-[3px] h-0.5 origin-left rounded-full transition-transform duration-500 ease-fluid bg-brand-500",
             isActive ? "scale-x-100" : "scale-x-0",
           )}
         />

@@ -19,7 +19,7 @@ export async function SiteFooter() {
     <footer className="relative overflow-hidden border-t border-zinc-200 bg-zinc-50">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-400/70 to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/[0.06]"
       />
       <div
         aria-hidden="true"

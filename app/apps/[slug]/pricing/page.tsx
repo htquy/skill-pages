@@ -122,7 +122,7 @@ export default async function AppPricingPage({ params }: Props) {
               return (
                 <section
                   key={price.id}
-                  className={`card-lift animate-fade-up stagger relative flex flex-col rounded-3xl p-6 sm:p-7 ${
+                  className={`card-lift animate-fade-up stagger relative flex flex-col rounded-2xl p-6 sm:p-7 ${
                     isBest
                       ? "border-gradient shadow-lift ring-2 ring-spark-300"
                       : "border border-zinc-200 bg-surface shadow-sm hover:border-brand-200"
@@ -130,7 +130,7 @@ export default async function AppPricingPage({ params }: Props) {
                   style={{ "--d": `${120 + index * 90}ms` } as React.CSSProperties}
                 >
                   {isBest ? (
-                    <span className="absolute -top-3 left-6 rounded-full bg-gradient-to-r from-spark-500 to-spark-400 px-3 py-1 text-xs font-semibold text-white shadow-sm">
+                    <span className="absolute -top-3 left-6 rounded-full px-3 py-1 text-xs font-semibold text-white shadow-sm bg-spark-500">
                       {t.bestValue}
                     </span>
                   ) : null}

@@ -39,7 +39,7 @@ function statCards(metrics: Awaited<ReturnType<typeof statistics.getDashboardMet
       value: formatNumber(metrics.publishedSkills),
       icon: BookOpen,
       href: "/admin/skills",
-      accent: "text-violet-600 bg-violet-50",
+      accent: "text-brand-600 bg-brand-50",
     },
     {
       label: dict.admin.dashboard.paidOrders,

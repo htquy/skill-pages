@@ -71,9 +71,9 @@ export async function HeroRedesign({ counts }: { counts: StoreCounts }) {
         <div className="relative animate-fade-up stagger lg:col-span-5" style={delay(220)}>
           <div
             aria-hidden="true"
-            className="absolute -inset-6 -z-10 hidden rounded-[2.5rem] sm:block bg-gradient-to-br from-brand-300/50 via-violet-300/40 to-spark-200/50 blur-2xl"
+            className="absolute -inset-6 -z-10 hidden rounded-2xl sm:block hidden"
           />
-          <div className="md:animate-float rounded-3xl border-gradient p-4 shadow-lift">
+          <div className=" rounded-2xl border-gradient p-4 shadow-lift">
             <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
               <div className="flex items-center gap-2">
                 <span className="flex gap-1.5" aria-hidden="true">
@@ -97,9 +97,9 @@ export async function HeroRedesign({ counts }: { counts: StoreCounts }) {
                   <li key={line.key}>
                     <Link
                       href={line.href}
-                      className="group flex items-center gap-3 rounded-2xl p-2.5 transition-colors hover:bg-zinc-50"
+                      className="group flex items-center gap-3 rounded-lg p-2.5 transition-colors hover:bg-zinc-200"
                     >
-                      <span className={`inline-grid size-9 shrink-0 place-items-center rounded-xl ${line.tile}`}>
+                      <span className={`inline-grid size-9 shrink-0 place-items-center rounded-lg ${line.tile}`}>
                         <line.Icon className="size-4.5" aria-hidden="true" />
                       </span>
                       <span className="min-w-0 flex-1 text-sm font-semibold text-zinc-900">{label}</span>

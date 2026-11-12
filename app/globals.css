@@ -1,35 +1,37 @@
 @import "tailwindcss";
 
 /*
- * Design tokens — phong cách "SaaS AI" (tham chiếu SaaS-AI):
- * nền tối #181B20, chữ gradient hồng-tím, nút bo tròn (pill), lưới chấm + quầng màu mờ, tông tím-xanh #4f55c1 / #6c72e8.
+ * Design tokens — công thức "linear" của thư viện SkillStudio (garden-web-design-engineer/style-recipes/linear.md):
+ * nền tối ấm #08090A, bề mặt #16171C / #1E1F25 / #26272E, đường kẻ 1px rgba(255,255,255,.06), chữ #F7F8F8 / #9CA3AF,
+ * một màu nhấn duy nhất #5E6AD2 (< 5% diện tích), bo góc tối đa 16px, không glow, không bóng màu, không chữ gradient.
  *
  * Toàn bộ class cũ (bg-zinc-50, text-zinc-900, bg-emerald-50, text-brand-700 ...) được giữ nguyên tên nhưng thang màu
  * đã ĐẢO sang tối ở đây, nên component không phải sửa từng chỗ. `bg-surface` thay cho `bg-white` (thẻ, ô nhập, popover).
  */
 :root {
-  --background: #181b20;
-  --foreground: #f1f3f6;
+  --background: #08090a;
+  --foreground: #f7f8f8;
+  --hairline: rgb(255 255 255 / 0.06);
 }
 
 @theme {
-  --color-surface: #1f242b;
-  --color-surface-raised: #272d36;
+  --color-surface: #16171c;
+  --color-surface-raised: #1e1f25;
   /* nền đậm hơn cả trang: khối nhấn (stats, CTA, khung video, code). Dùng thay cho bg-zinc-950, vì zinc-950 giờ là màu CHỮ trắng. */
-  --color-ink: #0f1216;
+  --color-ink: #050506;
 
-  /* brand: tím-xanh của SaaS AI (#4f55c1 nút, #6c72e8 hover/secondary, #c490ff điểm nhấn). Thang đã đảo cho nền tối. */
-  --color-brand-50: #1d1f3f;
-  --color-brand-100: #252852;
-  --color-brand-200: #343879;
-  --color-brand-300: #4b50b0;
-  --color-brand-400: #7d83ee;
-  --color-brand-500: #6a70e4;
-  --color-brand-600: #5a60d6;
-  --color-brand-700: #8f94f2;
-  --color-brand-800: #aeb2f6;
-  --color-brand-900: #cbcefa;
-  --color-brand-950: #e8e9fd;
+  /* brand: tím Linear #5E6AD2 — chỉ cho trạng thái active/focus, pill nhỏ, nút chính. Thang đã đảo cho nền tối. */
+  --color-brand-50: #15172a;
+  --color-brand-100: #1b1e38;
+  --color-brand-200: #262a52;
+  --color-brand-300: #3a4090;
+  --color-brand-400: #7c85e0;
+  --color-brand-500: #6c77dc;
+  --color-brand-600: #5e6ad2;
+  --color-brand-700: #9aa2ea;
+  --color-brand-800: #b9bff1;
+  --color-brand-900: #d7dbf7;
+  --color-brand-950: #eef0fc;
 
   /* spark: hổ phách ấm — điểm xuyết (gói Pro, top xếp hạng). */
   --color-spark-50: #2b1a0a;
@@ -42,16 +44,17 @@
   --color-spark-700: #fdd38a;
 
   /* zinc: thang trung tính đảo, hơi ngả xanh như nền #181B20. 50 = nền phụ, 900 = chữ chính. */
-  --color-zinc-50: #1d2229;
-  --color-zinc-100: #232932;
-  --color-zinc-200: #2d3540;
-  --color-zinc-300: #3c4553;
-  --color-zinc-400: #7f8999;
-  --color-zinc-500: #9aa3b2;
-  --color-zinc-600: #b4bbc7;
-  --color-zinc-700: #ccd2db;
-  --color-zinc-800: #e0e4ea;
-  --color-zinc-900: #f1f3f6;
+  /* trung tính ấm của Linear: 50–200 là các lớp bề mặt, 300 là đường kẻ, 400–600 chữ phụ, 900 chữ chính */
+  --color-zinc-50: #111216;
+  --color-zinc-100: #16171c;
+  --color-zinc-200: #1e1f25;
+  --color-zinc-300: #2a2b33;
+  --color-zinc-400: #6b7280;
+  --color-zinc-500: #8a8f98;
+  --color-zinc-600: #9ca3af;
+  --color-zinc-700: #c4c8cf;
+  --color-zinc-800: #e2e4e8;
+  --color-zinc-900: #f7f8f8;
   --color-zinc-950: #ffffff;
 
   /* Tông tối: đảo thang màu tint của Tailwind (50↔950, 100↔900 ...) để mọi class bg-*-50 / text-*-700 cũ tự thành giao diện tối. */
@@ -166,8 +169,9 @@
   --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  --shadow-glow: 0 10px 40px -12px rgb(108 114 232 / 0.55);
-  --shadow-lift: 0 1px 2px rgb(0 0 0 / 0.2), 0 22px 44px -18px rgb(108 114 232 / 0.45);
+  /* Linear: bóng gần như không có, không bao giờ có màu */
+  --shadow-glow: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-lift: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.6);
 
   --animate-fade-up: fade-up 0.8s var(--ease-fluid) both;
   --animate-float: float 7s ease-in-out infinite;
@@ -262,23 +266,12 @@ body {
 
 /* ---------- Hiệu ứng dùng chung ---------- */
 
-/* Chữ gradient hồng → tím (bảng màu "gradient-text" của SaaS AI), chạy chậm. */
+/* Linear không dùng chữ gradient: class giữ tên cho các trang cũ, giờ là chữ sáng đặc. */
 @utility text-gradient {
-  background-image: linear-gradient(
-    93deg,
-    rgb(233 92 255) 0%,
-    rgb(210 125 255) 35%,
-    rgb(159 121 255) 65%,
-    rgb(233 92 255) 100%
-  );
-  background-size: 200% auto;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  animation: var(--animate-gradient-pan);
+  color: var(--color-zinc-900);
 }
 
-/* Nền "aurora": các quầng màu mờ (hồng nhạt, xanh dương, mint, tím) trôi chậm phía sau nội dung — lấy từ header-gradient của SaaS AI. */
+/* Lưới gradient rất nhẹ (< 8% độ đậm) ở mép trên hero — thay cho quầng màu trôi của bản cũ. Không chuyển động. */
 @utility aurora {
   position: relative;
   isolation: isolate;
@@ -286,19 +279,17 @@ body {
   &::before {
     content: "";
     position: absolute;
-    inset: -20%;
+    inset: 0 0 auto;
+    height: 520px;
     z-index: -1;
     pointer-events: none;
     background:
-      radial-gradient(38% 42% at 18% 22%, rgb(206 174 212 / 0.16), transparent 70%),
-      radial-gradient(30% 36% at 82% 18%, rgb(171 212 230 / 0.12), transparent 70%),
-      radial-gradient(40% 40% at 65% 85%, rgb(115 237 192 / 0.1), transparent 70%),
-      radial-gradient(35% 40% at 40% 60%, rgb(140 145 232 / 0.14), transparent 70%);
-    animation: var(--animate-aurora);
+      radial-gradient(60% 100% at 50% 0%, rgb(94 106 210 / 0.07), transparent 70%),
+      radial-gradient(30% 60% at 85% 0%, rgb(120 130 160 / 0.04), transparent 70%);
   }
 }
 
-/* Biến thể aurora đậm hơn (CTA, thẻ nổi bật). */
+/* Khối nhấn (CTA, thẻ nổi bật): nền phẳng, chỉ một vệt sáng rất nhẹ ở mép trên. */
 @utility aurora-dark {
   position: relative;
   isolation: isolate;
@@ -306,172 +297,107 @@ body {
   &::before {
     content: "";
     position: absolute;
-    inset: -30%;
-    z-index: -1;
+    inset: 0 0 auto;
+    height: 1px;
+    z-index: 0;
     pointer-events: none;
-    background:
-      radial-gradient(35% 45% at 20% 20%, rgb(206 174 212 / 0.3), transparent 70%),
-      radial-gradient(30% 40% at 85% 30%, rgb(171 212 230 / 0.22), transparent 70%),
-      radial-gradient(40% 45% at 55% 100%, rgb(140 145 232 / 0.4), transparent 70%);
-    animation: var(--animate-aurora);
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.12), transparent);
   }
 }
 
-/* Lưới chấm kiểu hero của SaaS AI (dots.svg), mờ dần ra rìa. */
+/* Linear không có lưới chấm: giữ tên class, không vẽ gì. */
 @utility bg-grid {
-  background-image: radial-gradient(rgb(255 255 255 / 0.13) 1px, transparent 1.2px);
-  background-size: 24px 24px;
-  mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, black 25%, transparent 78%);
+  background-image: none;
 }
 
 @utility bg-grid-dark {
-  background-image: radial-gradient(rgb(255 255 255 / 0.16) 1px, transparent 1.2px);
-  background-size: 24px 24px;
-  mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 75%);
+  background-image: none;
 }
 
-/* Viền gradient 1px cho khối nổi bật (nền surface bên trong). */
+/* Khối nổi bật: đường kẻ mảnh, sáng hơn đường kẻ thường một bậc (không viền gradient). */
 @utility border-gradient {
-  border: 1px solid transparent;
-  background:
-    linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
-    linear-gradient(135deg, rgb(233 92 255), rgb(159 121 255) 50%, var(--color-brand-400)) border-box;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: var(--color-surface);
 }
 
-/* Nhãn nhỏ đầu section: pill monospace. */
+/* Nhãn nhỏ đầu section: chữ mono nhỏ, xám, không khung. */
 @utility eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  border-radius: 9999px;
-  border: 1px solid rgb(196 144 255 / 0.3);
-  background: rgb(196 144 255 / 0.08);
-  padding: 0.25rem 0.8rem;
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   line-height: 1rem;
   font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #c490ff;
+  letter-spacing: 0.02em;
+  color: var(--color-zinc-500);
 }
 
-/* Nút chính: pill #4f55c1 → #6c72e8 như nút "Get started" của SaaS AI, trượt nhẹ khi hover. */
+/* Nút chính: nền sáng, chữ tối, bo 8px (kiểu nút chính của Linear) — rõ nhất trang mà không cần màu. */
 @utility btn-primary {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 9999px;
-  min-height: 2.75rem;
-  padding: 0.625rem 1.35rem;
-  font-weight: 600;
-  color: #fff;
-  background-image: linear-gradient(135deg, #4f55c1, #6c72e8);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.2),
-    var(--shadow-glow);
-  transition:
-    transform 0.4s var(--ease-fluid),
-    box-shadow 0.4s var(--ease-fluid),
-    filter 0.3s;
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.3) 50%, transparent 70%);
-    transform: translateX(-120%);
-    transition: transform 0.8s var(--ease-fluid);
-  }
+  border-radius: 8px;
+  min-height: 2.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  color: #08090a;
+  background: #f7f8f8;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+  transition: background-color 150ms ease-out, opacity 150ms ease-out;
   @media (hover: hover) {
     &:hover {
-      transform: translateX(3px);
-      box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 0.2),
-        0 16px 44px -12px rgb(108 114 232 / 0.75);
-    }
-    &:hover::after {
-      transform: translateX(120%);
+      background: #ffffff;
     }
   }
   &:active {
-    transform: scale(0.97);
+    background: #e6e7e9;
   }
   &:disabled {
-    filter: grayscale(0.4);
-    opacity: 0.6;
-    transform: none;
+    opacity: 0.5;
   }
 }
 
-/* Nút phụ: pill viền mảnh, trong suốt trên nền tối. */
+/* Nút phụ: viền mảnh, nền trong suốt, bo 8px. */
 @utility btn-secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 9999px;
-  min-height: 2.75rem;
-  border: 1px solid var(--color-zinc-300);
-  background: rgb(255 255 255 / 0.03);
-  padding: 0.625rem 1.35rem;
-  font-weight: 600;
+  border-radius: 8px;
+  min-height: 2.5rem;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.02);
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  font-size: 0.9375rem;
   color: var(--color-zinc-900);
-  transition:
-    transform 0.4s var(--ease-fluid),
-    border-color 0.3s,
-    background-color 0.3s,
-    color 0.3s;
+  transition: border-color 150ms ease-out, background-color 150ms ease-out;
   @media (hover: hover) {
     &:hover {
-      transform: translateX(3px);
-      border-color: var(--color-brand-400);
-      background: rgb(108 114 232 / 0.12);
-      color: #fff;
+      border-color: rgb(255 255 255 / 0.18);
+      background: rgb(255 255 255 / 0.05);
     }
-  }
-  &:active {
-    transform: scale(0.97);
   }
 }
 
-/* Thẻ nổi lên khi hover, viền + bóng ngả tím. */
+/* Thẻ: hover chỉ làm sáng đường kẻ và nền một bậc — không nhấc lên, không bóng màu. */
 @utility card-lift {
-  transition:
-    transform 0.5s var(--ease-fluid),
-    box-shadow 0.5s var(--ease-fluid),
-    border-color 0.3s;
+  transition: border-color 150ms ease-out, background-color 150ms ease-out;
   @media (hover: hover) {
     &:hover {
-      transform: translateY(-4px);
-      border-color: rgb(108 114 232 / 0.55);
-      box-shadow: var(--shadow-lift);
+      border-color: rgb(255 255 255 / 0.14);
+      background-color: var(--color-surface-raised);
     }
   }
 }
 
-/* Dải sáng gradient ở mép trên thẻ, hiện khi hover (thẻ cần `relative overflow-hidden`). */
+/* Không còn dải gradient trên thẻ. */
 @utility card-topline {
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto;
-    height: 3px;
-    z-index: 20;
-    pointer-events: none;
-    background: linear-gradient(90deg, rgb(233 92 255), rgb(159 121 255), #6c72e8);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.6s var(--ease-fluid);
-  }
-  &:hover::before,
-  &:focus-within::before {
-    transform: scaleX(1);
-  }
+  position: relative;
 }
 
 /* Băng chuyền vô hạn (như "Trusted by" của SaaS AI): đặt 2 bản nội dung giống nhau trong .marquee-track. */
@@ -517,8 +443,8 @@ body {
 /* Shimmer skeleton: quét ngang bằng `background-position` nên không cần
    `overflow: hidden` cho các khối bo góc; `prefers-reduced-motion` tắt animation. */
 .skeleton {
-  background-color: #232932;
-  background-image: linear-gradient(90deg, #232932 0%, #2d3540 50%, #232932 100%);
+  background-color: #16171c;
+  background-image: linear-gradient(90deg, #16171c 0%, #1e1f25 50%, #16171c 100%);
   background-repeat: no-repeat;
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.6s ease-in-out infinite;

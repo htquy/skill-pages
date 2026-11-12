@@ -15,7 +15,7 @@ export function Logo({ className }: { className?: string }) {
       aria-label={`${siteConfig.name} home`}
       className={cn("group flex min-h-11 items-center gap-2 font-semibold tracking-tight", className)}
     >
-      <span className="relative flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 via-violet-600 to-brand-700 text-white shadow-glow transition-transform duration-500 ease-spring group-hover:-rotate-6 group-hover:scale-105">
+      <span className="relative flex size-8 items-center justify-center rounded-lg text-white shadow-glow transition-transform duration-500 ease-out bg-brand-500">
         <Store className="size-4" aria-hidden="true" />
         {/* Đốm hổ phách: điểm nhấn ấm duy nhất của logo. */}
         <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-spark-400 ring-2 ring-surface" aria-hidden="true" />
