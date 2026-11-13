@@ -96,6 +96,25 @@ async function resolveUser(request: Request): Promise<{ id: string; email: strin
   return null;
 }
 
+/** Đọc env khoá nội dung; mục sai định dạng bị bỏ qua (không bao giờ trả khoá hỏng cho app). */
+function parseContentKeys(raw: string | undefined): Record<string, { id: string; key: string }> {
+  if (!raw) return {};
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return {};
+    const result: Record<string, { id: string; key: string }> = {};
+    for (const [feature, value] of Object.entries(parsed as Record<string, unknown>)) {
+      const entry = value as { id?: unknown; key?: unknown } | null;
+      if (!entry || typeof entry.id !== "string" || typeof entry.key !== "string") continue;
+      if (!/^[A-Za-z0-9_-]{1,40}$/.test(entry.id) || Buffer.from(entry.key, "base64").length !== 32) continue;
+      result[feature] = { id: entry.id, key: entry.key };
+    }
+    return result;
+  } catch {
+    return {};
+  }
+}
+
 export const appCorsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -205,6 +224,41 @@ export class AppsController {
       );
     } catch (error: unknown) {
       return errorResponse(error, appCorsHeaders);
+    }
+  }
+
+  /**
+   * GET /api/apps/[slug]/content-keys
+   * Khoá giải mã nội dung trả phí của app desktop (SkillStudio: file skill đã niêm phong trong feed).
+   * Chỉ nhận Bearer token của chính người dùng (không cookie, không userId server-to-server): khoá chỉ đi tới
+   * app đang đăng nhập. Mỗi khoá gắn với một mã tính năng; chỉ trả khoá của tính năng mà gói đang mở.
+   * Cấu hình: env <SLUG>_CONTENT_KEYS = {"FEATURE_KEY":{"id":"...","key":"base64 32 byte"}} (cùng nội dung với
+   * file khoá của `skillstudio skills keygen`). Chưa cấu hình => trả danh sách rỗng.
+   */
+  static async contentKeys(request: Request, slug: string): Promise<NextResponse> {
+    const headers = { ...appCorsHeaders, "Cache-Control": "no-store" };
+    try {
+      const authHeader = request.headers.get("authorization");
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401, headers });
+      }
+      let userId: string;
+      try {
+        userId = (await oauthService.getUserByAccessToken(authHeader.substring(7).trim())).id;
+      } catch {
+        return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401, headers });
+      }
+
+      const entitlement = await appsService.checkUserAppAccess(slug, userId);
+      const configured = parseContentKeys(process.env[`${slug.replace(/[^a-z0-9]/gi, "").toUpperCase()}_CONTENT_KEYS`]);
+      const keys = entitlement.hasActiveSubscription
+        ? Object.entries(configured)
+            .filter(([feature]) => entitlement.unlockedFeatures.includes(feature))
+            .map(([, k]) => k)
+        : [];
+      return NextResponse.json({ success: true, data: { keys } }, { headers });
+    } catch (error: unknown) {
+      return errorResponse(error, headers);
     }
   }
 
