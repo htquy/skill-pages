@@ -183,6 +183,7 @@ import { AiGatewayService } from "@/src/application/ai/ai-gateway.service";
 import { TaskWorkerService } from "@/src/application/ai/task-worker.service";
 
 export const aiRepository = prismaAiRepository;
+export const userRepository = prismaUserRepository;
 export const keyManagerService = new KeyManagerService(prismaAiRepository);
 
 const imageProvidersMap = new Map([["fal-ai", falAiFluxAdapter]]);
@@ -205,6 +206,16 @@ export const aiGatewayService = new AiGatewayService({
   imageProviders: [falAiFluxAdapter],
   videoProviders: [lumaVideoAdapter],
   audioProviders: [audioTtsAdapter],
+  resolveOAuthToken: async (token) => {
+    try {
+      const user = await oauthService.getUserByAccessToken(token);
+      return { id: user.id, email: user.email, name: user.name };
+    } catch {
+      return null;
+    }
+  },
+  checkAppAccess: (appSlug, userId) => appsService.checkUserAppAccess(appSlug, userId),
+  defaultAppSlug: "skill-studio",
 });
 
 import { DistributionService } from "@/src/application/apps/distribution-service";

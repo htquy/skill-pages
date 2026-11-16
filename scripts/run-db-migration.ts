@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 
-const supabaseUrl = "postgresql://postgres.fpqrrbdzeqmlnsjvgfeb:Ra9WjSfeL0ihrJ7Z@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require&statement_cache_size=0";
+const supabaseUrl = (process.env.DATABASE_URL ?? "");
 
 const prisma = new PrismaClient({
   datasources: {

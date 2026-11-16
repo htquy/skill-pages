@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/src/infrastructure/authentication/authorization";
-import { aiRepository, keyManagerService, aiGatewayService } from "@/src/infrastructure/composition";
+import {
+  aiGatewayService,
+  aiRepository,
+  appsService,
+  keyManagerService,
+  toolQueries,
+  userRepository,
+} from "@/src/infrastructure/composition";
 import { isAppError } from "@/src/domain/errors";
+import { currentUtcPeriodKey, monthBoundsUtc } from "@/src/application/ai/credit-pricing";
 
 const createKeySchema = z.object({
   provider: z.string().min(1).max(60),
@@ -21,12 +29,46 @@ const updateKeySchema = z.object({
 });
 
 const testApiSchema = z.object({
-  taskType: z.enum(["TEXT", "IMAGE", "AUDIO"]),
+  taskType: z.enum(["VERIFY_KEY", "TEXT", "IMAGE", "AUDIO"]),
   provider: z.string().min(1),
   model: z.string().optional(),
-  prompt: z.string().min(1).max(4000),
-  customKey: z.string().optional(), // Test trực tiếp bằng key vừa nhập hoặc key hệ thống
+  prompt: z.string().max(4000).optional(),
+  customKey: z.string().optional(),
 });
+
+const upsertPolicySchema = z.object({
+  appSlug: z.string().trim().min(1).max(120),
+  planKey: z.string().trim().min(1).max(80),
+  monthlyCredits: z.number().min(0).max(1_000_000),
+  usdPerCredit: z.number().positive().max(10).default(0.002),
+  resetMode: z.enum(["MONTHLY", "TRIAL"]).default("MONTHLY"),
+  primaryProvider: z.string().trim().min(1).max(60).default("openrouter"),
+  primaryModel: z.string().trim().min(1).max(120).default("anthropic/claude-haiku-5.5"),
+  fallbackProvider: z.string().trim().max(60).nullable().optional(),
+  fallbackModel: z.string().trim().max(120).nullable().optional(),
+  allowedModels: z.array(z.string().trim().min(1)).max(50).optional(),
+  isActive: z.boolean().default(true),
+  description: z.string().max(500).nullable().optional(),
+});
+
+const bonusCreditSchema = z.object({
+  userId: z.string().trim().min(1),
+  appSlug: z.string().trim().min(1).max(120).default("skill-studio"),
+  periodKey: z.string().regex(/^\d{4}-\d{2}$/).optional(),
+  bonusDelta: z.number().min(-100_000).max(100_000),
+});
+
+async function resolveUsersMap(userIds: string[]) {
+  const unique = [...new Set(userIds.filter(Boolean))];
+  const map = new Map<string, { id: string; email: string | null; name: string | null }>();
+  await Promise.all(
+    unique.map(async (id) => {
+      const u = await userRepository.findById(id);
+      if (u) map.set(id, { id: u.id, email: u.email, name: u.name });
+    }),
+  );
+  return map;
+}
 
 export class AiAdminController {
   /** GET /api/admin/ai/keys */
@@ -34,7 +76,6 @@ export class AiAdminController {
     try {
       await requireAdmin();
       const keys = await keyManagerService.listKeys();
-      // Mask keySecret để không lộ toàn bộ raw secret trên UI (chỉ hiện 4 ký tự đầu và 4 ký tự cuối)
       const maskedKeys = keys.map((k) => ({
         ...k,
         keySecretMasked:
@@ -119,14 +160,35 @@ export class AiAdminController {
       const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50", 10)));
       const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
       const offset = (page - 1) * limit;
+      const userId = searchParams.get("userId")?.trim() || undefined;
+      const appSlug = searchParams.get("appSlug")?.trim().toLowerCase() || undefined;
+      const periodKey = searchParams.get("periodKey")?.trim() || undefined;
+      const bounds = periodKey ? monthBoundsUtc(periodKey) : null;
+
+      const filter = {
+        userId,
+        appSlug,
+        periodStart: bounds?.start,
+        periodEnd: bounds?.end,
+        limit,
+        offset,
+      };
 
       const [logs, total] = await Promise.all([
-        aiRepository.getUsageLogs(limit, offset),
-        aiRepository.countUsageLogs(),
+        aiRepository.listUsageLogsFiltered(filter),
+        aiRepository.countUsageLogsFiltered(filter),
       ]);
 
+      const usersMap = await resolveUsersMap(
+        logs.map((l) => l.userId || "").filter(Boolean),
+      );
+
       return NextResponse.json({
-        logs,
+        logs: logs.map((l) => ({
+          ...l,
+          userEmail: l.userId ? usersMap.get(l.userId)?.email ?? null : null,
+          userName: l.userId ? usersMap.get(l.userId)?.name ?? null : null,
+        })),
         pagination: {
           total,
           page,
@@ -140,24 +202,267 @@ export class AiAdminController {
     }
   }
 
+  /** GET /api/admin/ai/policies */
+  static async listPolicies(request: Request): Promise<NextResponse> {
+    try {
+      await requireAdmin();
+      const { searchParams } = new URL(request.url);
+      const appSlug = searchParams.get("appSlug")?.trim().toLowerCase() || undefined;
+
+      const [policies, activeApps, toolsPage] = await Promise.all([
+        aiRepository.listCreditPolicies(appSlug),
+        appsService.listActiveApps(),
+        toolQueries.list({}, { page: 1, pageSize: 100 }),
+      ]);
+
+      return NextResponse.json({
+        policies,
+        apps: activeApps.map((a) => ({
+          id: a.id,
+          slug: a.slug,
+          name: a.name,
+          plans: a.plans.map((p) => ({ id: p.id, name: p.name })),
+        })),
+        tools: toolsPage.items.map((t) => ({
+          slug: t.slug,
+          title: t.title,
+          appSlug: t.appSlug ?? t.slug,
+        })),
+      });
+    } catch (error) {
+      if (isAppError(error)) return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json({ error: "Failed to load credit policies" }, { status: 500 });
+    }
+  }
+
+  /** PUT /api/admin/ai/policies */
+  static async upsertPolicy(request: Request): Promise<NextResponse> {
+    try {
+      await requireAdmin();
+      const body = await request.json();
+      const input = upsertPolicySchema.parse(body);
+
+      const saved = await aiRepository.upsertCreditPolicy({
+        appSlug: input.appSlug.toLowerCase(),
+        planKey: input.planKey,
+        monthlyCredits: input.monthlyCredits,
+        usdPerCredit: input.usdPerCredit,
+        resetMode: input.resetMode,
+        primaryProvider: input.primaryProvider.toLowerCase(),
+        primaryModel: input.primaryModel,
+        fallbackProvider: input.fallbackProvider ? input.fallbackProvider.toLowerCase() : null,
+        fallbackModel: input.fallbackModel || null,
+        allowedModels:
+          input.allowedModels && input.allowedModels.length > 0
+            ? input.allowedModels
+            : [
+                input.primaryModel,
+                ...(input.fallbackModel ? [input.fallbackModel] : []),
+              ],
+        isActive: input.isActive,
+        description: input.description ?? null,
+      });
+
+      return NextResponse.json(saved);
+    } catch (error) {
+      if (isAppError(error)) return NextResponse.json({ error: error.message }, { status: error.status });
+      if (error instanceof z.ZodError) {
+        return NextResponse.json({ error: error.issues[0]?.message || "Dữ liệu không hợp lệ" }, { status: 400 });
+      }
+      return NextResponse.json({ error: "Failed to save credit policy" }, { status: 500 });
+    }
+  }
+
+  /** DELETE /api/admin/ai/policies/[id] */
+  static async deletePolicy(_request: Request, id: string): Promise<NextResponse> {
+    try {
+      await requireAdmin();
+      await aiRepository.deleteCreditPolicy(id);
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      if (isAppError(error)) return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json({ error: "Failed to delete credit policy" }, { status: 500 });
+    }
+  }
+
+  /** GET /api/admin/ai/usage?periodKey=YYYY-MM&appSlug=...&q=...&userId=... */
+  static async getMonthlyUsage(request: Request): Promise<NextResponse> {
+    try {
+      await requireAdmin();
+      const { searchParams } = new URL(request.url);
+      const periodKey = searchParams.get("periodKey")?.trim() || currentUtcPeriodKey();
+      const appSlug = searchParams.get("appSlug")?.trim().toLowerCase() || undefined;
+      const q = searchParams.get("q")?.trim() || undefined;
+      const explicitUserId = searchParams.get("userId")?.trim() || undefined;
+      const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50", 10)));
+      const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+      const offset = (page - 1) * limit;
+
+      let targetUserId = explicitUserId;
+      if (!targetUserId && q) {
+        if (q.includes("@")) {
+          const exact = await userRepository.findByEmail(q);
+          if (exact) targetUserId = exact.id;
+        }
+        if (!targetUserId) {
+          const found = await userRepository.listForAdmin({ q }, { page: 1, pageSize: 10 });
+          if (found.items.length === 1) {
+            targetUserId = found.items[0].id;
+          } else if (found.items.length === 0) {
+            return NextResponse.json({
+              periodKey,
+              accounts: [],
+              totals: { accounts: 0, requests: 0, creditsUsed: 0, costUsd: 0 },
+              pagination: { total: 0, page, limit, totalPages: 0 },
+            });
+          } else {
+            // Multiple matching users: fetch all their periods and combine
+            const matchedPeriods = (
+              await Promise.all(
+                found.items.map((u) =>
+                  aiRepository.listUserCreditPeriods({
+                    periodKey,
+                    appSlug,
+                    userId: u.id,
+                    limit: 50,
+                  }),
+                ),
+              )
+            ).flat();
+            const userLookup = new Map(found.items.map((u) => [u.id, u]));
+            const accounts = matchedPeriods.map((p) => {
+              const u = userLookup.get(p.userId);
+              return {
+                ...p,
+                userEmail: u?.email ?? null,
+                userName: u?.name ?? null,
+                remainingCredits: Math.max(
+                  0,
+                  Number((p.allowanceCredits + p.bonusCredits - p.usedCredits).toFixed(4)),
+                ),
+              };
+            });
+            return NextResponse.json({
+              periodKey,
+              accounts,
+              totals: {
+                accounts: accounts.length,
+                requests: accounts.reduce((s, a) => s + a.requestCount, 0),
+                creditsUsed: Number(accounts.reduce((s, a) => s + a.usedCredits, 0).toFixed(4)),
+                costUsd: Number(accounts.reduce((s, a) => s + a.usedCostUsd, 0).toFixed(6)),
+              },
+              pagination: { total: accounts.length, page: 1, limit, totalPages: 1 },
+            });
+          }
+        }
+      }
+
+      const [periods, total] = await Promise.all([
+        aiRepository.listUserCreditPeriods({
+          periodKey,
+          appSlug,
+          userId: targetUserId,
+          limit,
+          offset,
+        }),
+        aiRepository.countUserCreditPeriods({
+          periodKey,
+          appSlug,
+          userId: targetUserId,
+        }),
+      ]);
+
+      const usersMap = await resolveUsersMap(periods.map((p) => p.userId));
+      const accounts = periods.map((p) => {
+        const u = usersMap.get(p.userId);
+        return {
+          ...p,
+          userEmail: u?.email ?? null,
+          userName: u?.name ?? null,
+          remainingCredits: Math.max(
+            0,
+            Number((p.allowanceCredits + p.bonusCredits - p.usedCredits).toFixed(4)),
+          ),
+        };
+      });
+
+      return NextResponse.json({
+        periodKey,
+        accounts,
+        totals: {
+          accounts: total,
+          requests: accounts.reduce((s, a) => s + a.requestCount, 0),
+          creditsUsed: Number(accounts.reduce((s, a) => s + a.usedCredits, 0).toFixed(4)),
+          costUsd: Number(accounts.reduce((s, a) => s + a.usedCostUsd, 0).toFixed(6)),
+        },
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+    } catch (error) {
+      if (isAppError(error)) return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json({ error: "Failed to load monthly usage" }, { status: 500 });
+    }
+  }
+
+  /** POST /api/admin/ai/usage/bonus */
+  static async grantBonusCredits(request: Request): Promise<NextResponse> {
+    try {
+      await requireAdmin();
+      const body = await request.json();
+      const input = bonusCreditSchema.parse(body);
+
+      const periodKey = input.periodKey || currentUtcPeriodKey();
+      const currentStatus = await aiGatewayService.getUserCreditStatus(
+        input.userId,
+        input.appSlug,
+      );
+      const updated = await aiRepository.addBonusCredits({
+        userId: input.userId,
+        appSlug: currentStatus.appSlug,
+        periodKey,
+        planKey: currentStatus.planKey,
+        allowanceCredits: currentStatus.allowanceCredits,
+        bonusDelta: input.bonusDelta,
+      });
+
+      return NextResponse.json(updated);
+    } catch (error) {
+      if (isAppError(error)) return NextResponse.json({ error: error.message }, { status: error.status });
+      if (error instanceof z.ZodError) {
+        return NextResponse.json({ error: error.issues[0]?.message || "Dữ liệu không hợp lệ" }, { status: 400 });
+      }
+      return NextResponse.json({ error: "Failed to adjust bonus credits" }, { status: 500 });
+    }
+  }
+
   /** POST /api/admin/ai/test - Trực tiếp thử nghiệm API từ Admin Panel */
   static async testApi(request: Request): Promise<NextResponse> {
     try {
-      const user = await requireAdmin();
+      await requireAdmin();
       const body = await request.json();
       const input = testApiSchema.parse(body);
 
-      // Tạo một mock auth context cho Admin
+      if (input.taskType === "VERIFY_KEY") {
+        const result = await aiGatewayService.verifyProviderKey(
+          input.provider,
+          input.customKey,
+        );
+        return NextResponse.json({ kind: "VERIFY_KEY", result });
+      }
+
+      const prompt = input.prompt?.trim() || "";
+      if (!prompt) {
+        return NextResponse.json({ error: "Vui lòng nhập prompt để test API." }, { status: 400 });
+      }
+
+      // Không truyền fake clientId để tránh vi phạm FK ai_usage_logs.clientId -> ai_clients.id
       const adminAuth = {
-        client: {
-          id: `admin-${user.id}`,
-          name: "Admin Playground",
-          apiKey: "internal-admin",
-          status: "ACTIVE" as const,
-          rateLimitPerMin: 1000,
-          allowedProviders: ["*"],
-          allowedTasks: ["*"],
-        },
+        client: null,
+        authType: "api_key" as const,
         byokKey: input.customKey || undefined,
       };
 
@@ -166,7 +471,9 @@ export class AiAdminController {
           {
             provider: input.provider,
             model: input.model,
-            messages: [{ role: "user", content: input.prompt }],
+            messages: [{ role: "user", content: prompt }],
+            maxTokens: 128,
+            allowFallback: false,
             stream: false,
           },
           adminAuth,
@@ -179,7 +486,7 @@ export class AiAdminController {
           {
             provider: input.provider,
             model: input.model,
-            text: input.prompt,
+            text: prompt,
             voice: "alloy",
           },
           adminAuth,
@@ -203,7 +510,7 @@ export class AiAdminController {
           {
             provider: input.provider,
             model: input.model,
-            prompt: input.prompt,
+            prompt,
             aspectRatio: "1:1",
           },
           adminAuth,

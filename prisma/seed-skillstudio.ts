@@ -148,5 +148,43 @@ export async function seedSkillStudio(prisma: PrismaClient, demoUserId?: string)
     },
   });
 
+  // Hạn mức AI Gateway mặc định cho SkillStudio: 50 credit dùng thử (FREE) & 1000 credit/tháng (Pro = $2.00)
+  const defaultModels = ["anthropic/claude-haiku-5.5", "openai/gpt-6-luna"];
+  for (const policy of [
+    {
+      planKey: "FREE",
+      monthlyCredits: 50,
+      resetMode: "TRIAL",
+      description: "Gói dùng thử cho tài khoản đăng nhập (50 credit = $0.10).",
+    },
+    {
+      planKey: pro.id,
+      monthlyCredits: 1000,
+      resetMode: "MONTHLY",
+      description: "Gói SkillStudio Pro mặc định 1000 credit/tháng (= $2.00 input + output).",
+    },
+  ]) {
+    await prisma.aiAppCreditPolicy.upsert({
+      where: { appSlug_planKey: { appSlug: app.slug, planKey: policy.planKey } },
+      create: {
+        appSlug: app.slug,
+        planKey: policy.planKey,
+        monthlyCredits: policy.monthlyCredits,
+        usdPerCredit: 0.002,
+        resetMode: policy.resetMode,
+        primaryProvider: "openrouter",
+        primaryModel: "anthropic/claude-haiku-5.5",
+        fallbackProvider: "openrouter",
+        fallbackModel: "openai/gpt-6-luna",
+        allowedModels: defaultModels,
+        isActive: true,
+        description: policy.description,
+      },
+      update: {
+        description: policy.description,
+      },
+    });
+  }
+
   return app;
 }

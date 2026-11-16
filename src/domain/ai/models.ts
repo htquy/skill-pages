@@ -5,6 +5,7 @@
 
 export type AiProviderName =
   | "openai"
+  | "openrouter"
   | "gemini"
   | "anthropic"
   | "groq"
@@ -26,11 +27,15 @@ export type AiTaskStatus =
   "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "CANCELLED";
 export type AiKeyStatus = "ACTIVE" | "RATE_LIMITED" | "SUSPENDED" | "EXPIRED";
 export type AiCallbackStatus = "NONE" | "PENDING" | "DELIVERED" | "FAILED";
+export type CreditResetMode = "MONTHLY" | "TRIAL";
 
 export interface TokenUsage {
   promptTokens: number;
+  cachedTokens?: number;
   completionTokens: number;
   totalTokens: number;
+  costUsd?: number;
+  creditsCharged?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -50,9 +55,20 @@ export interface FunctionTool {
     parameters: Record<string, unknown>;
   };
 }
+export interface TextContentPart {
+  type: "text";
+  text: string;
+  cache_control?: { type: "ephemeral" };
+}
+export interface ImageUrlContentPart {
+  type: "image_url";
+  image_url: { url: string; detail?: "auto" | "low" | "high" };
+}
+export type MessageContentPart = TextContentPart | ImageUrlContentPart;
+
 export interface ChatMessage {
   role: "system" | "user" | "assistant" | "tool";
-  content: string;
+  content: string | MessageContentPart[] | null;
   tool_calls?: ToolCall[];
   tool_call_id?: string;
 }
@@ -60,9 +76,15 @@ export interface ChatMessage {
 export interface UnifiedTextRequest {
   provider?: AiProviderName;
   model?: string;
+  appSlug?: string;
   messages: ChatMessage[];
   tools?: FunctionTool[];
   toolChoice?: "auto" | "none" | "required";
+  parallelToolCalls?: boolean;
+  reasoningEffort?: "minimal" | "low" | "medium" | "high";
+  allowFallback?: boolean;
+  fallbackProvider?: string;
+  fallbackModel?: string;
   dataCollection?: "allow" | "deny";
   temperature?: number;
   maxTokens?: number;
@@ -80,10 +102,16 @@ export interface UnifiedTextResponse {
   usage: TokenUsage;
   finishReason?: string;
   executionTimeMs: number;
+  fallbackUsed?: boolean;
+  fallbackFrom?: string;
+  creditsCharged?: number;
+  remainingCredits?: number;
 }
 
 export interface TextStreamChunk {
   id: string;
+  provider?: string;
+  model?: string;
   deltaText: string;
   toolCallDeltas?: Array<{
     index: number;
@@ -94,6 +122,10 @@ export interface TextStreamChunk {
   isFinished: boolean;
   finishReason?: string;
   usage?: TokenUsage;
+  fallbackUsed?: boolean;
+  fallbackFrom?: string;
+  creditsCharged?: number;
+  remainingCredits?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -242,18 +274,94 @@ export interface AiTaskDto {
 export interface AiUsageLogDto {
   id: string;
   clientId?: string | null;
+  userId?: string | null;
+  appSlug?: string | null;
   taskId?: string | null;
   taskType: AiTaskType;
   provider: string;
   model: string;
   promptTokens: number;
+  cachedTokens: number;
   completionTokens: number;
   totalTokens: number;
+  costUsd: number;
+  creditsCharged: number;
+  fallbackUsed: boolean;
+  fallbackFrom?: string | null;
   latencyMs: number;
   statusCode: number;
   errorMessage?: string | null;
   ipAddress?: string | null;
   createdAt: Date;
+}
+
+export interface AiAppCreditPolicyDto {
+  id: string;
+  appSlug: string;
+  planKey: string;
+  monthlyCredits: number;
+  usdPerCredit: number;
+  resetMode: CreditResetMode;
+  primaryProvider: string;
+  primaryModel: string;
+  fallbackProvider?: string | null;
+  fallbackModel?: string | null;
+  allowedModels: string[];
+  isActive: boolean;
+  description?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AiUserCreditPeriodDto {
+  id: string;
+  userId: string;
+  appSlug: string;
+  periodKey: string;
+  planKey: string;
+  allowanceCredits: number;
+  bonusCredits: number;
+  usedCredits: number;
+  usedCostUsd: number;
+  requestCount: number;
+  promptTokens: number;
+  cachedTokens: number;
+  completionTokens: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AiUserCreditStatusDto {
+  userId: string;
+  appSlug: string;
+  periodKey: string;
+  planKey: string;
+  planName: string;
+  isPaid: boolean;
+  resetMode: CreditResetMode;
+  usdPerCredit: number;
+  allowanceCredits: number;
+  bonusCredits: number;
+  usedCredits: number;
+  remainingCredits: number;
+  usedCostUsd: number;
+  requestCount: number;
+  promptTokens: number;
+  cachedTokens: number;
+  completionTokens: number;
+  primaryProvider: string;
+  primaryModel: string;
+  fallbackProvider?: string | null;
+  fallbackModel?: string | null;
+  allowedModels: string[];
+}
+
+export interface AiGatewayAuthContext {
+  client?: AiClientDto | null;
+  userId?: string | null;
+  userEmail?: string | null;
+  userName?: string | null;
+  authType: "api_key" | "oauth" | "session";
 }
 
 // ---------------------------------------------------------------------------

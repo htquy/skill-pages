@@ -1,7 +1,13 @@
 import {
+  AiAppCreditPolicyDto,
   AiClientDto,
+  AiProviderKeyDto,
   AiTaskDto,
+  AiUserCreditStatusDto,
+  AIProfile,
+  CatalogResponse,
   TextStreamChunk,
+  TokenUsage,
   UnifiedAudioRequest,
   UnifiedAudioResponse,
   UnifiedImageRequest,
@@ -10,8 +16,6 @@ import {
   UnifiedTextResponse,
   UnifiedVideoRequest,
   UnifiedVideoTaskResponse,
-  AIProfile,
-  CatalogResponse,
 } from "@/src/domain/ai/models";
 import {
   IAiRepository,
@@ -21,31 +25,85 @@ import {
   ITtsProvider,
   IVideoProvider,
 } from "@/src/domain/ai/contracts";
-import { KeyManagerService } from "./key-manager.service";
+import { KeyManagerService, sanitizeApiKeySecret } from "./key-manager.service";
 import {
+  AiCreditsExhaustedError,
   AiRateLimitExceededError,
   AiTaskNotFoundError,
   AiUnauthorizedClientError,
   AiValidationError,
 } from "@/src/domain/ai/errors";
+import {
+  calculateCostUsd,
+  currentUtcPeriodKey,
+  DEFAULT_FALLBACK_MODEL,
+  DEFAULT_FALLBACK_PROVIDER,
+  DEFAULT_OPENROUTER_MAX_TOKENS,
+  DEFAULT_PRIMARY_MODEL,
+  DEFAULT_PRIMARY_PROVIDER,
+  defaultPolicyFor,
+  isRetryableFallbackError,
+  usdToCredits,
+} from "./credit-pricing";
 
 export interface GatewayAuthContext {
-  client: AiClientDto;
+  client: AiClientDto | null;
+  userId?: string | null;
+  userEmail?: string | null;
+  userName?: string | null;
+  appSlug?: string | null;
+  authType?: "api_key" | "oauth" | "session";
   ipAddress?: string;
   byokKey?: string; // Client có thể tự gửi header X-Provider-Key
+}
+
+export interface AppAccessFacadeResult {
+  hasActiveSubscription: boolean;
+  subscription: {
+    planId: string;
+    planName: string;
+  } | null;
+  user?: {
+    id: string;
+    email: string | null;
+    name: string | null;
+  };
+}
+
+interface ResolvedPolicyContext {
+  appSlug: string;
+  periodKey: string;
+  planKey: string;
+  planName: string;
+  isPaid: boolean;
+  policy: AiAppCreditPolicyDto;
+  status: AiUserCreditStatusDto;
+}
+
+interface TextExecutionAttempt {
+  providerName: string;
+  model: string;
 }
 
 export class AiGatewayService {
   private repository: IAiRepository;
   private keyManager: KeyManagerService;
   private queue: ITaskQueue;
+  private resolveOAuthToken?: (
+    token: string,
+  ) => Promise<{ id: string; email: string | null; name: string | null } | null>;
+  private checkAppAccess?: (
+    appSlug: string,
+    userId: string,
+  ) => Promise<AppAccessFacadeResult>;
+  private defaultAppSlug: string;
 
   private textProviders = new Map<string, ITextProvider>();
   private imageProviders = new Map<string, IImageProvider>();
   private videoProviders = new Map<string, IVideoProvider>();
   private audioProviders = new Map<string, ITtsProvider>();
 
-  // In-memory sliding rate limiter per client
+  // In-memory sliding rate limiter per client/user
   private clientRequestCounts = new Map<
     string,
     { count: number; resetAt: number }
@@ -59,10 +117,21 @@ export class AiGatewayService {
     imageProviders?: IImageProvider[];
     videoProviders?: IVideoProvider[];
     audioProviders?: ITtsProvider[];
+    resolveOAuthToken?: (
+      token: string,
+    ) => Promise<{ id: string; email: string | null; name: string | null } | null>;
+    checkAppAccess?: (
+      appSlug: string,
+      userId: string,
+    ) => Promise<AppAccessFacadeResult>;
+    defaultAppSlug?: string;
   }) {
     this.repository = deps.repository;
     this.keyManager = deps.keyManager;
     this.queue = deps.queue;
+    this.resolveOAuthToken = deps.resolveOAuthToken;
+    this.checkAppAccess = deps.checkAppAccess;
+    this.defaultAppSlug = deps.defaultAppSlug || "skill-studio";
 
     deps.textProviders?.forEach((p) =>
       this.textProviders.set(p.providerName, p),
@@ -91,179 +160,718 @@ export class AiGatewayService {
     this.audioProviders.set(provider.providerName, provider);
   }
 
+  private enforceRateLimit(bucketKey: string, limitPerMin: number) {
+    const now = Date.now();
+    let rateRecord = this.clientRequestCounts.get(bucketKey);
+    if (!rateRecord || now > rateRecord.resetAt) {
+      rateRecord = { count: 0, resetAt: now + 60 * 1000 };
+      this.clientRequestCounts.set(bucketKey, rateRecord);
+    }
+
+    rateRecord.count++;
+    if (rateRecord.count > limitPerMin) {
+      throw new AiRateLimitExceededError(
+        `Client exceeded limit of ${limitPerMin} requests per minute`,
+      );
+    }
+  }
+
   /**
-   * Xác thực Client và kiểm tra Rate Limiting
+   * Xác thực Client API key hoặc OAuth Bearer token / Session user và kiểm tra Rate Limiting
    */
   async authenticateClient(
     apiKeyHeader?: string | null,
     ipAddress?: string,
+    options?: {
+      appSlug?: string | null;
+      sessionUser?: { id: string; email?: string | null; name?: string | null } | null;
+    },
   ): Promise<GatewayAuthContext> {
-    if (!apiKeyHeader) {
-      throw new AiUnauthorizedClientError(
-        "Missing X-API-KEY or Authorization header",
-      );
+    if (apiKeyHeader) {
+      const token = apiKeyHeader.startsWith("Bearer ")
+        ? apiKeyHeader.slice(7).trim()
+        : apiKeyHeader.trim();
+
+      if (token) {
+        const client = await this.repository.getClientByApiKey(token);
+        if (client) {
+          if (client.status !== "ACTIVE") {
+            throw new AiUnauthorizedClientError("Invalid or deactivated API key");
+          }
+          this.enforceRateLimit(`client:${client.id}`, client.rateLimitPerMin);
+          return {
+            client,
+            authType: "api_key",
+            appSlug: options?.appSlug ?? null,
+            ipAddress,
+          };
+        }
+
+        if (this.resolveOAuthToken) {
+          const oauthUser = await this.resolveOAuthToken(token);
+          if (oauthUser) {
+            this.enforceRateLimit(`user:${oauthUser.id}`, 120);
+            return {
+              client: null,
+              userId: oauthUser.id,
+              userEmail: oauthUser.email,
+              userName: oauthUser.name,
+              appSlug: (options?.appSlug || this.defaultAppSlug).toLowerCase(),
+              authType: "oauth",
+              ipAddress,
+            };
+          }
+        }
+      }
+
+      throw new AiUnauthorizedClientError("Invalid or deactivated API key / token");
     }
 
-    const token = apiKeyHeader.startsWith("Bearer ")
-      ? apiKeyHeader.slice(7).trim()
-      : apiKeyHeader.trim();
-    const client = await this.repository.getClientByApiKey(token);
-
-    if (!client || client.status !== "ACTIVE") {
-      throw new AiUnauthorizedClientError("Invalid or deactivated API key");
+    if (options?.sessionUser?.id) {
+      this.enforceRateLimit(`user:${options.sessionUser.id}`, 120);
+      return {
+        client: null,
+        userId: options.sessionUser.id,
+        userEmail: options.sessionUser.email ?? null,
+        userName: options.sessionUser.name ?? null,
+        appSlug: (options.appSlug || this.defaultAppSlug).toLowerCase(),
+        authType: "session",
+        ipAddress,
+      };
     }
 
-    // Rate Limiting Check
-    const now = Date.now();
-    let rateRecord = this.clientRequestCounts.get(client.id);
-    if (!rateRecord || now > rateRecord.resetAt) {
-      rateRecord = { count: 0, resetAt: now + 60 * 1000 };
-      this.clientRequestCounts.set(client.id, rateRecord);
-    }
-
-    rateRecord.count++;
-    if (rateRecord.count > client.rateLimitPerMin) {
-      throw new AiRateLimitExceededError(
-        `Client exceeded limit of ${client.rateLimitPerMin} requests per minute`,
-      );
-    }
-
-    return { client, ipAddress };
+    throw new AiUnauthorizedClientError(
+      "Missing X-API-KEY or Authorization header",
+    );
   }
 
   /**
-   * TEXT LLM ENGINE: Đồng bộ
+   * Lấy chính sách credit áp dụng cho (appSlug, userId) và trạng thái hạn mức tháng hiện tại.
+   */
+  async getUserCreditStatus(
+    userId: string,
+    requestedAppSlug?: string | null,
+  ): Promise<AiUserCreditStatusDto> {
+    const resolved = await this.resolveUserPolicyContext(userId, requestedAppSlug);
+    return resolved.status;
+  }
+
+  private async resolvePolicyRecord(
+    appSlug: string,
+    isPaid: boolean,
+    planId?: string | null,
+  ): Promise<AiAppCreditPolicyDto> {
+    const candidates: Array<[string, string]> = [];
+    if (isPaid) {
+      if (planId) candidates.push([appSlug, planId]);
+      candidates.push([appSlug, "PRO"]);
+      candidates.push(["*", "PRO"]);
+    } else {
+      candidates.push([appSlug, "FREE"]);
+      candidates.push(["*", "FREE"]);
+    }
+
+    for (const [slug, key] of candidates) {
+      const found = await this.repository.findCreditPolicy(slug, key);
+      if (found && found.isActive) return found;
+    }
+
+    return defaultPolicyFor(appSlug, isPaid ? planId || "PRO" : "FREE");
+  }
+
+  private async resolveUserPolicyContext(
+    userId: string,
+    requestedAppSlug?: string | null,
+  ): Promise<ResolvedPolicyContext> {
+    const appSlug = (requestedAppSlug || this.defaultAppSlug || "skill-studio")
+      .trim()
+      .toLowerCase();
+    const periodKey = currentUtcPeriodKey();
+
+    let isPaid = false;
+    let planId: string | null = null;
+    let planName = "Free Trial";
+
+    if (this.checkAppAccess) {
+      try {
+        const access = await this.checkAppAccess(appSlug, userId);
+        if (access.hasActiveSubscription && access.subscription) {
+          isPaid = true;
+          planId = access.subscription.planId;
+          planName = access.subscription.planName || "Pro";
+        }
+      } catch (err) {
+        // If custom tool slug isn't an `apps.apps` record (404), keep FREE tier policy smoothly.
+        const status = (err as { status?: number })?.status;
+        if (status !== 404) throw err;
+      }
+    }
+
+    const policy = await this.resolvePolicyRecord(appSlug, isPaid, planId);
+    const planKey = isPaid ? planId || "PRO" : "FREE";
+    const currentPeriod = await this.repository.getUserCreditPeriod(
+      userId,
+      appSlug,
+      periodKey,
+    );
+
+    let effectiveUsedForQuota = currentPeriod?.usedCredits ?? 0;
+    let effectiveBonusForQuota = currentPeriod?.bonusCredits ?? 0;
+    let effectiveAllowance = policy.monthlyCredits;
+
+    if (!isPaid && policy.resetMode === "TRIAL") {
+      // FREE trial cap spans across months so free trial doesn't auto-reset to 50 every month unless admin configured MONTHLY.
+      const trialAgg = await this.repository.getTrialAggregateForUserApp(
+        userId,
+        appSlug,
+      );
+      effectiveUsedForQuota = trialAgg.usedCredits;
+      effectiveBonusForQuota = trialAgg.bonusCredits;
+    } else if (isPaid && currentPeriod && currentPeriod.planKey === "FREE") {
+      // Upgraded from FREE -> PRO mid-month: count prior FREE usage separately so user receives full Pro allowance.
+      const freePolicy = await this.resolvePolicyRecord(appSlug, false, null);
+      const coveredFree = Math.min(currentPeriod.usedCredits, freePolicy.monthlyCredits);
+      effectiveAllowance = policy.monthlyCredits + coveredFree;
+    } else if (currentPeriod && currentPeriod.allowanceCredits > effectiveAllowance) {
+      effectiveAllowance = currentPeriod.allowanceCredits;
+    }
+
+    const totalBudget = effectiveAllowance + effectiveBonusForQuota;
+    const remainingCredits = Math.max(
+      0,
+      Number((totalBudget - effectiveUsedForQuota).toFixed(4)),
+    );
+
+    return {
+      appSlug,
+      periodKey,
+      planKey,
+      planName,
+      isPaid,
+      policy,
+      status: {
+        userId,
+        appSlug,
+        periodKey,
+        planKey,
+        planName,
+        isPaid,
+        resetMode: policy.resetMode,
+        usdPerCredit: policy.usdPerCredit,
+        allowanceCredits: policy.monthlyCredits,
+        bonusCredits: effectiveBonusForQuota,
+        usedCredits: effectiveUsedForQuota,
+        remainingCredits,
+        usedCostUsd: currentPeriod?.usedCostUsd ?? 0,
+        requestCount: currentPeriod?.requestCount ?? 0,
+        promptTokens: currentPeriod?.promptTokens ?? 0,
+        cachedTokens: currentPeriod?.cachedTokens ?? 0,
+        completionTokens: currentPeriod?.completionTokens ?? 0,
+        primaryProvider: policy.primaryProvider,
+        primaryModel: policy.primaryModel,
+        fallbackProvider: policy.fallbackProvider ?? null,
+        fallbackModel: policy.fallbackModel ?? null,
+        allowedModels: policy.allowedModels,
+      },
+    };
+  }
+
+  private async prepareTextExecution(
+    request: UnifiedTextRequest,
+    auth: GatewayAuthContext,
+  ): Promise<{
+    attempts: TextExecutionAttempt[];
+    resolvedContext: ResolvedPolicyContext | null;
+    effectiveRequest: UnifiedTextRequest;
+  }> {
+    let resolvedContext: ResolvedPolicyContext | null = null;
+
+    if (auth.userId) {
+      resolvedContext = await this.resolveUserPolicyContext(
+        auth.userId,
+        request.appSlug || auth.appSlug,
+      );
+      if (!auth.byokKey && resolvedContext.status.remainingCredits <= 0) {
+        throw new AiCreditsExhaustedError(
+          `Tài khoản đã dùng hết ${resolvedContext.status.usedCredits}/${resolvedContext.status.allowanceCredits + resolvedContext.status.bonusCredits} credit cho '${resolvedContext.appSlug}' (${resolvedContext.planName}). Vui lòng nâng cấp hoặc liên hệ admin nạp thêm.`,
+          {
+            appSlug: resolvedContext.appSlug,
+            planKey: resolvedContext.planKey,
+            planName: resolvedContext.planName,
+            usedCredits: resolvedContext.status.usedCredits,
+            allowanceCredits: resolvedContext.status.allowanceCredits,
+            bonusCredits: resolvedContext.status.bonusCredits,
+            remainingCredits: 0,
+          },
+        );
+      }
+    }
+
+    const defaultProvider = resolvedContext
+      ? resolvedContext.policy.primaryProvider
+      : auth.authType === "oauth" || auth.authType === "session"
+        ? DEFAULT_PRIMARY_PROVIDER
+        : "openai";
+
+    const requestedProvider = (request.provider || defaultProvider).toLowerCase();
+    const requestedModel =
+      !request.model || request.model === "auto"
+        ? resolvedContext?.policy.primaryModel ||
+          (requestedProvider === "openrouter"
+            ? DEFAULT_PRIMARY_MODEL
+            : "gpt-4o-mini")
+        : request.model;
+
+    if (
+      resolvedContext &&
+      !auth.byokKey &&
+      resolvedContext.policy.allowedModels.length > 0 &&
+      !resolvedContext.policy.allowedModels.includes("*")
+    ) {
+      const permitted = new Set([
+        ...resolvedContext.policy.allowedModels,
+        resolvedContext.policy.primaryModel,
+        ...(resolvedContext.policy.fallbackModel
+          ? [resolvedContext.policy.fallbackModel]
+          : []),
+      ]);
+      if (!permitted.has(requestedModel)) {
+        throw new AiValidationError(
+          `Model '${requestedModel}' is not enabled in policy for '${resolvedContext.appSlug}'`,
+        );
+      }
+    }
+
+    this.validatePermissions(auth.client, requestedProvider, "TEXT");
+    const hasTools = Boolean(
+      request.tools?.length ||
+        request.messages.some((m) => m.role === "tool" || m.tool_calls?.length),
+    );
+    if (hasTools && !["openai", "openrouter"].includes(requestedProvider)) {
+      throw new AiValidationError(
+        "Selected provider does not support gateway tool calling; use openai or openrouter.",
+      );
+    }
+
+    if (!this.textProviders.get(requestedProvider)) {
+      throw new AiValidationError(
+        `Unsupported text provider '${requestedProvider}'`,
+      );
+    }
+
+    const attempts: TextExecutionAttempt[] = [
+      { providerName: requestedProvider, model: requestedModel },
+    ];
+
+    if (request.allowFallback !== false) {
+      const fallbackProvider = (
+        request.fallbackProvider ||
+        resolvedContext?.policy.fallbackProvider ||
+        (requestedProvider === "openrouter" ? DEFAULT_FALLBACK_PROVIDER : "")
+      ).toLowerCase();
+      const fallbackModel =
+        request.fallbackModel ||
+        resolvedContext?.policy.fallbackModel ||
+        (fallbackProvider === "openrouter" ? DEFAULT_FALLBACK_MODEL : "");
+
+      if (
+        fallbackProvider &&
+        fallbackModel &&
+        (fallbackProvider !== requestedProvider || fallbackModel !== requestedModel) &&
+        this.textProviders.has(fallbackProvider)
+      ) {
+        try {
+          this.validatePermissions(auth.client, fallbackProvider, "TEXT");
+          if (!hasTools || ["openai", "openrouter"].includes(fallbackProvider)) {
+            attempts.push({ providerName: fallbackProvider, model: fallbackModel });
+          }
+        } catch {
+          // Fallback provider not allowed for this client; skip silently.
+        }
+      }
+    }
+
+    return {
+      attempts,
+      resolvedContext,
+      effectiveRequest: {
+        ...request,
+        provider: requestedProvider,
+        model: requestedModel,
+        ...(requestedProvider === "openrouter" && request.maxTokens === undefined
+          ? { maxTokens: DEFAULT_OPENROUTER_MAX_TOKENS }
+          : {}),
+      },
+    };
+  }
+
+  private async recordTextUsage(params: {
+    auth: GatewayAuthContext;
+    resolvedContext: ResolvedPolicyContext | null;
+    providerName: string;
+    model: string;
+    usage: TokenUsage;
+    fallbackUsed: boolean;
+    fallbackFrom?: string;
+    latencyMs: number;
+  }): Promise<{ costUsd: number; creditsCharged: number; remainingCredits?: number }> {
+    const { auth, resolvedContext, providerName, model, usage, fallbackUsed, fallbackFrom, latencyMs } = params;
+    const costUsd = calculateCostUsd(model, usage);
+    const usdPerCredit = resolvedContext?.policy.usdPerCredit;
+    const creditsCharged = auth.byokKey ? 0 : usdToCredits(costUsd, usdPerCredit);
+
+    if (auth.userId && resolvedContext) {
+      let freeAllowanceOnUpgrade: number | undefined;
+      if (resolvedContext.isPaid) {
+        const freePolicy = await this.resolvePolicyRecord(
+          resolvedContext.appSlug,
+          false,
+          null,
+        );
+        freeAllowanceOnUpgrade = freePolicy.monthlyCredits;
+      }
+
+      await this.repository.recordUserPeriodUsageAndLog({
+        clientId: auth.client?.id ?? null,
+        userId: auth.userId,
+        appSlug: resolvedContext.appSlug,
+        periodKey: resolvedContext.periodKey,
+        planKey: resolvedContext.planKey,
+        allowanceCredits: resolvedContext.policy.monthlyCredits,
+        freeAllowanceOnUpgrade,
+        taskType: "TEXT",
+        provider: providerName,
+        model,
+        promptTokens: usage.promptTokens,
+        cachedTokens: usage.cachedTokens ?? 0,
+        completionTokens: usage.completionTokens,
+        totalTokens: usage.totalTokens,
+        costUsd,
+        creditsCharged,
+        fallbackUsed,
+        fallbackFrom: fallbackFrom ?? null,
+        latencyMs,
+        statusCode: 200,
+        ipAddress: auth.ipAddress,
+      });
+
+      const remainingCredits = Math.max(
+        0,
+        Number((resolvedContext.status.remainingCredits - creditsCharged).toFixed(4)),
+      );
+      return { costUsd, creditsCharged, remainingCredits };
+    }
+
+    await this.repository.createUsageLog({
+      clientId: auth.client?.id ?? null,
+      userId: auth.userId ?? null,
+      appSlug: resolvedContext?.appSlug ?? auth.appSlug ?? null,
+      taskType: "TEXT",
+      provider: providerName,
+      model,
+      promptTokens: usage.promptTokens,
+      cachedTokens: usage.cachedTokens ?? 0,
+      completionTokens: usage.completionTokens,
+      totalTokens: usage.totalTokens,
+      costUsd,
+      creditsCharged,
+      fallbackUsed,
+      fallbackFrom: fallbackFrom ?? null,
+      latencyMs,
+      statusCode: 200,
+      ipAddress: auth.ipAddress,
+    });
+    return { costUsd, creditsCharged };
+  }
+
+  /**
+   * TEXT LLM ENGINE: Đồng bộ (tự động fallback sang OpenAI GPT-6 Luna nếu Haiku lỗi)
    */
   async generateText(
     request: UnifiedTextRequest,
     auth: GatewayAuthContext,
   ): Promise<UnifiedTextResponse> {
-    const providerName = (request.provider || "openai").toLowerCase();
-    this.validatePermissions(auth.client, providerName, "TEXT");
-    if (
-      (request.tools?.length ||
-        request.messages.some(
-          (m) => m.role === "tool" || m.tool_calls?.length,
-        )) &&
-      !["openai", "openrouter"].includes(providerName)
-    ) {
-      throw new AiValidationError(
-        "Selected provider does not support gateway tool calling; use openai or openrouter.",
-      );
+    const { attempts, resolvedContext, effectiveRequest } =
+      await this.prepareTextExecution(request, auth);
+
+    let lastError: unknown;
+    const primaryAttempt = attempts[0];
+
+    for (let i = 0; i < attempts.length; i++) {
+      const attempt = attempts[i];
+      const provider = this.textProviders.get(attempt.providerName)!;
+      const startTime = Date.now();
+
+      try {
+        const response = await this.keyManager.executeWithRetry(
+          attempt.providerName,
+          auth.byokKey ? null : auth.client?.id ?? null,
+          async (apiKey) => {
+            const keyToUse = auth.byokKey || apiKey;
+            return await provider.generateText(
+              {
+                ...effectiveRequest,
+                provider: attempt.providerName,
+                model: attempt.model,
+              },
+              keyToUse,
+            );
+          },
+        );
+
+        const fallbackUsed = i > 0;
+        const fallbackFrom = fallbackUsed ? primaryAttempt.model : undefined;
+        const billing = await this.recordTextUsage({
+          auth,
+          resolvedContext,
+          providerName: attempt.providerName,
+          model: response.model || attempt.model,
+          usage: response.usage,
+          fallbackUsed,
+          fallbackFrom,
+          latencyMs: Date.now() - startTime,
+        });
+
+        return {
+          ...response,
+          usage: {
+            ...response.usage,
+            costUsd: billing.costUsd,
+            creditsCharged: billing.creditsCharged,
+          },
+          fallbackUsed,
+          ...(fallbackFrom ? { fallbackFrom } : {}),
+          creditsCharged: billing.creditsCharged,
+          ...(billing.remainingCredits !== undefined
+            ? { remainingCredits: billing.remainingCredits }
+            : {}),
+        };
+      } catch (err) {
+        lastError = err;
+        await this.repository.createUsageLog({
+          clientId: auth.client?.id ?? null,
+          userId: auth.userId ?? null,
+          appSlug: resolvedContext?.appSlug ?? auth.appSlug ?? null,
+          taskType: "TEXT",
+          provider: attempt.providerName,
+          model: attempt.model,
+          promptTokens: 0,
+          cachedTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
+          costUsd: 0,
+          creditsCharged: 0,
+          fallbackUsed: i > 0,
+          fallbackFrom: i > 0 ? primaryAttempt.model : null,
+          latencyMs: Date.now() - startTime,
+          statusCode:
+            (err as { statusCode?: number; status?: number })?.statusCode ||
+            (err as { status?: number })?.status ||
+            500,
+          errorMessage: err instanceof Error ? err.message : String(err),
+          ipAddress: auth.ipAddress,
+        });
+
+        const nextAttempt = attempts[i + 1];
+        const sameProvider = nextAttempt?.providerName === attempt.providerName;
+        if (nextAttempt && isRetryableFallbackError(err, sameProvider)) {
+          continue;
+        }
+        throw err;
+      }
     }
 
-    const provider = this.textProviders.get(providerName);
-    if (!provider) {
-      throw new AiValidationError(
-        `Unsupported text provider '${providerName}'`,
-      );
+    throw lastError;
+  }
+
+  private async *streamAttemptWithKeyRotation(
+    provider: ITextProvider,
+    request: UnifiedTextRequest,
+    auth: GatewayAuthContext,
+  ): AsyncIterable<{ chunk: TextStreamChunk; keyUsed: AiProviderKeyDto | null }> {
+    if (auth.byokKey) {
+      for await (const chunk of provider.streamText(request, auth.byokKey)) {
+        yield { chunk, keyUsed: null };
+      }
+      return;
     }
 
-    const startTime = Date.now();
-    try {
-      const response = await this.keyManager.executeWithRetry(
-        providerName,
-        auth.byokKey ? null : auth.client.id,
-        async (apiKey) => {
-          const keyToUse = auth.byokKey || apiKey;
-          return await provider.generateText(request, keyToUse);
-        },
-      );
+    const triedKeyIds = new Set<string>();
+    let lastError: unknown;
 
-      // Audit Log
-      await this.repository.createUsageLog({
-        clientId: auth.client.id,
-        taskType: "TEXT",
-        provider: providerName,
-        model: response.model,
-        promptTokens: response.usage.promptTokens,
-        completionTokens: response.usage.completionTokens,
-        totalTokens: response.usage.totalTokens,
-        latencyMs: Date.now() - startTime,
-        statusCode: 200,
-        ipAddress: auth.ipAddress,
-      });
+    for (let keyTry = 0; keyTry < 3; keyTry++) {
+      let key: AiProviderKeyDto;
+      try {
+        key = await this.keyManager.getAvailableKey(
+          provider.providerName,
+          auth.client?.id ?? null,
+        );
+      } catch (err) {
+        throw lastError || err;
+      }
+      if (triedKeyIds.has(key.id)) break;
+      triedKeyIds.add(key.id);
 
-      return response;
-    } catch (err) {
-      await this.repository.createUsageLog({
-        clientId: auth.client.id,
-        taskType: "TEXT",
-        provider: providerName,
-        model: request.model || "default",
-        promptTokens: 0,
-        completionTokens: 0,
-        totalTokens: 0,
-        latencyMs: Date.now() - startTime,
-        statusCode: (err as { status?: number })?.status || 500,
-        errorMessage: err instanceof Error ? err.message : String(err),
-        ipAddress: auth.ipAddress,
-      });
-      throw err;
+      let emittedToCaller = false;
+      try {
+        for await (const chunk of provider.streamText(request, key.keySecret)) {
+          if (chunk.deltaText || chunk.toolCallDeltas?.length) {
+            emittedToCaller = true;
+          }
+          yield { chunk, keyUsed: key };
+        }
+        await this.keyManager.markKeySuccess(key.id);
+        return;
+      } catch (err) {
+        lastError = err;
+        const statusCode = (err as { statusCode?: number })?.statusCode;
+        if (statusCode === 429) {
+          await this.keyManager.markKeyRateLimited(key.id);
+        } else if (statusCode === 401) {
+          await this.keyManager.markKeyExpired(key.id);
+        } else {
+          await this.keyManager.recordKeyFailure(key.id);
+        }
+
+        // Only rotate to another key on 429/401 before any output has flushed to client
+        if (!emittedToCaller && (statusCode === 429 || statusCode === 401)) {
+          continue;
+        }
+        throw err;
+      }
     }
+
+    throw lastError;
   }
 
   /**
-   * TEXT LLM ENGINE: Server-Sent Events (SSE) Streaming
+   * TEXT LLM ENGINE: Server-Sent Events (SSE) Streaming + tự động fallback nếu primary lỗi trước khi phát token
    */
   async *streamText(
     request: UnifiedTextRequest,
     auth: GatewayAuthContext,
   ): AsyncIterable<TextStreamChunk> {
-    const providerName = (request.provider || "openai").toLowerCase();
-    this.validatePermissions(auth.client, providerName, "TEXT");
-    if (
-      (request.tools?.length ||
-        request.messages.some(
-          (m) => m.role === "tool" || m.tool_calls?.length,
-        )) &&
-      !["openai", "openrouter"].includes(providerName)
-    ) {
-      throw new AiValidationError(
-        "Selected provider does not support gateway tool calling; use openai or openrouter.",
-      );
-    }
+    const { attempts, resolvedContext, effectiveRequest } =
+      await this.prepareTextExecution(request, auth);
 
-    const provider = this.textProviders.get(providerName);
-    if (!provider) {
-      throw new AiValidationError(
-        `Unsupported text provider '${providerName}'`,
-      );
-    }
+    const primaryAttempt = attempts[0];
+    let lastError: unknown;
 
-    const key = await this.keyManager.getAvailableKey(
-      providerName,
-      auth.client.id,
-    );
-    const keyToUse = auth.byokKey || key.keySecret;
-    const stream = provider.streamText(request, keyToUse);
+    for (let i = 0; i < attempts.length; i++) {
+      const attempt = attempts[i];
+      const provider = this.textProviders.get(attempt.providerName)!;
+      const startTime = Date.now();
+      let emittedContent = false;
+      let totalChars = 0;
+      let latestUsage: TokenUsage | undefined;
+      let resolvedModel = attempt.model;
 
-    let totalChars = 0;
-    const startTime = Date.now();
+      try {
+        for await (const { chunk } of this.streamAttemptWithKeyRotation(
+          provider,
+          {
+            ...effectiveRequest,
+            provider: attempt.providerName,
+            model: attempt.model,
+          },
+          auth,
+        )) {
+          if (chunk.deltaText) {
+            emittedContent = true;
+            totalChars += chunk.deltaText.length;
+          }
+          if (chunk.toolCallDeltas?.length) {
+            emittedContent = true;
+          }
+          if (chunk.model) resolvedModel = chunk.model;
+          if (chunk.usage) latestUsage = chunk.usage;
 
-    try {
-      for await (const chunk of stream) {
-        totalChars += chunk.deltaText.length;
-        yield chunk;
+          if (chunk.isFinished) {
+            const finalUsage: TokenUsage = latestUsage ?? {
+              promptTokens: 0,
+              cachedTokens: 0,
+              completionTokens: Math.ceil(totalChars / 4),
+              totalTokens: Math.ceil(totalChars / 4),
+            };
+            const fallbackUsed = i > 0;
+            const fallbackFrom = fallbackUsed ? primaryAttempt.model : undefined;
+            const billing = await this.recordTextUsage({
+              auth,
+              resolvedContext,
+              providerName: attempt.providerName,
+              model: resolvedModel,
+              usage: finalUsage,
+              fallbackUsed,
+              fallbackFrom,
+              latencyMs: Date.now() - startTime,
+            });
+
+            yield {
+              ...chunk,
+              provider: attempt.providerName,
+              model: resolvedModel,
+              fallbackUsed,
+              ...(fallbackFrom ? { fallbackFrom } : {}),
+              creditsCharged: billing.creditsCharged,
+              ...(billing.remainingCredits !== undefined
+                ? { remainingCredits: billing.remainingCredits }
+                : {}),
+              usage: {
+                ...finalUsage,
+                costUsd: billing.costUsd,
+                creditsCharged: billing.creditsCharged,
+              },
+            };
+            return;
+          }
+
+          yield {
+            ...chunk,
+            provider: attempt.providerName,
+            model: resolvedModel,
+            ...(i > 0
+              ? { fallbackUsed: true, fallbackFrom: primaryAttempt.model }
+              : {}),
+          };
+        }
+        return;
+      } catch (err) {
+        lastError = err;
+        await this.repository.createUsageLog({
+          clientId: auth.client?.id ?? null,
+          userId: auth.userId ?? null,
+          appSlug: resolvedContext?.appSlug ?? auth.appSlug ?? null,
+          taskType: "TEXT",
+          provider: attempt.providerName,
+          model: resolvedModel,
+          promptTokens: 0,
+          cachedTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
+          costUsd: 0,
+          creditsCharged: 0,
+          fallbackUsed: i > 0,
+          fallbackFrom: i > 0 ? primaryAttempt.model : null,
+          latencyMs: Date.now() - startTime,
+          statusCode:
+            (err as { statusCode?: number; status?: number })?.statusCode ||
+            (err as { status?: number })?.status ||
+            500,
+          errorMessage: err instanceof Error ? err.message : String(err),
+          ipAddress: auth.ipAddress,
+        });
+
+        // Seamless fallback to secondary model only if no output delta was sent to client yet
+        const nextAttempt = attempts[i + 1];
+        const sameProvider = nextAttempt?.providerName === attempt.providerName;
+        if (!emittedContent && nextAttempt && isRetryableFallbackError(err, sameProvider)) {
+          continue;
+        }
+        throw err;
       }
-
-      await this.repository.createUsageLog({
-        clientId: auth.client.id,
-        taskType: "TEXT",
-        provider: providerName,
-        model: request.model || "default",
-        promptTokens: 0,
-        completionTokens: Math.ceil(totalChars / 4),
-        totalTokens: Math.ceil(totalChars / 4),
-        latencyMs: Date.now() - startTime,
-        statusCode: 200,
-        ipAddress: auth.ipAddress,
-      });
-      await this.keyManager.markKeySuccess(key.id);
-    } catch (err) {
-      await this.keyManager.markKeyRateLimited(key.id);
-      throw err;
     }
+
+    throw lastError;
   }
 
   /**
@@ -283,9 +891,9 @@ export class AiGatewayService {
       );
     }
 
-    // 1. Tạo task trong DB
+    const clientId = auth.client?.id ?? null;
     const task = await this.repository.createTask({
-      clientId: auth.client.id,
+      clientId,
       taskType: "IMAGE",
       provider: providerName,
       model: request.model || "flux/schnell",
@@ -294,16 +902,14 @@ export class AiGatewayService {
       callbackUrl: request.callbackUrl,
     });
 
-    // 2. Gọi provider tạo task bên phía upstream
     const taskResponse = await this.keyManager.executeWithRetry(
       providerName,
-      auth.client.id,
+      clientId,
       async (apiKey) => {
         return await provider.createImageTask(request, apiKey);
       },
     );
 
-    // 3. Đẩy vào background task queue để worker polling và xử lý webhook/S3
     await this.queue.enqueue({
       taskId: task.id,
       taskType: "IMAGE",
@@ -311,7 +917,7 @@ export class AiGatewayService {
       model: task.model,
       payload: request as unknown as Record<string, unknown>,
       callbackUrl: request.callbackUrl,
-      clientId: auth.client.id,
+      clientId,
     });
 
     return {
@@ -341,8 +947,9 @@ export class AiGatewayService {
       );
     }
 
+    const clientId = auth.client?.id ?? null;
     const task = await this.repository.createTask({
-      clientId: auth.client.id,
+      clientId,
       taskType: "VIDEO",
       provider: providerName,
       model: request.model || "ray-2",
@@ -353,7 +960,7 @@ export class AiGatewayService {
 
     const taskResponse = await this.keyManager.executeWithRetry(
       providerName,
-      auth.client.id,
+      clientId,
       async (apiKey) => {
         return await provider.createVideoTask(request, apiKey);
       },
@@ -366,7 +973,7 @@ export class AiGatewayService {
       model: task.model,
       payload: request as unknown as Record<string, unknown>,
       callbackUrl: request.callbackUrl,
-      clientId: auth.client.id,
+      clientId,
     });
 
     return {
@@ -396,23 +1003,30 @@ export class AiGatewayService {
       );
     }
 
+    const clientId = auth.client?.id ?? null;
     const startTime = Date.now();
     const result = await this.keyManager.executeWithRetry(
       providerName,
-      auth.client.id,
+      clientId,
       async (apiKey) => {
         return await provider.synthesizeAudio(request, apiKey);
       },
     );
 
     await this.repository.createUsageLog({
-      clientId: auth.client.id,
+      clientId,
+      userId: auth.userId ?? null,
+      appSlug: auth.appSlug ?? null,
       taskType: "AUDIO",
       provider: providerName,
       model: request.model || "default",
       promptTokens: 0,
+      cachedTokens: 0,
       completionTokens: 0,
       totalTokens: request.text.length,
+      costUsd: 0,
+      creditsCharged: 0,
+      fallbackUsed: false,
       latencyMs: Date.now() - startTime,
       statusCode: 200,
       ipAddress: auth.ipAddress,
@@ -429,8 +1043,7 @@ export class AiGatewayService {
     if (!task) {
       throw new AiTaskNotFoundError(taskId);
     }
-    // Bảo vệ đa người dùng: client chỉ xem được task của chính mình (nếu task có clientId)
-    if (task.clientId && task.clientId !== auth.client.id) {
+    if (task.clientId && auth.client?.id && task.clientId !== auth.client.id) {
       throw new AiTaskNotFoundError(taskId);
     }
     return task;
@@ -438,20 +1051,18 @@ export class AiGatewayService {
 
   /**
    * Lấy danh mục Model/Provider (Catalog) theo quyền của caller (không lộ API secrets)
-   * Kiểm tra động theo trạng thái API Key trong Database
    */
   async getCatalog(
     auth: GatewayAuthContext,
     requestedCapability?: string,
   ): Promise<CatalogResponse> {
-    const allowedProviders = auth.client.allowedProviders || ["*"];
+    const allowedProviders = auth.client?.allowedProviders || ["*"];
     const isAllowedProvider = (p: string) =>
       allowedProviders.includes("*") || allowedProviders.includes(p);
-    const allowedTasks = auth.client.allowedTasks || ["*"];
+    const allowedTasks = auth.client?.allowedTasks || ["*"];
     const isAllowedTask = (t: string) =>
       allowedTasks.includes("*") || allowedTasks.includes(t);
 
-    // Kiểm tra trạng thái Key thật trong database
     const allKeys = await this.repository.getAllKeys();
     const activeProviders = new Set<string>();
     for (const k of allKeys) {
@@ -464,11 +1075,56 @@ export class AiGatewayService {
         activeProviders.add(k.provider.toLowerCase());
       }
     }
-    // Edge-TTS là provider miễn phí không cần key
+    if (process.env.OPENROUTER_API_KEY?.trim()) activeProviders.add("openrouter");
+    if (process.env.OPENAI_API_KEY?.trim()) activeProviders.add("openai");
+    if (process.env.GEMINI_API_KEY?.trim()) activeProviders.add("gemini");
     activeProviders.add("edgetts");
 
-    // Dynamic AI Profiles Registry
     const allProfiles: AIProfile[] = [
+      {
+        profileId: "text.openrouter.haiku",
+        version: 1,
+        displayName: "Claude Haiku 5.5 (OpenRouter)",
+        description:
+          "Model ưu tiên mặc định: tốc độ nhanh, tool calling chuẩn, $0.10/$0.50 per 1M",
+        capability: "text.generate",
+        providerId: "openrouter",
+        upstreamModelId: "anthropic/claude-haiku-5.5",
+        executionMode: "gateway_proxy",
+        status: activeProviders.has("openrouter") ? "enabled" : "degraded",
+        limits: { maxContextTokens: 1000000, maxOutputTokens: 16384 },
+        supportedParameters: [
+          "temperature",
+          "maxTokens",
+          "stream",
+          "tools",
+          "reasoningEffort",
+          "systemPrompt",
+        ],
+        pricing: { estimatedCostUsd: 0.0001, currency: "USD" },
+      },
+      {
+        profileId: "text.openrouter.gpt6luna",
+        version: 1,
+        displayName: "GPT-6 Luna (OpenRouter Fallback)",
+        description:
+          "Model dự phòng tự động khi Claude Haiku lỗi hoặc giới hạn (1.05M ctx, $0.10/$0.50 per 1M)",
+        capability: "text.generate",
+        providerId: "openrouter",
+        upstreamModelId: "openai/gpt-6-luna",
+        executionMode: "gateway_proxy",
+        status: activeProviders.has("openrouter") ? "enabled" : "degraded",
+        limits: { maxContextTokens: 1050000, maxOutputTokens: 16384 },
+        supportedParameters: [
+          "temperature",
+          "maxTokens",
+          "stream",
+          "tools",
+          "reasoningEffort",
+          "systemPrompt",
+        ],
+        pricing: { estimatedCostUsd: 0.0001, currency: "USD" },
+      },
       {
         profileId: "text.chat.fast",
         version: 1,
@@ -613,7 +1269,6 @@ export class AiGatewayService {
       },
     ];
 
-    // Lọc theo quyền của caller (client.allowedProviders, client.allowedTasks)
     let filteredProfiles = allProfiles.filter((p) => {
       if (!isAllowedProvider(p.providerId)) return false;
       const taskType = p.capability.startsWith("text")
@@ -632,7 +1287,6 @@ export class AiGatewayService {
       );
     }
 
-    // Tổ chức danh sách providers cho các client dùng schema providers
     const providersMap = new Map<
       string,
       {
@@ -650,22 +1304,22 @@ export class AiGatewayService {
       }
     >();
 
+    const displayNames: Record<string, string> = {
+      openrouter: "OpenRouter",
+      openai: "OpenAI",
+      gemini: "Google Gemini",
+      anthropic: "Anthropic",
+      "fal-ai": "Fal AI",
+      luma: "Luma Dream Machine",
+      edgetts: "Edge TTS",
+    };
+
     for (const prof of filteredProfiles) {
       let prov = providersMap.get(prof.providerId);
       if (!prov) {
-        const displayName =
-          prof.providerId === "openai"
-            ? "OpenAI"
-            : prof.providerId === "gemini"
-              ? "Google Gemini"
-              : prof.providerId === "fal-ai"
-                ? "Fal AI"
-                : prof.providerId === "luma"
-                  ? "Luma Dream Machine"
-                  : "Edge TTS";
         prov = {
           id: prof.providerId,
-          displayName,
+          displayName: displayNames[prof.providerId] || prof.providerId,
           enabled: prof.status === "enabled",
           capabilities: new Set<string>(),
           models: [],
@@ -692,8 +1346,8 @@ export class AiGatewayService {
     }));
 
     return {
-      catalogVersion: 1,
-      version: 1,
+      catalogVersion: 2,
+      version: 2,
       generatedAt: new Date().toISOString(),
       profiles: filteredProfiles,
       providers: providersList,
@@ -714,11 +1368,69 @@ export class AiGatewayService {
     return profile;
   }
 
+  async verifyProviderKey(
+    providerName: string,
+    customKey?: string,
+  ): Promise<{
+    valid: boolean;
+    provider: string;
+    keySource: "custom" | "db_or_env";
+    statusCode: number;
+    label?: string | null;
+    limit?: number | null;
+    limitRemaining?: number | null;
+    usage?: number | null;
+    isFreeTier?: boolean | null;
+    isManagementKey?: boolean;
+    isProvisioningKey?: boolean;
+    expiresAt?: string | null;
+    error?: string;
+  }> {
+    const cleanProvider = providerName.trim().toLowerCase();
+    const cleanedCustom = customKey ? sanitizeApiKeySecret(customKey) : "";
+    const keySource = cleanedCustom ? "custom" : "db_or_env";
+    const apiKey = cleanedCustom
+      ? cleanedCustom
+      : (await this.keyManager.getAvailableKey(cleanProvider, null)).keySecret;
+
+    const provider = this.textProviders.get(cleanProvider) as
+      | (ITextProvider & {
+          verifyKey?: (key: string) => Promise<{
+            valid: boolean;
+            provider: string;
+            statusCode: number;
+            label?: string | null;
+            limit?: number | null;
+            limitRemaining?: number | null;
+            usage?: number | null;
+            isFreeTier?: boolean | null;
+            isManagementKey?: boolean;
+            isProvisioningKey?: boolean;
+            expiresAt?: string | null;
+            error?: string;
+          }>;
+        })
+      | undefined;
+
+    if (provider?.verifyKey) {
+      const result = await provider.verifyKey(apiKey);
+      return { ...result, keySource };
+    }
+
+    return {
+      valid: Boolean(apiKey),
+      provider: cleanProvider,
+      keySource,
+      statusCode: apiKey ? 200 : 400,
+    };
+  }
+
   private validatePermissions(
-    client: AiClientDto,
+    client: AiClientDto | null,
     provider: string,
     taskType: string,
   ) {
+    if (!client) return;
     if (client.allowedProviders && client.allowedProviders.length > 0) {
       if (
         !client.allowedProviders.includes(provider) &&

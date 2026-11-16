@@ -116,7 +116,7 @@ const GROUPS: Record<string, string[]> = {
     ...bs("orbit-admin-dashboard", "opsdeck-admin-kit", "data-visualization-kpi-lines", "data-visualization-funnel-area", "data-visualization-stacked-columns", "data-visualization-records-grid"),
   ],
   "hero-section": [
-    ...bs("hero-particle-field", "hero-dark-stats", "hero-film-strip", "hero-integration-grid", "testimonial-masonry-wall", "testimonial-minimal-carousel", "testimonial-fanned-deck", "interactive-system-map", "iphone-duo-mockup", "sketchnote-pricing"),
+    ...bs("hero-particle-field", "hero-dark-stats", "hero-film-strip", "hero-integration-grid",  "testimonial-minimal-carousel", "testimonial-fanned-deck", "interactive-system-map", "iphone-duo-mockup", "sketchnote-pricing"),
   ],
   "brand-style-site": [
     ...gweb("design-engineer", "apple-hig", "linear", "notion-pre-ai", "raycast", "vercel-mesh", "aesop", "active-theory", "bloomberg-terminal", "dieter-rams-braun", "monocle-magazine", "pentagram", "y2k-retrofuturism"),
@@ -147,18 +147,18 @@ const GROUPS: Record<string, string[]> = {
     ...lm(
       "cta-brush-wipe-sunset",
       "cta-earthrise-dives-through",
-      "cta-particle-dome-headlines",
+      
       "data-metric-board-introduced",
-      "flow-neon-tunnel-stream",
+      
       "grid-social-proof-wall",
       "grid-glowing-mood-orbs",
       "reveal-plasma-orb-collapses",
-      "reveal-rainbow-twists-dna",
+      
       "type-headline-builds-word",
-      "ui-thermal-scan-glass",
-      "ui-multiplayer-poster-assembles",
+      
+      
       "ui-agent-completes-checklist",
-      "ui-exploded-security-chip",
+      
     ),
     ...cm(
       "cards-roadmap-focus",
@@ -167,10 +167,10 @@ const GROUPS: Record<string, string[]> = {
       "comparison-feature-matrix",
       "comparison-line-trend",
       "diagram-hub-routing",
-      "diagram-timeline-nodes",
+      
       "pip-calendar-reschedule",
       "split-chart-pan",
-      "spotlight-region-callout",
+      
       "transition-tile-dissolve",
       "type-title-takeover",
     ),

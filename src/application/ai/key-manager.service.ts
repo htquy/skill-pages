@@ -5,6 +5,25 @@ import {
 import { IAiRepository, IKeyManager } from "@/src/domain/ai/contracts";
 import { AiAllKeysExhaustedError } from "@/src/domain/ai/errors";
 
+export function sanitizeApiKeySecret(raw: string): string {
+  let clean = raw.replace(/[\r\n]/g, "").trim();
+  while (
+    (clean.startsWith('"') && clean.endsWith('"')) ||
+    (clean.startsWith("'") && clean.endsWith("'")) ||
+    /^bearer\s+/i.test(clean)
+  ) {
+    if (
+      (clean.startsWith('"') && clean.endsWith('"')) ||
+      (clean.startsWith("'") && clean.endsWith("'"))
+    ) {
+      clean = clean.slice(1, -1).trim();
+    } else {
+      clean = clean.replace(/^bearer\s+/i, "").trim();
+    }
+  }
+  return clean;
+}
+
 export class KeyManagerService implements IKeyManager {
   private repository: IAiRepository;
   private defaultCooldownMinutes = 3;
@@ -23,13 +42,15 @@ export class KeyManagerService implements IKeyManager {
     const keys = await this.repository.findKeysByProvider(provider, clientId);
 
     if (!keys || keys.length === 0) {
+      const envKey = this.getEnvFallbackKey(provider);
+      if (envKey) return envKey;
       throw new AiAllKeysExhaustedError(provider);
     }
 
     // Nếu có BYOK riêng của client đang active thì ưu tiên dùng
     if (clientId) {
       const clientKey = keys.find((k) => k.clientId === clientId && k.status === "ACTIVE");
-      if (clientKey) return clientKey;
+      if (clientKey) return { ...clientKey, keySecret: sanitizeApiKeySecret(clientKey.keySecret) };
     }
 
     // Lọc các system keys
@@ -42,6 +63,8 @@ export class KeyManagerService implements IKeyManager {
     });
 
     if (availableKeys.length === 0) {
+      const envKey = this.getEnvFallbackKey(provider);
+      if (envKey) return envKey;
       throw new AiAllKeysExhaustedError(provider);
     }
 
@@ -52,13 +75,42 @@ export class KeyManagerService implements IKeyManager {
       return timeA - timeB;
     });
 
-    return availableKeys[0];
+    const chosen = availableKeys[0];
+    return { ...chosen, keySecret: sanitizeApiKeySecret(chosen.keySecret) };
+  }
+
+  private getEnvFallbackKey(provider: string): AiProviderKeyDto | null {
+    const envVar =
+      provider === "openrouter"
+        ? "OPENROUTER_API_KEY"
+        : provider === "openai"
+          ? "OPENAI_API_KEY"
+          : provider === "gemini"
+            ? "GEMINI_API_KEY"
+            : null;
+    const raw = envVar ? process.env[envVar] : undefined;
+    const secret = raw ? sanitizeApiKeySecret(raw) : "";
+    if (!secret) return null;
+    return {
+      id: `__env_${provider}__`,
+      provider,
+      keySecret: secret,
+      alias: `env:${envVar}`,
+      status: "ACTIVE",
+      cooldownUntil: null,
+      failureCount: 0,
+      successCount: 0,
+      weight: 1,
+      lastUsedAt: null,
+      clientId: null,
+    };
   }
 
   /**
    * Phạt key khi gặp lỗi 429 (Too Many Requests), chuyển sang RATE_LIMITED và bật cooldown
    */
   async markKeyRateLimited(keyId: string, cooldownMinutes?: number): Promise<void> {
+    if (keyId.startsWith("__env_")) return;
     const minutes = cooldownMinutes ?? this.defaultCooldownMinutes;
     const cooldownUntil = new Date(Date.now() + minutes * 60 * 1000);
     await this.repository.incrementKeyFailure(keyId);
@@ -69,6 +121,7 @@ export class KeyManagerService implements IKeyManager {
    * Ghi nhận key thực thi thành công: reset cooldown, tăng successCount
    */
   async markKeySuccess(keyId: string): Promise<void> {
+    if (keyId.startsWith("__env_")) return;
     await this.repository.incrementKeySuccess(keyId);
   }
 
@@ -76,8 +129,14 @@ export class KeyManagerService implements IKeyManager {
    * Phạt key khi gặp lỗi 401 (Unauthorized / Invalid Key)
    */
   async markKeyExpired(keyId: string): Promise<void> {
+    if (keyId.startsWith("__env_")) return;
     await this.repository.incrementKeyFailure(keyId);
     await this.repository.updateKeyStatus(keyId, "EXPIRED", null);
+  }
+
+  async recordKeyFailure(keyId: string): Promise<void> {
+    if (keyId.startsWith("__env_")) return;
+    await this.repository.incrementKeyFailure(keyId);
   }
 
   async upsertKey(data: {
@@ -87,7 +146,10 @@ export class KeyManagerService implements IKeyManager {
     clientId?: string | null;
     weight?: number;
   }): Promise<AiProviderKeyDto> {
-    return await this.repository.saveKey(data);
+    return await this.repository.saveKey({
+      ...data,
+      keySecret: sanitizeApiKeySecret(data.keySecret),
+    });
   }
 
   async updateKey(
@@ -100,7 +162,12 @@ export class KeyManagerService implements IKeyManager {
       cooldownUntil: Date | null;
     }>,
   ): Promise<AiProviderKeyDto> {
-    return await this.repository.updateKey(id, data);
+    return await this.repository.updateKey(id, {
+      ...data,
+      ...(data.keySecret !== undefined
+        ? { keySecret: sanitizeApiKeySecret(data.keySecret) }
+        : {}),
+    });
   }
 
   async deleteKey(id: string): Promise<void> {
@@ -162,7 +229,7 @@ export class KeyManagerService implements IKeyManager {
         }
 
         // Lỗi nghiệp vụ khác (bad request, internal error): không phải lỗi do key, ném ra ngoài
-        await this.repository.incrementKeyFailure(key.id);
+        await this.recordKeyFailure(key.id);
         throw error;
       }
     }

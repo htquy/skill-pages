@@ -10,6 +10,14 @@ export class GeminiAdapter implements ITextProvider {
   readonly providerName = "gemini";
   private baseUrl = "https://generativelanguage.googleapis.com/v1beta";
 
+  private contentToText(content: UnifiedTextRequest["messages"][number]["content"]): string {
+    if (typeof content === "string") return content;
+    if (!Array.isArray(content)) return "";
+    return content
+      .map((p) => (p.type === "text" ? p.text : `[image:${p.image_url.url}]`))
+      .join("\n");
+  }
+
   private formatGeminiContents(request: UnifiedTextRequest) {
     const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
 
@@ -17,7 +25,7 @@ export class GeminiAdapter implements ITextProvider {
       if (msg.role === "system") continue; // system prompt goes to systemInstruction
       contents.push({
         role: msg.role === "assistant" ? "model" : "user",
-        parts: [{ text: msg.content }],
+        parts: [{ text: this.contentToText(msg.content) }],
       });
     }
 
@@ -25,7 +33,7 @@ export class GeminiAdapter implements ITextProvider {
     const systemMsg = request.messages.find((m) => m.role === "system");
     if (systemMsg || request.systemPrompt) {
       systemInstruction = {
-        parts: [{ text: systemMsg ? systemMsg.content : request.systemPrompt! }],
+        parts: [{ text: systemMsg ? this.contentToText(systemMsg.content) : request.systemPrompt! }],
       };
     }
 

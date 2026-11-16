@@ -42,6 +42,24 @@ export class AiRateLimitExceededError extends AiGatewayError {
   }
 }
 
+export class AiCreditsExhaustedError extends AiGatewayError {
+  readonly details?: Record<string, unknown>;
+
+  constructor(
+    message = "Monthly AI credits exhausted for this account",
+    details?: Record<string, unknown>,
+    instance?: string,
+  ) {
+    super("CREDITS_EXHAUSTED", message, 402, "https://api.gateway.dev/errors/credits-exhausted", instance);
+    this.details = details;
+  }
+
+  override toProblemDetails(): ProblemDetails {
+    const base = super.toProblemDetails();
+    return this.details ? { ...base, ...this.details } : base;
+  }
+}
+
 export class AiAllKeysExhaustedError extends AiGatewayError {
   constructor(provider: string, instance?: string) {
     super(

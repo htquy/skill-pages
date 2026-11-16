@@ -1187,13 +1187,20 @@ model AiTask {
 model AiUsageLog {
   id               String     @id @default(uuid())
   clientId         String?    @db.VarChar(120)
+  userId           String?    @db.VarChar(120)
+  appSlug          String?    @db.VarChar(120)
   taskId           String?    @db.VarChar(120)
   taskType         AiTaskType
   provider         String     @db.VarChar(60)
   model            String     @db.VarChar(120)
   promptTokens     Int        @default(0)
+  cachedTokens     Int        @default(0)
   completionTokens Int        @default(0)
   totalTokens      Int        @default(0)
+  costUsd          Decimal    @default(0) @db.Decimal(12, 6)
+  creditsCharged   Decimal    @default(0) @db.Decimal(12, 4)
+  fallbackUsed     Boolean    @default(false)
+  fallbackFrom     String?    @db.VarChar(120)
   latencyMs        Int        @default(0)
   statusCode       Int        @default(200)
   errorMessage     String?    @db.Text
@@ -1203,8 +1210,59 @@ model AiUsageLog {
   client           AiClient?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
 
   @@index([clientId, createdAt])
+  @@index([userId, appSlug, createdAt])
+  @@index([userId, createdAt])
   @@index([provider, model, createdAt])
   @@map("ai_usage_logs")
+  @@schema("ai")
+}
+
+/// Cấu hình hạn mức credit & model mặc định theo từng App/Tool và gói
+model AiAppCreditPolicy {
+  id               String   @id @default(uuid())
+  appSlug          String   @db.VarChar(120)
+  planKey          String   @default("FREE") @db.VarChar(80)
+  monthlyCredits   Decimal  @default(50) @db.Decimal(12, 4)
+  usdPerCredit     Decimal  @default(0.002) @db.Decimal(12, 6)
+  resetMode        String   @default("MONTHLY") @db.VarChar(20)
+  primaryProvider  String   @default("openrouter") @db.VarChar(60)
+  primaryModel     String   @default("anthropic/claude-haiku-5.5") @db.VarChar(120)
+  fallbackProvider String?  @default("openrouter") @db.VarChar(60)
+  fallbackModel    String?  @default("openai/gpt-6-luna") @db.VarChar(120)
+  allowedModels    String[] @default(["anthropic/claude-haiku-5.5", "openai/gpt-6-luna"])
+  isActive         Boolean  @default(true)
+  description      String?  @db.VarChar(500)
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([appSlug, planKey])
+  @@index([appSlug, isActive])
+  @@map("ai_app_credit_policies")
+  @@schema("ai")
+}
+
+/// Ví & thống kê request / token / credit theo tháng cho từng tài khoản & công cụ
+model AiUserCreditPeriod {
+  id               String   @id @default(uuid())
+  userId           String   @db.VarChar(120)
+  appSlug          String   @db.VarChar(120)
+  periodKey        String   @db.VarChar(16)
+  planKey          String   @default("FREE") @db.VarChar(80)
+  allowanceCredits Decimal  @default(0) @db.Decimal(12, 4)
+  bonusCredits     Decimal  @default(0) @db.Decimal(12, 4)
+  usedCredits      Decimal  @default(0) @db.Decimal(12, 4)
+  usedCostUsd      Decimal  @default(0) @db.Decimal(12, 6)
+  requestCount     Int      @default(0)
+  promptTokens     Int      @default(0)
+  cachedTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([userId, appSlug, periodKey])
+  @@index([appSlug, periodKey])
+  @@index([userId, periodKey])
+  @@map("ai_user_credit_periods")
   @@schema("ai")
 }
 

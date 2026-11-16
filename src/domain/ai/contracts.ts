@@ -1,4 +1,5 @@
 import {
+  AiAppCreditPolicyDto,
   AiClientDto,
   AiKeyStatus,
   AiProviderKeyDto,
@@ -6,6 +7,8 @@ import {
   AiTaskStatus,
   AiTaskType,
   AiUsageLogDto,
+  AiUserCreditPeriodDto,
+  CreditResetMode,
   ImageTaskResult,
   TextStreamChunk,
   UnifiedAudioRequest,
@@ -168,13 +171,20 @@ export interface IAiRepository {
   // Usage / Audit Logs
   createUsageLog(data: {
     clientId?: string | null;
+    userId?: string | null;
+    appSlug?: string | null;
     taskId?: string | null;
     taskType: AiTaskType;
     provider: string;
     model: string;
     promptTokens: number;
+    cachedTokens?: number;
     completionTokens: number;
     totalTokens: number;
+    costUsd?: number;
+    creditsCharged?: number;
+    fallbackUsed?: boolean;
+    fallbackFrom?: string | null;
     latencyMs: number;
     statusCode: number;
     errorMessage?: string | null;
@@ -182,4 +192,90 @@ export interface IAiRepository {
   }): Promise<void>;
   getUsageLogs(limit?: number, offset?: number): Promise<AiUsageLogDto[]>;
   countUsageLogs(): Promise<number>;
+  listUsageLogsFiltered(filter?: {
+    userId?: string;
+    appSlug?: string;
+    periodStart?: Date;
+    periodEnd?: Date;
+    limit?: number;
+    offset?: number;
+  }): Promise<AiUsageLogDto[]>;
+  countUsageLogsFiltered(filter?: {
+    userId?: string;
+    appSlug?: string;
+    periodStart?: Date;
+    periodEnd?: Date;
+  }): Promise<number>;
+
+  // Credit Policies & Monthly User Periods
+  listCreditPolicies(appSlug?: string): Promise<AiAppCreditPolicyDto[]>;
+  findCreditPolicy(appSlug: string, planKey: string): Promise<AiAppCreditPolicyDto | null>;
+  upsertCreditPolicy(data: {
+    appSlug: string;
+    planKey: string;
+    monthlyCredits: number;
+    usdPerCredit?: number;
+    resetMode?: CreditResetMode;
+    primaryProvider?: string;
+    primaryModel?: string;
+    fallbackProvider?: string | null;
+    fallbackModel?: string | null;
+    allowedModels?: string[];
+    isActive?: boolean;
+    description?: string | null;
+  }): Promise<AiAppCreditPolicyDto>;
+  deleteCreditPolicy(id: string): Promise<void>;
+
+  getUserCreditPeriod(userId: string, appSlug: string, periodKey: string): Promise<AiUserCreditPeriodDto | null>;
+  getTrialAggregateForUserApp(userId: string, appSlug: string): Promise<{
+    usedCredits: number;
+    bonusCredits: number;
+    usedCostUsd: number;
+    requestCount: number;
+  }>;
+  addBonusCredits(data: {
+    userId: string;
+    appSlug: string;
+    periodKey: string;
+    planKey?: string;
+    allowanceCredits?: number;
+    bonusDelta: number;
+  }): Promise<AiUserCreditPeriodDto>;
+  recordUserPeriodUsageAndLog(data: {
+    clientId?: string | null;
+    userId: string;
+    appSlug: string;
+    periodKey: string;
+    planKey: string;
+    allowanceCredits: number;
+    freeAllowanceOnUpgrade?: number;
+    taskId?: string | null;
+    taskType: AiTaskType;
+    provider: string;
+    model: string;
+    promptTokens: number;
+    cachedTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+    costUsd: number;
+    creditsCharged: number;
+    fallbackUsed: boolean;
+    fallbackFrom?: string | null;
+    latencyMs: number;
+    statusCode: number;
+    errorMessage?: string | null;
+    ipAddress?: string | null;
+  }): Promise<AiUserCreditPeriodDto>;
+  listUserCreditPeriods(filter?: {
+    periodKey?: string;
+    appSlug?: string;
+    userId?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<AiUserCreditPeriodDto[]>;
+  countUserCreditPeriods(filter?: {
+    periodKey?: string;
+    appSlug?: string;
+    userId?: string;
+  }): Promise<number>;
 }
